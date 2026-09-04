@@ -1,0 +1,150 @@
+"use client";
+
+import Link from "next/link";
+import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
+import { useSettings } from "@/contexts/SettingsContext";
+
+export default function Footer() {
+  const { contact, getWhatsAppUrl } = useSettings();
+
+  const phone = contact?.phone || "01910037935";
+  const whatsapp = contact?.whatsapp || "01910037935";
+  const email = contact?.email || "sashroyi@gmail.com";
+  const address = contact?.address || "Dhaka, Bangladesh";
+  const fbPage = contact?.facebookPage || "https://www.facebook.com/";
+  const fbGroup = contact?.facebookGroup || "https://facebook.com/groups/";
+  const insta = contact?.instagram || "https://instagram.com/";
+
+  const quickLinks = [
+    { label: "Home", href: "/" },
+    { label: "Wall Clocks", href: "/category/wall-clock/natural" },
+    { label: "Wall Canvas", href: "/category/wall-canvas/natural" },
+    {
+      label: "Facebook Group",
+      href: fbGroup,
+    },
+  ];
+
+  const socialLinks = [
+    {
+      label: "Facebook",
+      href: fbPage,
+      icon: <FaFacebookF size={14} />,
+    },
+    {
+      label: "Instagram",
+      href: insta,
+      icon: <FaInstagram size={16} />,
+    },
+    {
+      label: "WhatsApp",
+      href: getWhatsAppUrl("হ্যালো! আমি sashroyi.shop থেকে জানতে চাচ্ছি।"),
+      icon: <FaWhatsapp size={16} />,
+    },
+    {
+      label: "Email",
+      href: `mailto:${email}`,
+      icon: <FaEnvelope size={14} />,
+    },
+  ];
+
+  return (
+    <footer className="bg-[#0f2a44] text-white">
+      <div className="mx-auto w-full max-w-7xl px-4 py-12">
+        <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-3">
+          <div>
+            <h3 className="mb-3 text-xl font-bold text-[#d4af37]">Sashroyi</h3>
+            <p className="text-sm leading-relaxed text-white/70">
+              Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance
+              for your home.
+            </p>
+
+            <div className="mt-4 flex gap-3">
+              {socialLinks.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={item.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37] hover:text-[#0f2a44]"
+                >
+                  {item.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
+              Quick Links
+            </h4>
+
+            <div className="flex flex-col gap-2">
+              {quickLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
+              Contact
+            </h4>
+
+            <div className="flex flex-col gap-2.5 text-sm text-white/70">
+              <p className="flex items-center gap-2">
+                <FaEnvelope className="text-[#d4af37]" />
+                <a href={`mailto:${email}`} className="hover:text-[#d4af37] transition">
+                  {email}
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <FaPhoneAlt className="text-[#d4af37]" />
+                <a href={`tel:${phone}`} className="hover:text-[#d4af37] transition">
+                  {phone}
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <FaWhatsapp className="text-[#25D366]" />
+                <a
+                  href={getWhatsAppUrl("হ্যালো! আমি sashroyi.shop থেকে তথ্য জানতে চাচ্ছি।")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#d4af37] transition text-green-400 font-medium"
+                >
+                  WhatsApp: {whatsapp}
+                </a>
+              </p>
+              <p className="text-white/60 text-xs mt-1">{address}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10 border-t border-white/10 pt-6 text-center">
+          <p className="text-xs text-white/40">
+            © {new Date().getFullYear()} Sashroyi. All rights reserved.
+          </p>
+          <br />
+          <p className="text-xs text-white/40">
+            Developed by{" "}
+            <a
+              href="https://wa.me/88016229733026"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#d4af37] hover:underline animate-pulse font-semibold"
+            >
+              Rayhan
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
