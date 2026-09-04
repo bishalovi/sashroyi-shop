@@ -102,7 +102,13 @@ export default function AdminCategoriesPage() {
         }),
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("সার্ভার রেসপন্স দিতে পারছে না, অনুগ্রহ করে কয়েক সেকেন্ড পর চেষ্টা করুন");
+      }
+
       if (data.success) {
         toast.success("Category created successfully!");
         setNewCatName("");
@@ -117,7 +123,7 @@ export default function AdminCategoriesPage() {
         toast.error(data.message || "Failed to create category");
       }
     } catch (err) {
-      toast.error("Error creating category: " + err.message);
+      toast.error(err.message || "Error creating category");
     } finally {
       setSubmitting(false);
     }
@@ -166,7 +172,13 @@ export default function AdminCategoriesPage() {
         }),
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("সার্ভার রেসপন্স দিতে পারছে না, অনুগ্রহ করে কয়েক সেকেন্ড পর চেষ্টা করুন");
+      }
+
       if (data.success) {
         toast.success("Category updated successfully!");
         setEditingCat(null);
@@ -175,7 +187,7 @@ export default function AdminCategoriesPage() {
         toast.error(data.message || "Failed to update category");
       }
     } catch (err) {
-      toast.error("Error updating category: " + err.message);
+      toast.error(err.message || "Error updating category");
     } finally {
       setSubmitting(false);
     }
@@ -188,7 +200,12 @@ export default function AdminCategoriesPage() {
       const res = await fetch(`${baseUrl}/api/categories/${id}`, {
         method: "DELETE",
       });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("সার্ভার রেসপন্স দিতে পারছে না, অনুগ্রহ করে কয়েক সেকেন্ড পর চেষ্টা করুন");
+      }
       if (data.success) {
         toast.success("Category deleted successfully!");
         fetchCategories();
@@ -196,7 +213,7 @@ export default function AdminCategoriesPage() {
         toast.error(data.message || "Failed to delete category");
       }
     } catch (err) {
-      toast.error("Error deleting category: " + err.message);
+      toast.error(err.message || "Error deleting category");
     }
   };
 

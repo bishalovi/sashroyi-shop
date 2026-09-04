@@ -521,8 +521,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="https://... (ফাঁকা রাখলে ডিফল্ট লোগো শো করবে)"
-                    className="input input-bordered w-full"
+                    placeholder="https://... বা Google Drive / ImgBB লিঙ্ক"
+                    className="input input-bordered w-full font-mono text-xs"
                     value={settings.header.logoUrl}
                     onChange={(e) =>
                       setSettings({
@@ -531,6 +531,27 @@ export default function AdminSettingsPage() {
                       })
                     }
                   />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    💡 গুগল ড্রাইভ, ImgBB বা যেকোনো ইমেজ লিঙ্ক দেওয়া যাবে (গুগল ড্রাইভ লিঙ্ক স্বয়ংক্রিয়ভাবে কাজ করবে)।
+                  </p>
+                  {settings.header.logoUrl && (
+                    <div className="mt-2 flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                      <span className="text-xs text-gray-500 font-medium">লোগো প্রিভিউ:</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={settings.header.logoUrl.includes("drive.google.com")
+                          ? settings.header.logoUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+                            ? `https://lh3.googleusercontent.com/d/${settings.header.logoUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)[1]}`
+                            : settings.header.logoUrl
+                          : settings.header.logoUrl}
+                        alt="Logo Preview"
+                        className="h-8 max-w-[120px] object-contain rounded bg-white p-1 border"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -539,8 +560,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="https://.../favicon.ico"
-                    className="input input-bordered w-full"
+                    placeholder="https://.../favicon.ico বা Google Drive লিঙ্ক"
+                    className="input input-bordered w-full font-mono text-xs"
                     value={settings.header.faviconUrl}
                     onChange={(e) =>
                       setSettings({
@@ -549,6 +570,27 @@ export default function AdminSettingsPage() {
                       })
                     }
                   />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    💡 ব্রাউজার ট্যাবে প্রদর্শিত ছোট আইকন।
+                  </p>
+                  {settings.header.faviconUrl && (
+                    <div className="mt-2 flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                      <span className="text-xs text-gray-500 font-medium">ফেভিকন প্রিভিউ:</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={settings.header.faviconUrl.includes("drive.google.com")
+                          ? settings.header.faviconUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+                            ? `https://lh3.googleusercontent.com/d/${settings.header.faviconUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)[1]}`
+                            : settings.header.faviconUrl
+                          : settings.header.faviconUrl}
+                        alt="Favicon Preview"
+                        className="h-6 w-6 object-contain rounded bg-white p-0.5 border"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

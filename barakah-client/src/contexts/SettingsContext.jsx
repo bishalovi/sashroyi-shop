@@ -115,6 +115,30 @@ export function formatPhoneNumber(phone) {
   return clean || "01910037935";
 }
 
+/**
+ * Automatically converts Google Drive sharing links to direct embeddable CDN image URLs
+ */
+export function formatImageUrl(url) {
+  if (!url || typeof url !== "string") return "";
+  const trimmed = url.trim();
+
+  if (!trimmed.includes("drive.google.com")) {
+    return trimmed;
+  }
+
+  const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch && driveFileMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`;
+  }
+
+  const driveIdMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (driveIdMatch && driveIdMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${driveIdMatch[1]}`;
+  }
+
+  return trimmed;
+}
+
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -148,6 +172,21 @@ export function SettingsProvider({ children }) {
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  // Dynamic favicon injection
+  useEffect(() => {
+    const rawFavicon = settings.header?.faviconUrl || settings.general?.faviconUrl;
+    if (rawFavicon && typeof document !== "undefined") {
+      const fav = formatImageUrl(rawFavicon);
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.getElementsByTagName("head")[0].appendChild(link);
+      }
+      link.href = fav;
+    }
+  }, [settings.header?.faviconUrl, settings.general?.faviconUrl]);
 
   const getWhatsAppUrl = useCallback(
     (customMessage = "হ্যালো! আমি কিছু তথ্য ও প্রোডাক্ট সম্পর্কে জানতে চাচ্ছি।") => {

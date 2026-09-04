@@ -10,7 +10,7 @@ import { IoMdMenu } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, formatImageUrl } from "@/contexts/SettingsContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -20,7 +20,7 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const shopName = header?.shopName || general?.shopName || "Sashroyi";
-  const logoUrl = header?.logoUrl || general?.logoUrl || "";
+  const logoUrl = formatImageUrl(header?.logoUrl || general?.logoUrl || "");
 
   const defaultNavLinks = [
     { label: "Home", url: "/" },
