@@ -53,7 +53,7 @@ exports.getAllProducts = async (req, res) => {
 
       products = await productsCollection
         .find(query)
-        .sort({ createdAt: -1 })
+        .sort({ order: 1, createdAt: -1 })
         .skip(skip)
         .limit(limitNumber)
         .toArray();
@@ -67,7 +67,7 @@ exports.getAllProducts = async (req, res) => {
     } else {
       products = await productsCollection
         .find(query)
-        .sort({ createdAt: -1 })
+        .sort({ order: 1, createdAt: -1 })
         .toArray();
     }
 
@@ -281,3 +281,40 @@ exports.deleteProduct = async (req, res) => {
     });
   }
 };
+
+// REORDER products (Move Up / Move Down)
+exports.reorderProducts = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const productsCollection = db.collection("products");
+    const { orderedIds } = req.body;
+
+    if (!Array.isArray(orderedIds)) {
+      return res.status(400).json({ success: false, message: "Invalid orderedIds format" });
+    }
+
+    const bulkOps = orderedIds
+      .filter((id) => ObjectId.isValid(id))
+      .map((id, index) => ({
+        updateOne: {
+          filter: { _id: new ObjectId(id) },
+          update: { $set: { order: index, updatedAt: new Date() } },
+        },
+      }));
+
+    if (bulkOps.length > 0) {
+      await productsCollection.bulkWrite(bulkOps);
+    }
+
+    res.json({
+      success: true,
+      message: "Products reordered successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+

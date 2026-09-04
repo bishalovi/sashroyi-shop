@@ -419,10 +419,8 @@ export default function AdminSettingsPage() {
     { id: "paymentMethods", label: "Payment Methods (পেমেন্ট নম্বর)", icon: <FiCreditCard /> },
     { id: "staff", label: "Admin & Moderator (অ্যাডমিন/মডারেটর)", icon: <FiUsers /> },
     { id: "footer", label: "Footer & Branding", icon: <FiMenu /> },
-    { id: "noticeBar", label: "Notice Bar", icon: <FiVolume2 /> },
-    { id: "hero", label: "Hero Banner & Video", icon: <FiImage /> },
     { id: "contact", label: "Contact & Social", icon: <FiPhone /> },
-    { id: "offerTimer", label: "Offer Countdown", icon: <FiClock /> },
+    { id: "noticeBar", label: "Notice Bar", icon: <FiVolume2 /> },
   ];
 
   return (

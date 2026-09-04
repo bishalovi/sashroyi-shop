@@ -197,6 +197,29 @@ export default function ProductTable({
     }
   };
 
+  const handleMoveProduct = async (index, direction) => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= products.length) return;
+
+    const newProducts = [...products];
+    const temp = newProducts[index];
+    newProducts[index] = newProducts[targetIndex];
+    newProducts[targetIndex] = temp;
+
+    setProducts(newProducts);
+
+    try {
+      const orderedIds = newProducts.map((p) => p._id);
+      await fetch(`${baseUrl}/api/products/reorder`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+    } catch (err) {
+      console.error("Failed to reorder products:", err);
+    }
+  };
+
   if (products.length === 0) {
     return <p className="text-gray-500">No products found.</p>;
   }
@@ -276,6 +299,7 @@ export default function ProductTable({
                 />
               </th>
               <th>#</th>
+              <th>Order</th>
               <th>Product</th>
               <th>Category</th>
               <th>Price</th>
@@ -302,6 +326,30 @@ export default function ProductTable({
                   </td>
 
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+
+                  {/* Reorder Buttons */}
+                  <td>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => handleMoveProduct(index, "up")}
+                        className="btn btn-xs btn-outline border-gray-300 hover:bg-[#0f2a44] hover:text-white disabled:opacity-20 px-1.5 py-0.5"
+                        title="উপরে নিন (Move Up)"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === products.length - 1}
+                        onClick={() => handleMoveProduct(index, "down")}
+                        className="btn btn-xs btn-outline border-gray-300 hover:bg-[#0f2a44] hover:text-white disabled:opacity-20 px-1.5 py-0.5"
+                        title="নিচে নিন (Move Down)"
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  </td>
 
                   <td>
                     <div className="flex items-center gap-3">
@@ -419,7 +467,28 @@ export default function ProductTable({
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-4 items-center">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => handleMoveProduct(index, "up")}
+                    className="btn btn-sm btn-outline border-gray-300 px-2"
+                    title="উপরে নিন"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === products.length - 1}
+                    onClick={() => handleMoveProduct(index, "down")}
+                    className="btn btn-sm btn-outline border-gray-300 px-2"
+                    title="নিচে নিন"
+                  >
+                    ↓
+                  </button>
+                </div>
+
                 <Link
                   href={`/admin/products/edit/${product._id}`}
                   className="btn btn-sm flex-1"

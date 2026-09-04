@@ -6,7 +6,7 @@ export default function SectionTitle({
   linkText = "View All",
 }) {
   return (
-    <div className="mb-10 flex items-center justify-between gap-4">
+    <div className="mb-4 flex items-center justify-between gap-4">
       {/* Left */}
       <div>
         <h2 className="text-2xl font-bold text-[#0f2a44] lg:text-3xl">

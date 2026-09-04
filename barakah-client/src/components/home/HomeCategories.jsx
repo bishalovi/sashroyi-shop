@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import SearchBar from "./SearchBar";
@@ -76,10 +76,10 @@ const getCategoryMeta = (slug) => {
 
 export default function HomeCategories({ categories = [] }) {
   return (
-    <section className="bg-gradient-to-b from-white via-[#faf7f0]/60 to-[#faf7f0] pt-5 pb-8 border-b border-gray-200/70">
+    <section className="bg-gradient-to-b from-white via-[#faf7f0]/60 to-[#faf7f0] pt-3 pb-3 border-b border-gray-200/50">
       <div className="mx-auto max-w-7xl px-4">
         {/* 1. Header Search Bar */}
-        <div className="mb-6">
+        <div className="mb-4">
           <SearchBar />
         </div>
 

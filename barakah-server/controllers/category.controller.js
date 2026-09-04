@@ -79,11 +79,11 @@ exports.getCategories = async (req, res) => {
     const db = await connectDB();
     const collection = db.collection("categories");
 
-    let categories = await collection.find({}).sort({ createdAt: 1 }).toArray();
+    let categories = await collection.find({}).sort({ order: 1, createdAt: 1 }).toArray();
 
     if (categories.length === 0) {
       await collection.insertMany(DEFAULT_CATEGORIES);
-      categories = await collection.find({}).sort({ createdAt: 1 }).toArray();
+      categories = await collection.find({}).sort({ order: 1, createdAt: 1 }).toArray();
     }
 
     res.json({
@@ -244,3 +244,34 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 6. Reorder categories
+exports.reorderCategories = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const collection = db.collection("categories");
+    const { orderedIds } = req.body;
+
+    if (!Array.isArray(orderedIds)) {
+      return res.status(400).json({ success: false, message: "Invalid orderedIds format" });
+    }
+
+    const bulkOps = orderedIds
+      .filter((id) => ObjectId.isValid(id))
+      .map((id, index) => ({
+        updateOne: {
+          filter: { _id: new ObjectId(id) },
+          update: { $set: { order: index, updatedAt: new Date() } },
+        },
+      }));
+
+    if (bulkOps.length > 0) {
+      await collection.bulkWrite(bulkOps);
+    }
+
+    res.json({ success: true, message: "Categories reordered successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

@@ -82,6 +82,40 @@ export default function AdminCategoriesPage() {
     setNewSubcategories(newSubcategories.filter((_, i) => i !== index));
   };
 
+  const moveSubInNew = (index, direction) => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newSubcategories.length) return;
+    const updated = [...newSubcategories];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    setNewSubcategories(updated);
+  };
+
+  const handleMoveCategory = async (index, direction) => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+    const newCategories = [...categories];
+    const temp = newCategories[index];
+    newCategories[index] = newCategories[targetIndex];
+    newCategories[targetIndex] = temp;
+
+    setCategories(newCategories);
+
+    try {
+      const orderedIds = newCategories.map((c) => c._id);
+      await fetch(`${baseUrl}/api/categories/reorder`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      toast.success("ক্যাটাগরির ক্রম সংরক্ষিত হয়েছে!");
+    } catch (err) {
+      console.error("Failed to reorder categories:", err);
+    }
+  };
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     if (!newCatName.trim()) {
@@ -153,6 +187,17 @@ export default function AdminCategoriesPage() {
       ...editingCat,
       subcategories: editingCat.subcategories.filter((_, i) => i !== index),
     });
+  };
+
+  const moveSubInEdit = (index, direction) => {
+    if (!editingCat) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= (editingCat.subcategories || []).length) return;
+    const updated = [...(editingCat.subcategories || [])];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+    setEditingCat({ ...editingCat, subcategories: updated });
   };
 
   const handleUpdateCategory = async (e) => {
@@ -317,14 +362,32 @@ export default function AdminCategoriesPage() {
                   {newSubcategories.map((sub, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800 border"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-800 border"
                     >
+                      <button
+                        type="button"
+                        disabled={i === 0}
+                        onClick={() => moveSubInNew(i, "up")}
+                        className="text-gray-500 hover:text-black disabled:opacity-20 font-bold"
+                        title="Move Up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === newSubcategories.length - 1}
+                        onClick={() => moveSubInNew(i, "down")}
+                        className="text-gray-500 hover:text-black disabled:opacity-20 font-bold"
+                        title="Move Down"
+                      >
+                        ↓
+                      </button>
                       <span>{sub.name}</span>
-                      <span className="text-gray-400 font-mono">({sub.slug})</span>
+                      <span className="text-gray-400 font-mono text-[10px]">({sub.slug})</span>
                       <button
                         type="button"
                         onClick={() => removeSubFromNew(i)}
-                        className="text-red-500 hover:text-red-700 ml-1"
+                        className="text-red-500 hover:text-red-700 ml-1 font-bold"
                       >
                         ×
                       </button>
@@ -379,7 +442,25 @@ export default function AdminCategoriesPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={categories.indexOf(cat) === 0}
+                          onClick={() => handleMoveCategory(categories.indexOf(cat), "up")}
+                          className="btn btn-sm btn-outline border-gray-300 disabled:opacity-20 px-2 py-1"
+                          title="উপরে নিন (Move Up)"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          disabled={categories.indexOf(cat) === categories.length - 1}
+                          onClick={() => handleMoveCategory(categories.indexOf(cat), "down")}
+                          className="btn btn-sm btn-outline border-gray-300 disabled:opacity-20 px-2 py-1"
+                          title="নিচে নিন (Move Down)"
+                        >
+                          ↓
+                        </button>
                         <button
                           onClick={() => openEditModal(cat)}
                           className="btn btn-sm btn-ghost text-blue-600 hover:bg-blue-50"
@@ -519,14 +600,32 @@ export default function AdminCategoriesPage() {
                     {editingCat.subcategories?.map((sub, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800 border"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-800 border"
                       >
+                        <button
+                          type="button"
+                          disabled={i === 0}
+                          onClick={() => moveSubInEdit(i, "up")}
+                          className="text-gray-500 hover:text-black disabled:opacity-20 font-bold"
+                          title="Move Up"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          disabled={i === (editingCat.subcategories || []).length - 1}
+                          onClick={() => moveSubInEdit(i, "down")}
+                          className="text-gray-500 hover:text-black disabled:opacity-20 font-bold"
+                          title="Move Down"
+                        >
+                          ↓
+                        </button>
                         <span>{sub.name}</span>
-                        <span className="text-gray-400 font-mono">({sub.slug})</span>
+                        <span className="text-gray-400 font-mono text-[10px]">({sub.slug})</span>
                         <button
                           type="button"
                           onClick={() => removeSubFromEdit(i)}
-                          className="text-red-500 hover:text-red-700 ml-1"
+                          className="text-red-500 hover:text-red-700 ml-1 font-bold"
                         >
                           ×
                         </button>

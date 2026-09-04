@@ -7,9 +7,11 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  reorderProducts,
 } = require("../controllers/product.controller");
 
 router.get("/", getAllProducts);
+router.put("/reorder", reorderProducts);
 router.get("/:id", getSingleProduct);
 router.post("/", createProduct);
 router.patch("/:id", updateProduct);

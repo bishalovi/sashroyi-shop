@@ -35,8 +35,25 @@ async function getProductsByCategory(categorySlug) {
   }
 }
 
+async function getAllProducts() {
+  try {
+    const res = await fetch(`${baseUrl}/api/products?limit=50`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const result = await res.json();
+    return result.data || [];
+  } catch (error) {
+    console.error("Failed to fetch all products:", error);
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const categories = await getCategories();
+  const [categories, allProducts] = await Promise.all([
+    getCategories(),
+    getAllProducts(),
+  ]);
 
   // Fetch products for all active categories in parallel for maximum speed
   const categorySections = await Promise.all(
@@ -58,7 +75,15 @@ export default async function HomePage() {
     <main className="min-h-screen bg-[#faf7f0] text-[#3d2f1f]">
       <HomeCategories categories={categories} />
 
-      {activeSections.length > 0 ? (
+      {allProducts.length > 0 && (
+        <ProductSection
+          title="সকল পণ্যসমূহ"
+          products={allProducts}
+          bgClass="bg-[#faf7f0]"
+        />
+      )}
+
+      {activeSections.length > 0 &&
         activeSections.map((sec) => (
           <ProductSection
             key={sec._id}
@@ -67,9 +92,10 @@ export default async function HomePage() {
             products={sec.products}
             bgClass="bg-[#faf7f0]"
           />
-        ))
-      ) : (
-        <section className="bg-[#faf7f0] py-14">
+        ))}
+
+      {allProducts.length === 0 && activeSections.length === 0 && (
+        <section className="bg-[#faf7f0] py-10">
           <div className="mx-auto max-w-7xl px-4 text-center text-gray-500">
             নতুন প্রোডাক্ট শীঘ্রই আসছে...
           </div>

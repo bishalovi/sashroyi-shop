@@ -156,7 +156,9 @@ export default function CartPage() {
                   <span>৳ {totalPrice.toFixed(2)}</span>
                 </div>
 
-                <p className="text-green-600 text-center pb-2">সারা বাংলাদেশে ডেলিভারি চার্জ সম্পুর্ণ ফ্রি!</p>
+                <p className="text-[#0f2a44] font-medium text-xs md:text-sm text-center pb-3 flex items-center justify-center gap-1.5">
+                  <span className="text-[#d4af37]">★</span> আপনার বিশ্বাসই আমাদের অঙ্গীকার <span className="text-[#d4af37]">★</span>
+                </p>
 
                 <Link
                   href="/checkout"
