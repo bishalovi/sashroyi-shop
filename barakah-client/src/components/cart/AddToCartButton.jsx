@@ -12,7 +12,7 @@ export default function AddToCartButton({ product, quantity = 1 }) {
   return (
     <button
       onClick={handleAddToCart}
-      className="px-6 py-3 bg-[#0f2a44] text-white rounded-lg hover:bg-[#d4af37] transition"
+      className="px-6 py-3 border border-[#0f2a44] text-[#0f2a44] rounded-lg hover:bg-[#d4af37] hover:border-[#d4af37] hover:text-white transition font-medium"
     >
       কার্টে যোগ করুন
     </button>

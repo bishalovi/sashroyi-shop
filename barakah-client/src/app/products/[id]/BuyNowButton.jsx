@@ -19,7 +19,7 @@ export default function BuyNowButton({ product, quantity = 1 }) {
   return (
     <button
       onClick={handleBuyNow}
-      className="px-6 py-3 border border-[#0f2a44] rounded-lg hover:bg-[#d4af37] hover:border-[#d4af37] transition"
+      className="px-6 py-3 bg-[#0f2a44] text-white rounded-lg hover:bg-[#d4af37] transition font-medium"
     >
       এখনই কিনুন
     </button>

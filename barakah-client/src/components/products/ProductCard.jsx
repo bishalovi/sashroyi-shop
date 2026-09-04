@@ -95,13 +95,13 @@ export default function ProductCard({ product }) {
         <div className="flex justify-between py-2 gap-3">
           <button
             onClick={handleAddToCart}
-            className="py-2 w-[50%] rounded-md bg-[#0f2a44] text-white text-xs font-medium hover:bg-[#d4af37] transition-all duration-200"
+            className="py-2 w-[50%] rounded-md text-[#0f2a44] border border-[#0f2a44] text-xs font-medium hover:bg-[#d4af37] hover:border-[#d4af37] hover:text-white transition-all duration-200"
           >
             কার্টে যোগ করুন
           </button>
           <button
             onClick={handleBuyNow}
-            className="w-[50%] rounded-md text-[#0f2a44] border border-[#0f2a44] text-xs font-medium hover:bg-[#d4af37] hover:border-[white] transition-all duration-200"
+            className="w-[50%] py-2 rounded-md bg-[#0f2a44] text-white text-xs font-medium hover:bg-[#d4af37] transition-all duration-200"
           >
             এখনই কিনুন
           </button>
