@@ -17,7 +17,7 @@
  * ============================================================================
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { toast } from "react-toastify";
 import {
@@ -32,6 +32,12 @@ import {
   FiPlus,
   FiTrash2,
   FiCreditCard,
+  FiUsers,
+  FiUserCheck,
+  FiUserPlus,
+  FiShield,
+  FiLock,
+  FiSearch,
 } from "react-icons/fi";
 
 export default function AdminSettingsPage() {
@@ -39,6 +45,23 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("header");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Staff & Role Management State
+  const [usersList, setUsersList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userFilter, setUserFilter] = useState("all");
+  const [userSearch, setUserSearch] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [newStaff, setNewStaff] = useState({
+    userName: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "barakahModerator0102",
+  });
+  const [creatingStaff, setCreatingStaff] = useState(false);
+  const [roleUpdatingId, setRoleUpdatingId] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
   const [settings, setSettings] = useState({
     header: {
@@ -255,6 +278,132 @@ export default function AdminSettingsPage() {
     }));
   };
 
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("barakahUser") || "{}");
+      setCurrentUser(stored);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    if (!baseUrl) return;
+    try {
+      setLoadingUsers(true);
+      const res = await fetch(`${baseUrl}/api/auth/users`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setUsersList(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [baseUrl]);
+
+  useEffect(() => {
+    if (activeTab === "staff") {
+      fetchUsers();
+    }
+  }, [activeTab, fetchUsers]);
+
+  const handleCreateStaff = async (e) => {
+    e.preventDefault();
+    if (!newStaff.userName || !newStaff.email || !newStaff.password) {
+      toast.warning("নাম, ইমেইল এবং পাসওয়ার্ড আবশ্যক!", { position: "top-right" });
+      return;
+    }
+    if (newStaff.password.length < 6) {
+      toast.warning("পাসওয়ার্ড ন্যূনতম ৬ অক্ষরের হতে হবে!", { position: "top-right" });
+      return;
+    }
+    try {
+      setCreatingStaff(true);
+      const res = await fetch(`${baseUrl}/api/auth/staff`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newStaff),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || "নতুন স্টাফ সফলভাবে যোগ করা হয়েছে!", {
+          position: "top-right",
+        });
+        setNewStaff({
+          userName: "",
+          email: "",
+          phone: "",
+          password: "",
+          role: "barakahModerator0102",
+        });
+        fetchUsers();
+      } else {
+        toast.error(data.message || "স্টাফ যোগ করতে ব্যর্থ হয়েছে", {
+          position: "top-right",
+        });
+      }
+    } catch (err) {
+      toast.error("সার্ভার ত্রুটি!", { position: "top-right" });
+    } finally {
+      setCreatingStaff(false);
+    }
+  };
+
+  const handleUpdateUserRole = async (userId, role) => {
+    try {
+      setRoleUpdatingId(userId);
+      const res = await fetch(`${baseUrl}/api/auth/role`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("রোল সফলভাবে পরিবর্তন করা হয়েছে!", { position: "top-right" });
+        fetchUsers();
+      } else {
+        toast.error(data.message || "রোল পরিবর্তন ব্যর্থ হয়েছে", { position: "top-right" });
+      }
+    } catch (err) {
+      toast.error("সার্ভার ত্রুটি!", { position: "top-right" });
+    } finally {
+      setRoleUpdatingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName, email) => {
+    if (email === "bishalovi4874@gmail.com") {
+      toast.error("মূল অ্যাডমিন একাউন্ট ডিলিট করা যাবে না!", { position: "top-right" });
+      return;
+    }
+    if (currentUser?.email === email) {
+      toast.error("নিজের একাউন্ট নিজে ডিলিট করা যাবে না!", { position: "top-right" });
+      return;
+    }
+    if (!window.confirm(`আপনি কি নিশ্চিত যে "${userName || email}" এর একাউন্টটি মুছে ফেলতে চান?`)) {
+      return;
+    }
+    try {
+      setDeletingUserId(userId);
+      const res = await fetch(`${baseUrl}/api/auth/users/${userId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("ইউজার সফলভাবে মুছে ফেলা হয়েছে!", { position: "top-right" });
+        fetchUsers();
+      } else {
+        toast.error(data.message || "ইউজার মুছতে ব্যর্থ হয়েছে", { position: "top-right" });
+      }
+    } catch (err) {
+      toast.error("সার্ভার ত্রুটি!", { position: "top-right" });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   if (loading) {
     return (
       <AdminRoute>
@@ -268,6 +417,7 @@ export default function AdminSettingsPage() {
   const tabs = [
     { id: "header", label: "Header & Navigation", icon: <FiGlobe /> },
     { id: "paymentMethods", label: "Payment Methods (পেমেন্ট নম্বর)", icon: <FiCreditCard /> },
+    { id: "staff", label: "Admin & Moderator (অ্যাডমিন/মডারেটর)", icon: <FiUsers /> },
     { id: "footer", label: "Footer & Branding", icon: <FiMenu /> },
     { id: "noticeBar", label: "Notice Bar", icon: <FiVolume2 /> },
     { id: "hero", label: "Hero Banner & Video", icon: <FiImage /> },
@@ -863,6 +1013,385 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Staff & Roles (Admin & Moderator Management) */}
+          {activeTab === "staff" && (
+            <div className="space-y-6">
+              {/* Header Info */}
+              <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#0f2a44] flex items-center gap-2">
+                      <FiUsers className="text-[#d4af37]" /> Admin & Moderator Management (অ্যাডমিন ও মডারেটর ম্যানেজমেন্ট)
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      নতুন অ্যাডমিন বা মডারেটর যুক্ত করুন, রোল পরিবর্তন করুন এবং অ্যাক্সেস পরিচালনা করুন।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchUsers}
+                    className="btn btn-sm btn-outline text-[#0f2a44] hover:bg-[#0f2a44] hover:text-white"
+                  >
+                    রিফ্রেশ তালিকা
+                  </button>
+                </div>
+
+                {/* Role Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+                  <div className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+                      <FiShield size={22} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-indigo-700 uppercase">মোট অ্যাডমিন</p>
+                      <h4 className="text-2xl font-bold text-indigo-950">
+                        {usersList.filter((u) => u.role === "barakahAdmin1234").length}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                      <FiUserCheck size={22} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-emerald-700 uppercase">মোট মডারেটর</p>
+                      <h4 className="text-2xl font-bold text-emerald-950">
+                        {usersList.filter((u) => u.role === "barakahModerator0102").length}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700 text-white shadow-sm">
+                      <FiUsers size={22} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 uppercase">মোট কাস্টমার / ইউজার</p>
+                      <h4 className="text-2xl font-bold text-slate-900">
+                        {usersList.filter((u) => u.role !== "barakahAdmin1234" && u.role !== "barakahModerator0102").length}
+                      </h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add New Staff Form */}
+              <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+                <div className="border-b pb-3 mb-5">
+                  <h3 className="text-base font-bold text-[#0f2a44] flex items-center gap-2">
+                    <FiUserPlus className="text-emerald-600" /> নতুন অ্যাডমিন / মডারেটর যোগ করুন
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    নতুন স্টাফের বিস্তারিত ও রোল সিলেক্ট করে একাউন্ট তৈরি করুন।
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      নাম (Full Name) *
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full text-sm"
+                      placeholder="যেমন: মোঃ সাকিব হাসান"
+                      value={newStaff.userName}
+                      onChange={(e) =>
+                        setNewStaff({ ...newStaff, userName: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      ইমেইল (Email Address) *
+                    </label>
+                    <input
+                      type="email"
+                      className="input input-bordered w-full text-sm font-mono"
+                      placeholder="user@example.com"
+                      value={newStaff.email}
+                      onChange={(e) =>
+                        setNewStaff({ ...newStaff, email: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      ফোন নম্বর (Phone)
+                    </label>
+                    <input
+                      type="tel"
+                      className="input input-bordered w-full text-sm font-mono"
+                      placeholder="019XXXXXXXX"
+                      value={newStaff.phone}
+                      onChange={(e) =>
+                        setNewStaff({ ...newStaff, phone: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      পাসওয়ার্ড (Password) *
+                    </label>
+                    <input
+                      type="password"
+                      className="input input-bordered w-full text-sm"
+                      placeholder="কমপক্ষে ৬ ডিজিটের পাসওয়ার্ড"
+                      value={newStaff.password}
+                      onChange={(e) =>
+                        setNewStaff({ ...newStaff, password: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      রোল নির্বাচন করুন (Role) *
+                    </label>
+                    <select
+                      className="select select-bordered w-full text-sm font-semibold"
+                      value={newStaff.role}
+                      onChange={(e) =>
+                        setNewStaff({ ...newStaff, role: e.target.value })
+                      }
+                    >
+                      <option value="barakahModerator0102">
+                        💼 Moderator (মডারেটর - অর্ডার ও প্রোডাক্ট নিয়ন্ত্রণ)
+                      </option>
+                      <option value="barakahAdmin1234">
+                        🛡️ Admin (অ্যাডমিন - সম্পূর্ণ অ্যাক্সেস)
+                      </option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={handleCreateStaff}
+                      disabled={creatingStaff}
+                      className="btn bg-emerald-600 hover:bg-emerald-700 text-white w-full shadow-sm gap-2"
+                    >
+                      {creatingStaff ? (
+                        <span className="loading loading-spinner loading-sm"></span>
+                      ) : (
+                        <FiUserPlus />
+                      )}
+                      <span>{creatingStaff ? "যোগ করা হচ্ছে..." : "স্টাফ যোগ করুন"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users & Staff List */}
+              <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-[#0f2a44]">
+                      সকল স্টাফ ও ইউজার তালিকা ({usersList.length})
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      যেকোনো ইউজারের রোল পরিবর্তন বা স্টাফ রিমুভ করুন।
+                    </p>
+                  </div>
+
+                  {/* Filter & Search */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="নাম বা ইমেইল খুঁজুন..."
+                        className="input input-sm input-bordered pl-8 text-xs w-48 sm:w-56"
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                      />
+                    </div>
+
+                    <select
+                      className="select select-sm select-bordered text-xs font-semibold"
+                      value={userFilter}
+                      onChange={(e) => setUserFilter(e.target.value)}
+                    >
+                      <option value="all">সব ইউজার ({usersList.length})</option>
+                      <option value="admins">
+                        অ্যাডমিন ({usersList.filter((u) => u.role === "barakahAdmin1234").length})
+                      </option>
+                      <option value="moderators">
+                        মডারেটর ({usersList.filter((u) => u.role === "barakahModerator0102").length})
+                      </option>
+                      <option value="customers">কাস্টমার / সাধারণ ইউজার</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Table */}
+                {loadingUsers ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <span className="loading loading-spinner loading-md text-[#0f2a44]"></span>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="table w-full">
+                      <thead>
+                        <tr className="bg-gray-50 text-xs font-bold text-gray-600">
+                          <th>ইউজার</th>
+                          <th>যোগাযোগ</th>
+                          <th>বর্তমান রোল</th>
+                          <th>রোল পরিবর্তন</th>
+                          <th className="text-right">অ্যাকশন</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usersList
+                          .filter((u) => {
+                            if (userFilter === "admins") return u.role === "barakahAdmin1234";
+                            if (userFilter === "moderators") return u.role === "barakahModerator0102";
+                            if (userFilter === "customers")
+                              return (
+                                u.role !== "barakahAdmin1234" &&
+                                u.role !== "barakahModerator0102"
+                              );
+                            return true;
+                          })
+                          .filter((u) => {
+                            if (!userSearch) return true;
+                            const q = userSearch.toLowerCase();
+                            return (
+                              u.userName?.toLowerCase().includes(q) ||
+                              u.email?.toLowerCase().includes(q) ||
+                              u.phone?.toLowerCase().includes(q)
+                            );
+                          })
+                          .map((u) => {
+                            const isAdmin = u.role === "barakahAdmin1234";
+                            const isModerator = u.role === "barakahModerator0102";
+                            const isRoot = u.email === "bishalovi4874@gmail.com";
+                            const isSelf = currentUser?.email === u.email;
+
+                            return (
+                              <tr key={u._id} className="hover:bg-gray-50/80 transition">
+                                <td>
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-sm ${
+                                        isAdmin
+                                          ? "bg-indigo-600"
+                                          : isModerator
+                                          ? "bg-emerald-600"
+                                          : "bg-slate-500"
+                                      }`}
+                                    >
+                                      {u.userName ? u.userName.charAt(0).toUpperCase() : "U"}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-[#0f2a44] text-sm flex items-center gap-1.5">
+                                        {u.userName || "No Name"}
+                                        {isRoot && (
+                                          <span className="badge badge-warning badge-xs font-semibold">
+                                            Root Owner
+                                          </span>
+                                        )}
+                                        {isSelf && (
+                                          <span className="badge badge-neutral badge-xs font-semibold">
+                                            You
+                                          </span>
+                                        )}
+                                      </p>
+                                      <p className="text-[11px] text-gray-400">
+                                        {u.createdAt
+                                          ? new Date(u.createdAt).toLocaleDateString("bn-BD")
+                                          : "N/A"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td>
+                                  <p className="font-mono text-xs text-gray-700">{u.email}</p>
+                                  {u.phone && (
+                                    <p className="font-mono text-xs text-gray-500">{u.phone}</p>
+                                  )}
+                                </td>
+
+                                <td>
+                                  {isAdmin ? (
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-800">
+                                      <FiShield size={13} /> Admin
+                                    </span>
+                                  ) : isModerator ? (
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
+                                      <FiUserCheck size={13} /> Moderator
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                      Customer / User
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td>
+                                  {isRoot ? (
+                                    <span className="text-xs text-gray-400 font-medium">
+                                      স্থায়ী অ্যাডমিন
+                                    </span>
+                                  ) : (
+                                    <select
+                                      className="select select-bordered select-xs text-xs font-semibold disabled:opacity-50"
+                                      value={u.role || "customer"}
+                                      disabled={roleUpdatingId === u._id}
+                                      onChange={(e) =>
+                                        handleUpdateUserRole(u._id, e.target.value)
+                                      }
+                                    >
+                                      <option value="barakahAdmin1234">🛡️ Admin</option>
+                                      <option value="barakahModerator0102">💼 Moderator</option>
+                                      <option value="customer">👤 Customer</option>
+                                    </select>
+                                  )}
+                                </td>
+
+                                <td className="text-right">
+                                  {isRoot || isSelf ? (
+                                    <span className="text-xs text-gray-400">—</span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDeleteUser(u._id, u.userName, u.email)
+                                      }
+                                      disabled={deletingUserId === u._id}
+                                      className="btn btn-ghost btn-xs text-red-500 hover:bg-red-50"
+                                      title="রিমুভ করুন"
+                                    >
+                                      {deletingUserId === u._id ? (
+                                        <span className="loading loading-spinner loading-xs"></span>
+                                      ) : (
+                                        <FiTrash2 size={15} />
+                                      )}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+
+                    {usersList.length === 0 && (
+                      <div className="text-center py-8 text-gray-400 text-sm">
+                        কোনো ইউজার পাওয়া যায়নি।
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

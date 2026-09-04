@@ -42,7 +42,7 @@ export default function LoginPage() {
         });
         login(result.user);
 
-        if (result.user.role === "barakahAdmin1234") {
+        if (result.user.role === "barakahAdmin1234" || result.user.role === "barakahModerator0102") {
           router.push("/admin");
         } else {
           router.push("/");
