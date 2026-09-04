@@ -12,9 +12,9 @@ export default function Hero() {
     subtitle:
       "Discover curated collections of premium Islamic wall clocks and canvas art. Crafted with elegance for those who value faith and beauty.",
     primaryBtnText: "Shop Now",
-    primaryBtnLink: "/category/wall-clock/natural",
+    primaryBtnLink: "/category/kitchen-dining",
     secondaryBtnText: "Explore Categories",
-    secondaryBtnLink: "/category/wall-canvas/natural",
+    secondaryBtnLink: "/category/home-living",
     videoUrl: "https://www.youtube.com/embed/amRfomXo1_0?rel=0",
   });
 
