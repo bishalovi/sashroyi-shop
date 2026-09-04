@@ -1,4 +1,4 @@
-import Hero from "@/components/home/Hero";
+import HomeCategories from "@/components/home/HomeCategories";
 import ProductSection from "@/components/home/ProductSection";
 import Reviews from "@/components/home/Reviews";
 
@@ -56,7 +56,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#faf7f0] text-[#3d2f1f]">
-      <Hero />
+      <HomeCategories categories={categories} />
 
       {activeSections.length > 0 ? (
         activeSections.map((sec) => (
