@@ -69,7 +69,7 @@ export function formatPhoneNumber(phone) {
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.sashroyi.shop";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
 
   const fetchSettings = useCallback(async () => {
     try {
