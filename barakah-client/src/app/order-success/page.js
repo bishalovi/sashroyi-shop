@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { FaCircleCheck } from "react-icons/fa6";
@@ -85,7 +85,7 @@ export default function OrderSuccessPage() {
         <p className="text-xs text-black/80 text-center mt-16">
           Need Website? Contact with{" "}
           <a
-            href="https://wa.me/88016229733026"
+            href="https://wa.me/8801629733036"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[#0b91eb] hover:underline animate-pulse font-semibold"

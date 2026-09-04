@@ -16,7 +16,7 @@ import DynamicTrackingProvider from "@/components/tracking/DynamicTrackingProvid
 export const metadata = {
   title: "Sashroyi | Islamic Wall Clock & Canvas",
   description:
-    "Shop premium Islamic wall clocks and canvas art. Elegant designs for your home. Developed by Rayhan.",
+    "Shop premium Islamic wall clocks and canvas art. Elegant designs for your home. Maintained by Rayhan.",
 };
 
 const banglaFont = Hind_Siliguri({

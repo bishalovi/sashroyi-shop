@@ -143,9 +143,9 @@ export default function Footer() {
           </p>
           <br />
           <p className="text-xs text-white/40">
-            Developed by{" "}
+            Maintained by{" "}
             <a
-              href="https://wa.me/88016229733026"
+              href="https://wa.me/8801629733036"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#d4af37] hover:underline animate-pulse font-semibold"

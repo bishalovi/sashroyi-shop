@@ -1486,13 +1486,13 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
-              {/* Developer Attribution Info */}
+              {/* Maintainer Attribution Info */}
               <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
                 <p className="text-xs font-semibold text-amber-900 mb-1">
-                  💡 Developer Attribution (ডেভেলপার ক্রেডিট):
+                  💡 Maintainer Attribution (মেইনটেইনার ক্রেডিট):
                 </p>
                 <p className="text-xs text-amber-800">
-                  Developed by <span className="font-bold text-[#d4af37]">Rayhan</span> (WhatsApp: 016229733026) স্বয়ংক্রিয়ভাবে ফুটারের নিচে সংরক্ষিত রয়েছে।
+                  Maintained by <span className="font-bold text-[#d4af37]">Rayhan</span> (WhatsApp: 01629733036) স্বয়ংক্রিয়ভাবে ফুটারের নিচে সংরক্ষিত রয়েছে।
                 </p>
               </div>
 
