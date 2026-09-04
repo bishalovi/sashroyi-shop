@@ -31,7 +31,7 @@ export default async function ProductDetails({ params }) {
   const { id } = await params;
   const products = await getProducts();
 
-  const product = products.find((p) => p._id === id);
+  const product = products.find((p) => p._id === id || p.slug === id);
 
   if (!product) {
     return (

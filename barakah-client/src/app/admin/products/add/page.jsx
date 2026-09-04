@@ -1,13 +1,25 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Image from "next/image";
 import { toast } from "react-toastify";
+import { FiLink } from "react-icons/fi";
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "miigc3z4";
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default";
+
+function generateSlug(text) {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 export default function AddProductPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
@@ -17,15 +29,21 @@ export default function AddProductPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
 
+  // Dynamic Categories
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [selectedCategoryObj, setSelectedCategoryObj] = useState(null);
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
       name: "",
+      slug: "",
       price: "",
       oldPrice: "",
       category: "",
@@ -40,6 +58,36 @@ export default function AddProductPage() {
   });
 
   const customImageUrl = watch("imageUrl");
+  const productName = watch("name");
+  const selectedCategorySlug = watch("category");
+
+  useEffect(() => {
+    fetch(`${baseUrl}/api/categories`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setCategoriesList(data.data);
+        }
+      })
+      .catch((err) => console.error("Failed to load categories:", err));
+  }, [baseUrl]);
+
+  // When category changes, update selectedCategoryObj for subcategories
+  useEffect(() => {
+    if (selectedCategorySlug && categoriesList.length > 0) {
+      const found = categoriesList.find((c) => c.slug === selectedCategorySlug);
+      setSelectedCategoryObj(found || null);
+    } else {
+      setSelectedCategoryObj(null);
+    }
+  }, [selectedCategorySlug, categoriesList]);
+
+  // Auto-generate slug when name changes (unless user typed a custom slug)
+  const handleNameChange = (e) => {
+    const val = e.target.value;
+    setValue("name", val);
+    setValue("slug", generateSlug(val));
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -88,7 +136,8 @@ export default function AddProductPage() {
       setUploadStatus("প্রোডাক্ট সেভ করা হচ্ছে...");
 
       const productData = {
-        name: data.name,
+        name: data.name.trim(),
+        slug: (data.slug || generateSlug(data.name)).trim(),
         price: Number(data.price),
         oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
         category: data.category,
@@ -143,15 +192,39 @@ export default function AddProductPage() {
           </label>
           <input
             type="text"
-            placeholder="Enter product name"
+            placeholder="Enter product name (e.g. Ayatul Kursi Wooden Clock)"
             {...register("name", {
               required: "Product name is required",
             })}
+            onChange={handleNameChange}
             className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37]"
           />
           {errors.name && (
             <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
           )}
+        </div>
+
+        {/* Product Slug Field (Auto-generated & Editable) */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#3d2f1f] flex items-center gap-1.5">
+            <FiLink size={15} className="text-[#d4af37]" /> Product URL Slug (স্লাগ) *
+          </label>
+          <div className="flex rounded-lg border border-[#e5dccf] bg-gray-50 focus-within:border-[#d4af37] focus-within:bg-white transition">
+            <span className="flex items-center px-3 text-xs text-gray-500 font-mono border-r bg-gray-100">
+              /products/
+            </span>
+            <input
+              type="text"
+              placeholder="product-url-slug"
+              {...register("slug", {
+                required: "Slug is required",
+              })}
+              className="w-full p-3 font-mono text-sm bg-transparent outline-none"
+            />
+          </div>
+          <p className="mt-1 text-xs text-gray-400">
+            নাম লিখলে স্বয়ংক্রিয়ভাবে তৈরি হবে, প্রয়োজনে এডিট করতে পারবেন।
+          </p>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
@@ -191,6 +264,7 @@ export default function AddProductPage() {
           </div>
         </div>
 
+        {/* Dynamic Category & Subcategory Selection */}
         <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
@@ -200,14 +274,14 @@ export default function AddProductPage() {
               {...register("category", {
                 required: "Category is required",
               })}
-              className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37]"
+              className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37] bg-white"
             >
               <option value="">Select Category</option>
-              <option value="wall-clock">Wall Clock</option>
-              <option value="wall-canvas">Wall Canvas</option>
-              <option value="wall-art">Wall Art</option>
-              <option value="round-clock">Round Clock</option>
-              <option value="others">Others</option>
+              {categoriesList.map((cat) => (
+                <option key={cat._id || cat.slug} value={cat.slug}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
             {errors.category && (
               <p className="mt-1 text-sm text-red-500">
@@ -224,14 +298,22 @@ export default function AddProductPage() {
               {...register("subcategory", {
                 required: "Subcategory is required",
               })}
-              className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37]"
+              className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37] bg-white"
             >
               <option value="">Select Subcategory</option>
-              <option value="natural">Natural</option>
-              <option value="islamic">Islamic</option>
-              <option value="special1">Special 1</option>
-              <option value="special2">Special 2</option>
-              <option value="others">Others</option>
+              {selectedCategoryObj?.subcategories && selectedCategoryObj.subcategories.length > 0 ? (
+                selectedCategoryObj.subcategories.map((sub, idx) => (
+                  <option key={idx} value={sub.slug}>
+                    {sub.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="natural">Natural</option>
+                  <option value="islamic">Islamic</option>
+                  <option value="others">Others</option>
+                </>
+              )}
             </select>
             {errors.subcategory && (
               <p className="mt-1 text-sm text-red-500">

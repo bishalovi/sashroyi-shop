@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings } from "react-icons/fi";
+import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings, FiGrid } from "react-icons/fi";
 import { IoMdMenu } from "react-icons/io";
 import { usePathname } from "next/navigation";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -14,6 +14,7 @@ export default function AdminLayout({ children }) {
   const isProductsPage =
     pathname === "/admin/products" ||
     pathname.startsWith("/admin/products/edit");
+  const isCategoriesPage = pathname.startsWith("/admin/categories");
   return (
     <AdminRoute>
       <div className="drawer lg:drawer-open min-h-screen">
@@ -58,6 +59,17 @@ export default function AdminLayout({ children }) {
                 >
                   <FiHome />
                   Dashboard
+                </Link>
+              </li>
+
+              {/* Categories */}
+              <li>
+                <Link
+                  href="/admin/categories"
+                  className={isCategoriesPage ? "bg-[#d4af37] text-white" : ""}
+                >
+                  <FiGrid />
+                  Categories
                 </Link>
               </li>
 

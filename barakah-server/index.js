@@ -23,6 +23,7 @@ const reviewRoutes = require("./routes/review.routes");
 const trackingRoutes = require("./routes/tracking.routes");
 const shippingRoutes = require("./routes/shipping.routes");
 const settingsRoutes = require("./routes/settings.routes");
+const categoryRoutes = require("./routes/category.routes");
 
 app.get("/", (req, res) => {
   res.send("Barakah server running successfully");
@@ -47,6 +48,7 @@ app.get("/api/test", async (req, res) => {
 });
 
 app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reviews", reviewRoutes);

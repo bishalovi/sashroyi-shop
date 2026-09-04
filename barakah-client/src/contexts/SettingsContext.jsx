@@ -11,6 +11,30 @@ export const DEFAULT_SETTINGS = {
     logoUrl: "",
     faviconUrl: "",
   },
+  header: {
+    shopName: "Sashroyi",
+    tagline: "Blessings in every moment",
+    logoUrl: "",
+    faviconUrl: "",
+    navLinks: [
+      { label: "Home", url: "/" },
+      { label: "Wall Clock", url: "/category/wall-clock/natural" },
+      { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
+      { label: "Wall Art", url: "/category/wall-art/natural" },
+      { label: "Round Clock", url: "/category/round-clock/natural" },
+      { label: "Others", url: "/category/others/natural" },
+    ],
+  },
+  footer: {
+    aboutText: "Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance for your home.",
+    copyrightText: "© 2026 Sashroyi. All rights reserved.",
+    quickLinks: [
+      { label: "Home", url: "/" },
+      { label: "Wall Clocks", url: "/category/wall-clock/natural" },
+      { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
+      { label: "Facebook Group", url: "https://facebook.com/groups/" },
+    ],
+  },
   noticeBar: {
     isEnabled: true,
     text: "🔥 যেকোনো ২টি প্রোডাক্ট অর্ডারে ডেলিভারি সম্পূর্ণ ফ্রি!",
@@ -20,7 +44,7 @@ export const DEFAULT_SETTINGS = {
   },
   hero: {
     badgeText: "Blessings in every moment",
-    title: "Barakah - Islamic Clock & Canvas",
+    title: "Sashroyi - Islamic Clock & Canvas",
     subtitle:
       "Discover curated collections of premium Islamic wall clocks and canvas art. Crafted with elegance for those who value faith and beauty.",
     primaryBtnText: "Shop Now",
@@ -80,6 +104,8 @@ export function SettingsProvider({ children }) {
       if (data.success && data.data) {
         setSettings((prev) => ({
           general: { ...prev.general, ...(data.data.general || {}) },
+          header: { ...prev.header, ...(data.data.header || {}) },
+          footer: { ...prev.footer, ...(data.data.footer || {}) },
           noticeBar: { ...prev.noticeBar, ...(data.data.noticeBar || {}) },
           hero: { ...prev.hero, ...(data.data.hero || {}) },
           contact: { ...prev.contact, ...(data.data.contact || {}) },
@@ -111,6 +137,8 @@ export function SettingsProvider({ children }) {
         settings,
         contact: settings.contact || DEFAULT_SETTINGS.contact,
         general: settings.general || DEFAULT_SETTINGS.general,
+        header: settings.header || DEFAULT_SETTINGS.header,
+        footer: settings.footer || DEFAULT_SETTINGS.footer,
         noticeBar: settings.noticeBar || DEFAULT_SETTINGS.noticeBar,
         hero: settings.hero || DEFAULT_SETTINGS.hero,
         offerTimer: settings.offerTimer || DEFAULT_SETTINGS.offerTimer,
@@ -133,6 +161,8 @@ export function useSettings() {
       settings: DEFAULT_SETTINGS,
       contact: DEFAULT_SETTINGS.contact,
       general: DEFAULT_SETTINGS.general,
+      header: DEFAULT_SETTINGS.header,
+      footer: DEFAULT_SETTINGS.footer,
       noticeBar: DEFAULT_SETTINGS.noticeBar,
       hero: DEFAULT_SETTINGS.hero,
       offerTimer: DEFAULT_SETTINGS.offerTimer,

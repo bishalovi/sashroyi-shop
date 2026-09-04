@@ -10,26 +10,31 @@ import { IoMdMenu } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
+  const { header, general } = useSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [siteConfig, setSiteConfig] = useState(null);
-  const baseUrl = "https://sashroyi-api.onrender.com";
 
-  useEffect(() => {
-    if (!baseUrl) return;
-    fetch(`${baseUrl}/api/settings/public`)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data) {
-          setSiteConfig(res.data);
-        }
-      })
-      .catch((err) => console.error("Error loading navbar config:", err));
-  }, [baseUrl]);
+  const shopName = header?.shopName || general?.shopName || "Sashroyi";
+  const logoUrl = header?.logoUrl || general?.logoUrl || "";
+
+  const defaultNavLinks = [
+    { label: "Home", url: "/" },
+    { label: "Wall Clock", url: "/category/wall-clock/natural" },
+    { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
+    { label: "Wall Art", url: "/category/wall-art/natural" },
+    { label: "Round Clock", url: "/category/round-clock/natural" },
+    { label: "Others", url: "/category/others/natural" },
+  ];
+
+  const navLinks = header?.navLinks && header.navLinks.length > 0
+    ? header.navLinks
+    : defaultNavLinks;
+
   const pathname = usePathname();
   const router = useRouter();
   const userMenuRef = useRef(null);
@@ -79,51 +84,35 @@ export default function Navbar() {
       <div className="mx-auto w-full max-w-7xl px-4">
         <div className="flex h-16 items-center justify-between lg:h-20">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="Barakah Logo" width={25} height={25} />
+            {logoUrl ? (
+              <div className="relative h-8 w-8 overflow-hidden rounded">
+                <Image
+                  src={logoUrl}
+                  alt={shopName}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <Image src="/logo.svg" alt="Logo" width={25} height={25} />
+            )}
             <h1 className="bg-linear-to-r from-[#937923] via-[#ac9542] to-[#9c7e23] bg-clip-text text-xl font-bold text-transparent lg:text-2xl">
-              Barakah
+              {shopName}
             </h1>
           </Link>
 
+          {/* Desktop Nav Links */}
           <div className="hidden items-center gap-8 md:flex">
-            <Link href="/" className={navLinkClass(isActive("/", true))}>
-              Home
-            </Link>
-
-            <Link
-              href="/category/wall-clock/natural"
-              className={navLinkClass(isActive("/category/wall-clock"))}
-            >
-              Wall Clock
-            </Link>
-
-            <Link
-              href="/category/wall-canvas/natural"
-              className={navLinkClass(isActive("/category/wall-canvas"))}
-            >
-              Wall Canvas
-            </Link>
-
-            <Link
-              href="/category/wall-art/natural"
-              className={navLinkClass(isActive("/category/wall-art"))}
-            >
-              Wall Art
-            </Link>
-
-            <Link
-              href="/category/round-clock/natural"
-              className={navLinkClass(isActive("/category/round-clock"))}
-            >
-              Round Clock
-            </Link>
-
-            <Link
-              href="/category/others/natural"
-              className={navLinkClass(isActive("/category/others"))}
-            >
-              Others
-            </Link>
+            {navLinks.map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.url}
+                className={navLinkClass(isActive(item.url, item.url === "/"))}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-3">
@@ -173,14 +162,6 @@ export default function Navbar() {
                           </Link>
                         )}
 
-                        {/* <Link
-                          href="/profile"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="block rounded-lg px-3 py-2 text-sm text-[#0c2a45af] hover:bg-gray-50 hover:text-[#d4af37]"
-                        >
-                          Profile
-                        </Link> */}
-
                         <button
                           onClick={handleLogout}
                           className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-500 hover:bg-red-50"
@@ -216,53 +197,16 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="border-t border-gray-200 bg-white md:hidden">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4">
-            <Link
-              href="/"
-              onClick={closeMobileMenu}
-              className={mobileLinkClass(isActive("/", true))}
-            >
-              Home
-            </Link>
-
-            <Link
-              href="/category/wall-clock/natural"
-              onClick={closeMobileMenu}
-              className={mobileLinkClass(isActive("/category/wall-clock"))}
-            >
-              Wall Clock
-            </Link>
-
-            <Link
-              href="/category/wall-canvas/natural"
-              onClick={closeMobileMenu}
-              className={mobileLinkClass(isActive("/category/wall-canvas"))}
-            >
-              Wall Canvas
-            </Link>
-
-            <Link
-              href="/category/wall-art/natural"
-              onClick={closeMobileMenu}
-              className={mobileLinkClass(isActive("/category/wall-art"))}
-            >
-              Wall Art
-            </Link>
-
-            <Link
-              href="/category/round-clock/natural"
-              onClick={closeMobileMenu}
-              className={mobileLinkClass(isActive("/category/round-clock"))}
-            >
-              Round Clock
-            </Link>
-
-            <Link
-              href="/category/others/natural"
-              onClick={closeMobileMenu}
-              className={mobileLinkClass(isActive("/category/others"))}
-            >
-              Others
-            </Link>
+            {navLinks.map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.url}
+                onClick={closeMobileMenu}
+                className={mobileLinkClass(isActive(item.url, item.url === "/"))}
+              >
+                {item.label}
+              </Link>
+            ))}
 
             {user && (
               <div className="mt-2 border-t border-gray-200 pt-3 flex flex-col gap-3">
@@ -275,14 +219,6 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                 )}
-
-                {/* <Link
-                  href="/profile"
-                  onClick={closeMobileMenu}
-                  className="text-sm font-medium text-[#0c2a45af] hover:text-[#d4af37]"
-                >
-                  Profile
-                </Link> */}
 
                 <button
                   onClick={handleLogout}

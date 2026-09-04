@@ -165,24 +165,38 @@ export default async function AdminHomePage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/admin/products"
-              className="btn border border-[#d4af37] text-[#d4af37] hover:bg-[#0f2a44] hover:border-[#0f2a44] transition"
+              href="/admin/categories"
+              className="btn bg-[#0f2a44] text-white hover:bg-[#d4af37] hover:text-[#0f2a44] transition"
             >
-              View Products
+              Categories & Slugs
             </Link>
 
             <Link
               href="/admin/products/add"
-              className="btn border border-[#d4af37] text-[#d4af37] hover:bg-[#0f2a44] hover:border-[#0f2a44] transition"
+              className="btn border border-[#d4af37] text-[#d4af37] hover:bg-[#0f2a44] hover:text-white transition"
             >
               Add Product
             </Link>
 
             <Link
+              href="/admin/products"
+              className="btn border border-[#d4af37] text-[#d4af37] hover:bg-[#0f2a44] hover:text-white transition"
+            >
+              View Products
+            </Link>
+
+            <Link
               href="/admin/orders"
-              className="btn border border-[#d4af37] text-[#d4af37] hover:bg-[#0f2a44] hover:border-[#0f2a44] transition"
+              className="btn border border-[#d4af37] text-[#d4af37] hover:bg-[#0f2a44] hover:text-white transition"
             >
               View Orders
+            </Link>
+
+            <Link
+              href="/admin/settings"
+              className="btn border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+            >
+              Header & Footer Settings
             </Link>
           </div>
         </div>

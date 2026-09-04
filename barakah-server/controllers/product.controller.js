@@ -1,6 +1,17 @@
 const connectDB = require("../config/db");
 const { ObjectId } = require("mongodb");
 
+function generateSlug(text) {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 exports.getAllProducts = async (req, res) => {
   try {
     const db = await connectDB();
@@ -67,9 +78,14 @@ exports.getSingleProduct = async (req, res) => {
     const productsCollection = db.collection("products");
     const { id } = req.params;
 
-    const product = await productsCollection.findOne({
-      _id: new ObjectId(id),
-    });
+    let query = {};
+    if (ObjectId.isValid(id)) {
+      query = { $or: [{ _id: new ObjectId(id) }, { slug: id }] };
+    } else {
+      query = { slug: id };
+    }
+
+    const product = await productsCollection.findOne(query);
 
     if (!product) {
       return res.status(404).json({
@@ -98,6 +114,7 @@ exports.createProduct = async (req, res) => {
 
     const {
       name,
+      slug,
       category,
       subcategory,
       description,
@@ -110,8 +127,11 @@ exports.createProduct = async (req, res) => {
       isFreeShipping,
     } = req.body;
 
+    const finalSlug = (slug || generateSlug(name) || `product-${Date.now()}`).trim();
+
     const newProduct = {
       name: name?.trim() || "",
+      slug: finalSlug,
       category: category?.trim() || "",
       subcategory: subcategory?.trim() || "",
       description: description?.trim() || "",
@@ -121,6 +141,7 @@ exports.createProduct = async (req, res) => {
       badge: badge?.trim() || "",
       productCode: productCode?.trim() || "",
       inStock: typeof inStock === "boolean" ? inStock : true,
+      isFreeShipping: Boolean(isFreeShipping),
       createdAt: new Date(),
     };
 
@@ -130,6 +151,7 @@ exports.createProduct = async (req, res) => {
       success: true,
       message: "Product created successfully",
       insertedId: result.insertedId,
+      slug: finalSlug,
     });
   } catch (error) {
     res.status(500).json({
@@ -145,10 +167,14 @@ exports.updateProduct = async (req, res) => {
     const db = await connectDB();
     const productsCollection = db.collection("products");
     const { id } = req.params;
-    console.log(id);
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
+    }
 
     const {
       name,
+      slug,
       category,
       subcategory,
       description,
@@ -158,6 +184,7 @@ exports.updateProduct = async (req, res) => {
       badge,
       productCode,
       inStock,
+      isFreeShipping,
     } = req.body;
 
     const existingProduct = await productsCollection.findOne({
@@ -171,17 +198,21 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
+    const finalSlug = slug !== undefined && slug.trim()
+      ? slug.trim()
+      : existingProduct.slug || generateSlug(name || existingProduct.name);
+
     const updatedDoc = {
       name: name?.trim() || existingProduct.name,
+      slug: finalSlug,
       category: category?.trim() || existingProduct.category,
       description: description?.trim() || existingProduct.description || "",
       subcategory: subcategory?.trim() || existingProduct.subcategory || "",
       price: price !== undefined ? Number(price) : existingProduct.price,
-      oldPrice:
-        oldPrice !== undefined ? Number(oldPrice) : existingProduct.oldPrice,
+      oldPrice: oldPrice !== undefined ? Number(oldPrice) : existingProduct.oldPrice,
       image: image?.trim() || existingProduct.image,
-      badge: badge?.trim() || "",
-      productCode: productCode?.trim() || "",
+      badge: badge !== undefined ? badge.trim() : existingProduct.badge || "",
+      productCode: productCode !== undefined ? productCode.trim() : existingProduct.productCode || "",
       inStock: typeof inStock === "boolean" ? inStock : existingProduct.inStock,
       isFreeShipping: typeof isFreeShipping === "boolean" ? isFreeShipping : Boolean(isFreeShipping ?? existingProduct.isFreeShipping ?? false),
       updatedAt: new Date(),
@@ -211,6 +242,10 @@ exports.deleteProduct = async (req, res) => {
     const db = await connectDB();
     const productsCollection = db.collection("products");
     const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid product ID" });
+    }
 
     const result = await productsCollection.deleteOne({
       _id: new ObjectId(id),

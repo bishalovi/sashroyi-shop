@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCart } from "@/contexts/CartContext";
 import Image from "next/image";
@@ -34,7 +34,7 @@ export default function ProductCard({ product }) {
 
   return (
     <Link
-      href={`/products/${product._id}`}
+      href={`/products/${product.slug || product._id}`}
       className="group block overflow-hidden rounded-2xl bg-white border border-[#0f2a44]/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
     >
       {/* Image */}

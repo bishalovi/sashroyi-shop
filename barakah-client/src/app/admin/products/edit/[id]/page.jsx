@@ -5,9 +5,21 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import axios from "axios";
+import { FiLink } from "react-icons/fi";
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "miigc3z4";
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default";
+
+function generateSlug(text) {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 export default function EditProductPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
@@ -17,6 +29,7 @@ export default function EditProductPage() {
 
   const [formData, setFormData] = useState({
     name: "",
+    slug: "",
     description: "",
     category: "",
     subcategory: "",
@@ -29,6 +42,10 @@ export default function EditProductPage() {
     isFreeShipping: false,
   });
 
+  // Dynamic Categories
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [selectedCategoryObj, setSelectedCategoryObj] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [updateStatus, setUpdateStatus] = useState("");
@@ -36,13 +53,36 @@ export default function EditProductPage() {
   const [filePreview, setFilePreview] = useState(null);
   const [uploadMode, setUploadMode] = useState("current"); // 'current', 'file', 'url'
 
+  // Fetch categories
+  useEffect(() => {
+    fetch(`${baseUrl}/api/categories`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setCategoriesList(data.data);
+        }
+      })
+      .catch((err) => console.error("Failed to load categories:", err));
+  }, [baseUrl]);
+
+  // Update selectedCategoryObj when category changes
+  useEffect(() => {
+    if (formData.category && categoriesList.length > 0) {
+      const found = categoriesList.find((c) => c.slug === formData.category);
+      setSelectedCategoryObj(found || null);
+    } else {
+      setSelectedCategoryObj(null);
+    }
+  }, [formData.category, categoriesList]);
+
+  // Fetch product data
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
 
         const res = await fetch(`${baseUrl}/api/products/${id}`, {
-          next: { revalidate: 60 },
+          next: { revalidate: 0 },
         });
 
         const data = await res.json();
@@ -52,6 +92,7 @@ export default function EditProductPage() {
 
           setFormData({
             name: product.name || "",
+            slug: product.slug || generateSlug(product.name || ""),
             description: product.description || "",
             category: product.category || "",
             subcategory: product.subcategory || "",
@@ -89,6 +130,15 @@ export default function EditProductPage() {
       setFormData((prev) => ({
         ...prev,
         [name]: e.target.checked,
+      }));
+      return;
+    }
+
+    if (name === "name") {
+      setFormData((prev) => ({
+        ...prev,
+        name: value,
+        slug: prev.slug ? prev.slug : generateSlug(value),
       }));
       return;
     }
@@ -142,9 +192,10 @@ export default function EditProductPage() {
         },
         body: JSON.stringify({
           ...formData,
+          slug: (formData.slug || generateSlug(formData.name)).trim(),
           image: finalImageUrl,
           price: Number(formData.price),
-          oldPrice: Number(formData.oldPrice),
+          oldPrice: formData.oldPrice ? Number(formData.oldPrice) : null,
         }),
       });
 
@@ -171,8 +222,11 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#e5dccf] bg-white p-6">
-        <p className="text-[#3d2f1f]">Loading product...</p>
+      <div className="rounded-2xl border border-[#e5dccf] bg-white p-6 max-w-3xl mx-auto flex items-center justify-center h-64">
+        <p className="text-[#3d2f1f] flex items-center gap-2">
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#d4af37] border-t-transparent"></span>
+          Loading product...
+        </p>
       </div>
     );
   }
@@ -196,6 +250,30 @@ export default function EditProductPage() {
           />
         </div>
 
+        {/* Product URL Slug */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#3d2f1f] flex items-center gap-1.5">
+            <FiLink size={15} className="text-[#d4af37]" /> Product URL Slug (স্লাগ) *
+          </label>
+          <div className="flex rounded-xl border border-[#e5dccf] bg-gray-50 focus-within:border-[#d4af37] focus-within:bg-white transition overflow-hidden">
+            <span className="flex items-center px-3 text-xs text-gray-500 font-mono border-r bg-gray-100">
+              /products/
+            </span>
+            <input
+              type="text"
+              name="slug"
+              value={formData.slug}
+              onChange={handleChange}
+              placeholder="product-url-slug"
+              className="w-full p-3 font-mono text-sm bg-transparent outline-none"
+              required
+            />
+          </div>
+          <p className="mt-1 text-xs text-gray-400">
+            এসইও ও সুন্দর লিঙ্কের জন্য ইংরেজি স্লাগ ব্যবহার করুন।
+          </p>
+        </div>
+
         <div>
           <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
             Description (পণ্যের বিবরণ)
@@ -210,6 +288,7 @@ export default function EditProductPage() {
           />
         </div>
 
+        {/* Category & Subcategory Dynamic */}
         <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
@@ -219,15 +298,25 @@ export default function EditProductPage() {
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37]"
+              className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37] bg-white"
               required
             >
               <option value="">Select category</option>
-              <option value="wall-clock">Wall Clock</option>
-              <option value="wall-canvas">Wall Canvas</option>
-              <option value="wall-art">Wall Art</option>
-              <option value="round-clock">Round Clock</option>
-              <option value="others">Others</option>
+              {categoriesList.length > 0 ? (
+                categoriesList.map((cat) => (
+                  <option key={cat._id || cat.slug} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="wall-clock">Wall Clock</option>
+                  <option value="wall-canvas">Wall Canvas</option>
+                  <option value="wall-art">Wall Art</option>
+                  <option value="round-clock">Round Clock</option>
+                  <option value="others">Others</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -239,14 +328,24 @@ export default function EditProductPage() {
               name="subcategory"
               value={formData.subcategory}
               onChange={handleChange}
-              className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37]"
+              className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37] bg-white"
             >
               <option value="">Select Subcategory</option>
-              <option value="natural">Natural</option>
-              <option value="islamic">Islamic</option>
-              <option value="special1">Special 1</option>
-              <option value="special2">Special 2</option>
-              <option value="others">Others</option>
+              {selectedCategoryObj?.subcategories && selectedCategoryObj.subcategories.length > 0 ? (
+                selectedCategoryObj.subcategories.map((sub, idx) => (
+                  <option key={idx} value={sub.slug}>
+                    {sub.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="natural">Natural</option>
+                  <option value="islamic">Islamic</option>
+                  <option value="special1">Special 1</option>
+                  <option value="special2">Special 2</option>
+                  <option value="others">Others</option>
+                </>
+              )}
             </select>
           </div>
         </div>

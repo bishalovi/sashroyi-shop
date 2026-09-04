@@ -5,8 +5,9 @@ import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt } from "re
 import { useSettings } from "@/contexts/SettingsContext";
 
 export default function Footer() {
-  const { contact, getWhatsAppUrl } = useSettings();
+  const { contact, header, footer, general, getWhatsAppUrl } = useSettings();
 
+  const shopName = header?.shopName || general?.shopName || "Sashroyi";
   const phone = contact?.phone || "01910037935";
   const whatsapp = contact?.whatsapp || "01910037935";
   const email = contact?.email || "sashroyi@gmail.com";
@@ -15,15 +16,25 @@ export default function Footer() {
   const fbGroup = contact?.facebookGroup || "https://facebook.com/groups/";
   const insta = contact?.instagram || "https://instagram.com/";
 
-  const quickLinks = [
-    { label: "Home", href: "/" },
-    { label: "Wall Clocks", href: "/category/wall-clock/natural" },
-    { label: "Wall Canvas", href: "/category/wall-canvas/natural" },
-    {
-      label: "Facebook Group",
-      href: fbGroup,
-    },
+  const aboutText =
+    footer?.aboutText ||
+    "Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance for your home.";
+
+  const copyrightText =
+    footer?.copyrightText ||
+    `© ${new Date().getFullYear()} ${shopName}. All rights reserved.`;
+
+  const defaultQuickLinks = [
+    { label: "Home", url: "/" },
+    { label: "Wall Clocks", url: "/category/wall-clock/natural" },
+    { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
+    { label: "Facebook Group", url: fbGroup },
   ];
+
+  const quickLinks =
+    footer?.quickLinks && footer.quickLinks.length > 0
+      ? footer.quickLinks
+      : defaultQuickLinks;
 
   const socialLinks = [
     {
@@ -53,10 +64,9 @@ export default function Footer() {
       <div className="mx-auto w-full max-w-7xl px-4 py-12">
         <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-3">
           <div>
-            <h3 className="mb-3 text-xl font-bold text-[#d4af37]">Sashroyi</h3>
-            <p className="text-sm leading-relaxed text-white/70">
-              Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance
-              for your home.
+            <h3 className="mb-3 text-xl font-bold text-[#d4af37]">{shopName}</h3>
+            <p className="text-sm leading-relaxed text-white/70 whitespace-pre-line">
+              {aboutText}
             </p>
 
             <div className="mt-4 flex gap-3">
@@ -81,10 +91,10 @@ export default function Footer() {
             </h4>
 
             <div className="flex flex-col gap-2">
-              {quickLinks.map((link) => (
+              {quickLinks.map((link, idx) => (
                 <Link
-                  key={link.label}
-                  href={link.href}
+                  key={idx}
+                  href={link.url || link.href || "#"}
                   className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
                 >
                   {link.label}
@@ -129,7 +139,7 @@ export default function Footer() {
 
         <div className="mt-10 border-t border-white/10 pt-6 text-center">
           <p className="text-xs text-white/40">
-            © {new Date().getFullYear()} Sashroyi. All rights reserved.
+            {copyrightText}
           </p>
           <br />
           <p className="text-xs text-white/40">
