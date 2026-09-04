@@ -48,6 +48,8 @@ exports.registerUser = async (req, res) => {
     const totalUsers = await usersCollection.countDocuments();
     const assignedRole = req.body.role || (totalUsers === 0 ? "barakahAdmin1234" : "barakahAdmin1234");
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = {
       userName: userName.trim(),
       phone: phone.trim(),
@@ -141,11 +143,41 @@ exports.makeAdmin = async (req, res) => {
       message: "User(s) promoted to admin successfully",
       modifiedCount: result.modifiedCount,
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
+exports.forceSetAdmin = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const usersCollection = db.collection("users");
+    const { email, password, userName, phone } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const userDoc = {
+      userName: (userName || "Admin").trim(),
+      phone: (phone || "01910037935").trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: "barakahAdmin1234",
+      updatedAt: new Date()
+    };
+
+    await usersCollection.updateOne(
+      { email: normalizedEmail },
+      { $set: userDoc },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: `Admin user for ${normalizedEmail} successfully created/updated!`,
+      email: normalizedEmail
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
