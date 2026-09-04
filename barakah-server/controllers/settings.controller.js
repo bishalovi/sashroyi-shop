@@ -1,16 +1,17 @@
 /**
  * ============================================================================
  * FILE: settings.controller.js
- * VERSION: v2.0.0
+ * VERSION: v2.1.0
  * ----------------------------------------------------------------------------
  * USER REQUIREMENT:
  * Comprehensive Website Settings & Customization Hub for managing:
  * 1. Header & Navigation (Logo, Shop name, Tagline, Favicon, Nav Menu Links)
- * 2. Top Notice / Announcement Bar (Enabled, Text, Link, Colors)
- * 3. Hero Banner & Video (Headline, Subtitle, Buttons, YouTube Embed)
- * 4. Contact Info & Social Links (Phone, WhatsApp, FB Page, FB Group, Instagram, Messenger, Email, Address)
- * 5. Footer & Branding (About text, Quick links, Copyright)
- * 6. Offer Countdown Timer (Enabled, Title, Target Date)
+ * 2. Payment Methods & Numbers (bKash, Nagad, Rocket, Cash On Delivery)
+ * 3. Top Notice / Announcement Bar (Enabled, Text, Link, Colors)
+ * 4. Hero Banner & Video (Headline, Subtitle, Buttons, YouTube Embed)
+ * 5. Contact Info & Social Links (Phone, WhatsApp, FB Page, FB Group, Instagram, Messenger, Email, Address)
+ * 6. Footer & Branding (About text, Quick links, Copyright)
+ * 7. Offer Countdown Timer (Enabled, Title, Target Date)
  * ============================================================================
  */
 
@@ -39,6 +40,31 @@ const DEFAULT_WEBSITE_SETTINGS = {
       { label: "Round Clock", url: "/category/round-clock/natural" },
       { label: "Others", url: "/category/others/natural" },
     ],
+  },
+  paymentMethods: {
+    bkash: {
+      isEnabled: true,
+      number: "01910037935",
+      type: "Personal",
+      instructions: "বিকাশ পার্সোনাল নম্বরে Send Money করুন",
+    },
+    nagad: {
+      isEnabled: true,
+      number: "01910037935",
+      type: "Personal",
+      instructions: "নগদ পার্সোনাল নম্বরে Send Money করুন",
+    },
+    rocket: {
+      isEnabled: false,
+      number: "01910037935",
+      type: "Personal",
+      instructions: "রকেট পার্সোনাল নম্বরে Send Money করুন",
+    },
+    cod: {
+      isEnabled: true,
+      title: "ক্যাশ অন ডেলিভারি",
+      instructions: "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন",
+    },
   },
   noticeBar: {
     isEnabled: true,
@@ -111,6 +137,7 @@ exports.getPublicSettings = async (req, res) => {
           faviconUrl: config.general?.faviconUrl || "",
           navLinks: DEFAULT_WEBSITE_SETTINGS.header.navLinks,
         },
+        paymentMethods: config.paymentMethods || DEFAULT_WEBSITE_SETTINGS.paymentMethods,
         noticeBar: config.noticeBar || DEFAULT_WEBSITE_SETTINGS.noticeBar,
         hero: config.hero || DEFAULT_WEBSITE_SETTINGS.hero,
         contact: config.contact || DEFAULT_WEBSITE_SETTINGS.contact,
@@ -162,6 +189,32 @@ exports.updateAdminSettings = async (req, res) => {
         }))
       : DEFAULT_WEBSITE_SETTINGS.footer.quickLinks;
 
+    const paymentMethods = {
+      bkash: {
+        isEnabled: payload.paymentMethods?.bkash?.isEnabled !== undefined ? Boolean(payload.paymentMethods.bkash.isEnabled) : DEFAULT_WEBSITE_SETTINGS.paymentMethods.bkash.isEnabled,
+        number: (payload.paymentMethods?.bkash?.number || DEFAULT_WEBSITE_SETTINGS.paymentMethods.bkash.number).trim(),
+        type: (payload.paymentMethods?.bkash?.type || "Personal").trim(),
+        instructions: (payload.paymentMethods?.bkash?.instructions || "বিকাশ পার্সোনাল নম্বরে Send Money করুন").trim(),
+      },
+      nagad: {
+        isEnabled: payload.paymentMethods?.nagad?.isEnabled !== undefined ? Boolean(payload.paymentMethods.nagad.isEnabled) : DEFAULT_WEBSITE_SETTINGS.paymentMethods.nagad.isEnabled,
+        number: (payload.paymentMethods?.nagad?.number || DEFAULT_WEBSITE_SETTINGS.paymentMethods.nagad.number).trim(),
+        type: (payload.paymentMethods?.nagad?.type || "Personal").trim(),
+        instructions: (payload.paymentMethods?.nagad?.instructions || "নগদ পার্সোনাল নম্বরে Send Money করুন").trim(),
+      },
+      rocket: {
+        isEnabled: payload.paymentMethods?.rocket?.isEnabled !== undefined ? Boolean(payload.paymentMethods.rocket.isEnabled) : DEFAULT_WEBSITE_SETTINGS.paymentMethods.rocket.isEnabled,
+        number: (payload.paymentMethods?.rocket?.number || DEFAULT_WEBSITE_SETTINGS.paymentMethods.rocket.number).trim(),
+        type: (payload.paymentMethods?.rocket?.type || "Personal").trim(),
+        instructions: (payload.paymentMethods?.rocket?.instructions || "রকেট পার্সোনাল নম্বরে Send Money করুন").trim(),
+      },
+      cod: {
+        isEnabled: payload.paymentMethods?.cod?.isEnabled !== undefined ? Boolean(payload.paymentMethods.cod.isEnabled) : DEFAULT_WEBSITE_SETTINGS.paymentMethods.cod.isEnabled,
+        title: (payload.paymentMethods?.cod?.title || "ক্যাশ অন ডেলিভারি").trim(),
+        instructions: (payload.paymentMethods?.cod?.instructions || "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন").trim(),
+      },
+    };
+
     const updatedData = {
       key: SETTINGS_KEY,
       general: {
@@ -177,6 +230,7 @@ exports.updateAdminSettings = async (req, res) => {
         faviconUrl,
         navLinks: formattedNavLinks,
       },
+      paymentMethods,
       noticeBar: {
         isEnabled: Boolean(payload.noticeBar?.isEnabled),
         text: (payload.noticeBar?.text || "").trim(),
@@ -232,3 +286,4 @@ exports.updateAdminSettings = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

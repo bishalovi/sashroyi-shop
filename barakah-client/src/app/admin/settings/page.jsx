@@ -3,16 +3,17 @@
 /**
  * ============================================================================
  * FILE: admin/settings/page.jsx
- * VERSION: v2.0.0
+ * VERSION: v2.2.0
  * ----------------------------------------------------------------------------
  * USER REQUIREMENT:
- * Complete Website Customization Hub with 6 tabs:
+ * Complete Website Customization Hub with 7 tabs:
  * 1. Header & Navigation (Logo, Shop name, Tagline, Favicon, Nav Menu Links)
- * 2. Footer & Branding (About description, Quick links, Copyright)
- * 3. Top Notice Bar (Enabled, Text, Link, Colors)
- * 4. Hero Section & Video (Headlines, Subtitle, Buttons, YouTube Embed)
- * 5. Contact & Social (Phone, WhatsApp, FB Page, FB Group, Instagram, Messenger, Email, Address)
- * 6. Offer Countdown Timer (Enabled, Title, Target Date)
+ * 2. Payment Methods & Numbers (bKash, Nagad, Rocket, Cash on Delivery)
+ * 3. Footer & Branding (About description, Quick links, Copyright)
+ * 4. Top Notice Bar (Enabled, Text, Link, Colors)
+ * 5. Hero Section & Video (Headlines, Subtitle, Buttons, YouTube Embed)
+ * 6. Contact & Social (Phone, WhatsApp, FB Page, FB Group, Instagram, Messenger, Email, Address)
+ * 7. Offer Countdown Timer (Enabled, Title, Target Date)
  * ============================================================================
  */
 
@@ -30,9 +31,8 @@ import {
   FiMenu,
   FiPlus,
   FiTrash2,
-  FiExternalLink,
+  FiCreditCard,
 } from "react-icons/fi";
-import { FaFacebookF, FaInstagram, FaWhatsapp } from "react-icons/fa";
 
 export default function AdminSettingsPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
@@ -54,6 +54,31 @@ export default function AdminSettingsPage() {
         { label: "Round Clock", url: "/category/round-clock/natural" },
         { label: "Others", url: "/category/others/natural" },
       ],
+    },
+    paymentMethods: {
+      bkash: {
+        isEnabled: true,
+        number: "01910037935",
+        type: "Personal",
+        instructions: "বিকাশ পার্সোনাল নম্বরে Send Money করুন",
+      },
+      nagad: {
+        isEnabled: true,
+        number: "01910037935",
+        type: "Personal",
+        instructions: "নগদ পার্সোনাল নম্বরে Send Money করুন",
+      },
+      rocket: {
+        isEnabled: false,
+        number: "01910037935",
+        type: "Personal",
+        instructions: "রকেট পার্সোনাল নম্বরে Send Money করুন",
+      },
+      cod: {
+        isEnabled: true,
+        title: "ক্যাশ অন ডেলিভারি",
+        instructions: "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন",
+      },
     },
     footer: {
       aboutText: "Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance for your home.",
@@ -121,6 +146,12 @@ export default function AdminSettingsPage() {
             logoUrl: d.header?.logoUrl || d.general?.logoUrl || settings.header.logoUrl,
             faviconUrl: d.header?.faviconUrl || d.general?.faviconUrl || settings.header.faviconUrl,
             navLinks: d.header?.navLinks || settings.header.navLinks,
+          },
+          paymentMethods: {
+            bkash: { ...settings.paymentMethods.bkash, ...(d.paymentMethods?.bkash || {}) },
+            nagad: { ...settings.paymentMethods.nagad, ...(d.paymentMethods?.nagad || {}) },
+            rocket: { ...settings.paymentMethods.rocket, ...(d.paymentMethods?.rocket || {}) },
+            cod: { ...settings.paymentMethods.cod, ...(d.paymentMethods?.cod || {}) },
           },
           footer: {
             aboutText: d.footer?.aboutText || settings.footer.aboutText,
@@ -236,6 +267,7 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: "header", label: "Header & Navigation", icon: <FiGlobe /> },
+    { id: "paymentMethods", label: "Payment Methods (পেমেন্ট নম্বর)", icon: <FiCreditCard /> },
     { id: "footer", label: "Footer & Branding", icon: <FiMenu /> },
     { id: "noticeBar", label: "Notice Bar", icon: <FiVolume2 /> },
     { id: "hero", label: "Hero Banner & Video", icon: <FiImage /> },
@@ -250,10 +282,10 @@ export default function AdminSettingsPage() {
         <div className="flex flex-col justify-between gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold text-[#0f2a44] sm:text-3xl flex items-center gap-3">
-              <FiSettings className="text-[#d4af37]" /> Website Header, Footer & Settings
+              <FiSettings className="text-[#d4af37]" /> Website Customization & Settings
             </h1>
             <p className="text-sm text-gray-500">
-              হেডার, ফুটার, মেনু লিঙ্ক, ব্যানার, নোটিশ বার ও সোশ্যাল লিঙ্ক কাস্টমাইজ করুন।
+              হেডার, বিকাশ/নগদ পেমেন্ট নম্বর, ফুটার, মেনু লিঙ্ক, ব্যানার ও সোশ্যাল লিঙ্ক কাস্টমাইজ করুন।
             </p>
           </div>
           <button
@@ -428,7 +460,414 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {/* TAB 2: Footer & Branding */}
+          {/* TAB 2: Payment Methods & Numbers */}
+          {activeTab === "paymentMethods" && (
+            <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
+              <div className="border-b pb-3">
+                <h2 className="text-lg font-bold text-[#0f2a44] flex items-center gap-2">
+                  <FiCreditCard className="text-[#d4af37]" /> Payment Methods & Number Settings (পেমেন্ট পদ্ধতি ও নম্বর)
+                </h2>
+                <p className="text-xs text-gray-500">
+                  চেকআউট পেজে প্রদর্শিত বিকাশ, নগদ, রকেট এবং ক্যাশ অন ডেলিভারির নম্বর ও বিবরণ সেট করুন।
+                </p>
+              </div>
+
+              {/* bKash Configuration */}
+              <div className="rounded-xl border border-pink-200 bg-pink-50/30 p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-pink-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-pink-600"></span>
+                    <h3 className="text-base font-bold text-pink-900">
+                      bKash (বিকাশ পেমেন্ট)
+                    </h3>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-secondary"
+                    checked={settings.paymentMethods?.bkash?.isEnabled}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        paymentMethods: {
+                          ...settings.paymentMethods,
+                          bkash: {
+                            ...settings.paymentMethods.bkash,
+                            isEnabled: e.target.checked,
+                          },
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      bKash Account Number (বিকাশ নম্বর) *
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full font-mono font-semibold"
+                      placeholder="019XXXXXXXX"
+                      value={settings.paymentMethods?.bkash?.number || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            bkash: {
+                              ...settings.paymentMethods.bkash,
+                              number: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Account Type (অ্যাকাউন্ট টাইপ)
+                    </label>
+                    <select
+                      className="select select-bordered w-full bg-white"
+                      value={settings.paymentMethods?.bkash?.type || "Personal"}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            bkash: {
+                              ...settings.paymentMethods.bkash,
+                              type: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      <option value="Personal">Personal (পার্সোনাল)</option>
+                      <option value="Merchant">Merchant (মার্চেন্ট - Payment)</option>
+                      <option value="Agent">Agent (এজেন্ট - Cash Out)</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Payment Instructions / Note (কাস্টমারকে প্রদর্শিত নির্দেশিকা)
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full"
+                      placeholder="বিকাশ পার্সোনাল নম্বরে Send Money করুন"
+                      value={settings.paymentMethods?.bkash?.instructions || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            bkash: {
+                              ...settings.paymentMethods.bkash,
+                              instructions: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nagad Configuration */}
+              <div className="rounded-xl border border-orange-200 bg-orange-50/30 p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-orange-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-orange-600"></span>
+                    <h3 className="text-base font-bold text-orange-900">
+                      Nagad (নগদ পেমেন্ট)
+                    </h3>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-warning"
+                    checked={settings.paymentMethods?.nagad?.isEnabled}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        paymentMethods: {
+                          ...settings.paymentMethods,
+                          nagad: {
+                            ...settings.paymentMethods.nagad,
+                            isEnabled: e.target.checked,
+                          },
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Nagad Account Number (নগদ নম্বর) *
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full font-mono font-semibold"
+                      placeholder="019XXXXXXXX"
+                      value={settings.paymentMethods?.nagad?.number || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            nagad: {
+                              ...settings.paymentMethods.nagad,
+                              number: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Account Type (অ্যাকাউন্ট টাইপ)
+                    </label>
+                    <select
+                      className="select select-bordered w-full bg-white"
+                      value={settings.paymentMethods?.nagad?.type || "Personal"}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            nagad: {
+                              ...settings.paymentMethods.nagad,
+                              type: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      <option value="Personal">Personal (পার্সোনাল)</option>
+                      <option value="Merchant">Merchant (মার্চেন্ট - Payment)</option>
+                      <option value="Agent">Agent (এজেন্ট - Cash Out)</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Payment Instructions / Note (কাস্টমারকে প্রদর্শিত নির্দেশিকা)
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full"
+                      placeholder="নগদ পার্সোনাল নম্বরে Send Money করুন"
+                      value={settings.paymentMethods?.nagad?.instructions || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            nagad: {
+                              ...settings.paymentMethods.nagad,
+                              instructions: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Rocket Configuration */}
+              <div className="rounded-xl border border-purple-200 bg-purple-50/30 p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-purple-600"></span>
+                    <h3 className="text-base font-bold text-purple-900">
+                      Rocket (রকেট পেমেন্ট)
+                    </h3>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-primary"
+                    checked={settings.paymentMethods?.rocket?.isEnabled}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        paymentMethods: {
+                          ...settings.paymentMethods,
+                          rocket: {
+                            ...settings.paymentMethods.rocket,
+                            isEnabled: e.target.checked,
+                          },
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Rocket Account Number (রকেট নম্বর)
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full font-mono font-semibold"
+                      placeholder="019XXXXXXXXX"
+                      value={settings.paymentMethods?.rocket?.number || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            rocket: {
+                              ...settings.paymentMethods.rocket,
+                              number: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Account Type (অ্যাকাউন্ট টাইপ)
+                    </label>
+                    <select
+                      className="select select-bordered w-full bg-white"
+                      value={settings.paymentMethods?.rocket?.type || "Personal"}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            rocket: {
+                              ...settings.paymentMethods.rocket,
+                              type: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      <option value="Personal">Personal (পার্সোনাল)</option>
+                      <option value="Merchant">Merchant (মার্চেন্ট)</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Payment Instructions / Note
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full"
+                      placeholder="রকেট নম্বরে Send Money করুন"
+                      value={settings.paymentMethods?.rocket?.instructions || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            rocket: {
+                              ...settings.paymentMethods.rocket,
+                              instructions: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cash On Delivery Configuration */}
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/30 p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-emerald-600"></span>
+                    <h3 className="text-base font-bold text-emerald-900">
+                      Cash On Delivery (ক্যাশ অন ডেলিভারি)
+                    </h3>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-success"
+                    checked={settings.paymentMethods?.cod?.isEnabled}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        paymentMethods: {
+                          ...settings.paymentMethods,
+                          cod: {
+                            ...settings.paymentMethods.cod,
+                            isEnabled: e.target.checked,
+                          },
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Method Title (পদ্ধতির নাম)
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full"
+                      placeholder="ক্যাশ অন ডেলিভারি"
+                      value={settings.paymentMethods?.cod?.title || "ক্যাশ অন ডেলিভারি"}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            cod: {
+                              ...settings.paymentMethods.cod,
+                              title: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Instructions / Note (নির্দেশিকা)
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered w-full"
+                      placeholder="পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন"
+                      value={settings.paymentMethods?.cod?.instructions || ""}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          paymentMethods: {
+                            ...settings.paymentMethods,
+                            cod: {
+                              ...settings.paymentMethods.cod,
+                              instructions: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Footer & Branding */}
           {activeTab === "footer" && (
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
               <div className="border-b pb-3">
@@ -544,7 +983,7 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {/* TAB 3: Notice Bar */}
+          {/* TAB 4: Notice Bar */}
           {activeTab === "noticeBar" && (
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-4">
               <div className="flex items-center justify-between border-b pb-3">
@@ -620,7 +1059,7 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {/* TAB 4: Hero Banner & Video */}
+          {/* TAB 5: Hero Banner & Video */}
           {activeTab === "hero" && (
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-4">
               <h2 className="text-lg font-bold text-[#0f2a44] border-b pb-3">
@@ -775,7 +1214,7 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {/* TAB 5: Contact & Social */}
+          {/* TAB 6: Contact & Social */}
           {activeTab === "contact" && (
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-4">
               <h2 className="text-lg font-bold text-[#0f2a44] border-b pb-3">
@@ -943,7 +1382,7 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {/* TAB 6: Offer Countdown Timer */}
+          {/* TAB 7: Offer Countdown Timer */}
           {activeTab === "offerTimer" && (
             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-4">
               <div className="flex items-center justify-between border-b pb-3">

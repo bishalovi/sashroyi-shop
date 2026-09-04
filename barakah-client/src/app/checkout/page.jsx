@@ -13,16 +13,17 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { pushToDataLayer } from "@/lib/gtm";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
-import { FaFacebookMessenger, FaPhoneAlt, FaWhatsapp } from "react-icons/fa";
+import { FaFacebookMessenger, FaPhoneAlt, FaWhatsapp, FaCopy, FaCheck } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
 
 export default function CheckoutPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
   const router = useRouter();
   const { cartItems, totalPrice, clearCart } = useCart();
-  const { contact, cleanPhoneNumber, getWhatsAppUrl } = useSettings();
+  const { contact, cleanPhoneNumber, getWhatsAppUrl, paymentMethods } = useSettings();
   const [shipping, setShipping] = useState("inside");
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [copiedNumber, setCopiedNumber] = useState(null);
 
   const hasFreeShippingItem = useMemo(() => {
     return cartItems.some((item) => item.isFreeShipping === true);
@@ -53,6 +54,29 @@ export default function CheckoutPage() {
       })
       .catch((err) => console.error("Failed to load shipping config:", err));
   }, [baseUrl, hasFreeShippingItem]);
+
+  useEffect(() => {
+    if (paymentMethods) {
+      if (paymentMethods[paymentMethod]?.isEnabled === false) {
+        if (paymentMethods.cod?.isEnabled !== false) setPaymentMethod("cod");
+        else if (paymentMethods.bkash?.isEnabled) setPaymentMethod("bkash");
+        else if (paymentMethods.nagad?.isEnabled) setPaymentMethod("nagad");
+        else if (paymentMethods.rocket?.isEnabled) setPaymentMethod("rocket");
+      }
+    }
+  }, [paymentMethods, paymentMethod]);
+
+  const handleCopyNumber = (num, e) => {
+    if (e) e.stopPropagation();
+    if (!num) return;
+    navigator.clipboard.writeText(num);
+    setCopiedNumber(num);
+    toast.success("নম্বর কপি করা হয়েছে!", {
+      position: "top-right",
+      autoClose: 1500,
+    });
+    setTimeout(() => setCopiedNumber(null), 2000);
+  };
 
   const getCheckoutSessionId = () => {
     let sessionId = localStorage.getItem("checkoutSessionId");
@@ -190,10 +214,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (
-      (paymentMethod === "bkash" || paymentMethod === "nagad") &&
-      !data.accountLast4
-    ) {
+    const isDigitalPayment = ["bkash", "nagad", "rocket"].includes(paymentMethod);
+    if (isDigitalPayment && !data.accountLast4) {
       toast.warning("আপনার নাম্বারের শেষ ৪ সংখ্যা লিখুন", {
         position: "top-right",
       });
@@ -217,10 +239,7 @@ export default function CheckoutPage() {
       shippingType: shipping,
       shippingCost: roundedShippingCost,
       paymentMethod,
-      accountLast4:
-        paymentMethod === "bkash" || paymentMethod === "nagad"
-          ? data.accountLast4
-          : "",
+      accountLast4: isDigitalPayment ? data.accountLast4 : "",
       items: cartItems.map((item) => ({
         productId: item._id,
         name: item.name,
@@ -416,67 +435,214 @@ export default function CheckoutPage() {
                 </h3>
 
                 <div className="space-y-3">
-                  <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#0f2a44]/10 px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="bkash"
-                        checked={paymentMethod === "bkash"}
-                        onChange={() => setPaymentMethod("bkash")}
-                      />
-                      <span className="text-[#0f2a44]">
-                        বিকাশ (01601014782)
-                      </span>
-                    </div>
-                  </label>
+                  {/* COD */}
+                  {paymentMethods?.cod?.isEnabled !== false && (
+                    <label
+                      className={`flex cursor-pointer flex-col rounded-xl border p-4 transition ${
+                        paymentMethod === "cod"
+                          ? "border-[#0f2a44] bg-[#0f2a44]/5 shadow-sm"
+                          : "border-[#0f2a44]/10 hover:border-[#0f2a44]/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="cod"
+                          className="radio radio-primary radio-sm"
+                          checked={paymentMethod === "cod"}
+                          onChange={() => setPaymentMethod("cod")}
+                        />
+                        <span className="font-semibold text-[#0f2a44]">
+                          {paymentMethods?.cod?.title || "ক্যাশ অন ডেলিভারি"}
+                        </span>
+                      </div>
+                      {paymentMethods?.cod?.instructions && (
+                        <p className="ml-7 mt-1 text-xs text-[#0f2a44]/70">
+                          {paymentMethods.cod.instructions}
+                        </p>
+                      )}
+                    </label>
+                  )}
 
-                  <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#0f2a44]/10 px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="nagad"
-                        checked={paymentMethod === "nagad"}
-                        onChange={() => setPaymentMethod("nagad")}
-                      />
-                      <span className="text-[#0f2a44]">নগদ (01601014782)</span>
-                    </div>
-                  </label>
+                  {/* bKash */}
+                  {paymentMethods?.bkash?.isEnabled !== false && (
+                    <label
+                      className={`flex cursor-pointer flex-col rounded-xl border p-4 transition ${
+                        paymentMethod === "bkash"
+                          ? "border-pink-600 bg-pink-50/40 shadow-sm"
+                          : "border-[#0f2a44]/10 hover:border-pink-500/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="bkash"
+                            className="radio radio-secondary radio-sm"
+                            checked={paymentMethod === "bkash"}
+                            onChange={() => setPaymentMethod("bkash")}
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-pink-600">বিকাশ (bKash)</span>
+                            <span className="font-mono text-sm font-bold text-[#0f2a44]">
+                              {paymentMethods?.bkash?.number || "01910037935"}
+                            </span>
+                            <span className="rounded bg-pink-100 px-2 py-0.5 text-[11px] font-medium text-pink-700">
+                              {paymentMethods?.bkash?.type || "Personal"}
+                            </span>
+                          </div>
+                        </div>
+                        {paymentMethods?.bkash?.number && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyNumber(paymentMethods.bkash.number, e)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-pink-200 bg-white px-2.5 py-1 text-xs font-medium text-pink-600 hover:bg-pink-50"
+                            title="কপি করুন"
+                          >
+                            {copiedNumber === paymentMethods.bkash.number ? (
+                              <FaCheck className="text-emerald-500" />
+                            ) : (
+                              <FaCopy />
+                            )}
+                            <span className="hidden sm:inline">কপি</span>
+                          </button>
+                        )}
+                      </div>
+                      {paymentMethods?.bkash?.instructions && (
+                        <p className="ml-7 mt-1.5 text-xs text-[#0f2a44]/75">
+                          {paymentMethods.bkash.instructions}
+                        </p>
+                      )}
+                    </label>
+                  )}
 
-                  <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#0f2a44]/10 px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cod"
-                        checked={paymentMethod === "cod"}
-                        onChange={() => setPaymentMethod("cod")}
-                      />
-                      <span className="text-[#0f2a44]">ক্যাশ অন ডেলিভারি</span>
-                    </div>
-                  </label>
+                  {/* Nagad */}
+                  {paymentMethods?.nagad?.isEnabled !== false && (
+                    <label
+                      className={`flex cursor-pointer flex-col rounded-xl border p-4 transition ${
+                        paymentMethod === "nagad"
+                          ? "border-orange-600 bg-orange-50/40 shadow-sm"
+                          : "border-[#0f2a44]/10 hover:border-orange-500/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="nagad"
+                            className="radio radio-warning radio-sm"
+                            checked={paymentMethod === "nagad"}
+                            onChange={() => setPaymentMethod("nagad")}
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-orange-600">নগদ (Nagad)</span>
+                            <span className="font-mono text-sm font-bold text-[#0f2a44]">
+                              {paymentMethods?.nagad?.number || "01910037935"}
+                            </span>
+                            <span className="rounded bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700">
+                              {paymentMethods?.nagad?.type || "Personal"}
+                            </span>
+                          </div>
+                        </div>
+                        {paymentMethods?.nagad?.number && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyNumber(paymentMethods.nagad.number, e)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-white px-2.5 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50"
+                            title="কপি করুন"
+                          >
+                            {copiedNumber === paymentMethods.nagad.number ? (
+                              <FaCheck className="text-emerald-500" />
+                            ) : (
+                              <FaCopy />
+                            )}
+                            <span className="hidden sm:inline">কপি</span>
+                          </button>
+                        )}
+                      </div>
+                      {paymentMethods?.nagad?.instructions && (
+                        <p className="ml-7 mt-1.5 text-xs text-[#0f2a44]/75">
+                          {paymentMethods.nagad.instructions}
+                        </p>
+                      )}
+                    </label>
+                  )}
+
+                  {/* Rocket */}
+                  {paymentMethods?.rocket?.isEnabled && (
+                    <label
+                      className={`flex cursor-pointer flex-col rounded-xl border p-4 transition ${
+                        paymentMethod === "rocket"
+                          ? "border-purple-600 bg-purple-50/40 shadow-sm"
+                          : "border-[#0f2a44]/10 hover:border-purple-500/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="rocket"
+                            className="radio radio-secondary radio-sm"
+                            checked={paymentMethod === "rocket"}
+                            onChange={() => setPaymentMethod("rocket")}
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-purple-600">রকেট (Rocket)</span>
+                            <span className="font-mono text-sm font-bold text-[#0f2a44]">
+                              {paymentMethods?.rocket?.number || "01910037935"}
+                            </span>
+                            <span className="rounded bg-purple-100 px-2 py-0.5 text-[11px] font-medium text-purple-700">
+                              {paymentMethods?.rocket?.type || "Personal"}
+                            </span>
+                          </div>
+                        </div>
+                        {paymentMethods?.rocket?.number && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyNumber(paymentMethods.rocket.number, e)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-white px-2.5 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50"
+                            title="কপি করুন"
+                          >
+                            {copiedNumber === paymentMethods.rocket.number ? (
+                              <FaCheck className="text-emerald-500" />
+                            ) : (
+                              <FaCopy />
+                            )}
+                            <span className="hidden sm:inline">কপি</span>
+                          </button>
+                        )}
+                      </div>
+                      {paymentMethods?.rocket?.instructions && (
+                        <p className="ml-7 mt-1.5 text-xs text-[#0f2a44]/75">
+                          {paymentMethods.rocket.instructions}
+                        </p>
+                      )}
+                    </label>
+                  )}
                 </div>
 
-                {(paymentMethod === "bkash" || paymentMethod === "nagad") && (
-                  <div className="mt-5">
-                    <label className="mb-2 block text-sm font-medium text-[#0f2a44]">
-                      আপনার নাম্বারের শেষ ৪ সংখ্যা *
+                {(paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket") && (
+                  <div className="mt-5 rounded-xl border border-[#0f2a44]/10 bg-slate-50/80 p-4">
+                    <label className="mb-2 block text-sm font-semibold text-[#0f2a44]">
+                      আপনার {paymentMethod === "bkash" ? "বিকাশ" : paymentMethod === "nagad" ? "নগদ" : "রকেট"} নাম্বারের শেষ ৪ সংখ্যা *
                     </label>
                     <input
                       type="text"
                       maxLength={4}
                       {...register("accountLast4", {
-                        required:
-                          paymentMethod === "bkash" || paymentMethod === "nagad"
-                            ? "শেষ ৪ সংখ্যা আবশ্যক"
-                            : false,
+                        required: ["bkash", "nagad", "rocket"].includes(paymentMethod)
+                          ? "শেষ ৪ সংখ্যা আবশ্যক"
+                          : false,
                         pattern: {
                           value: /^\d{4}$/,
                           message: "শুধু ৪ সংখ্যার শেষ ডিজিট দিন",
                         },
                       })}
-                      className="w-full rounded-xl border border-[#0f2a44]/15 px-4 py-3 outline-none focus:border-[#d4af37]"
+                      className="w-full rounded-xl border border-[#0f2a44]/20 bg-white px-4 py-3 outline-none focus:border-[#d4af37]"
                       placeholder="যেমন: ১২৩৪"
                     />
                     {errors.accountLast4 && (

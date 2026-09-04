@@ -25,6 +25,31 @@ export const DEFAULT_SETTINGS = {
       { label: "Others", url: "/category/others/natural" },
     ],
   },
+  paymentMethods: {
+    bkash: {
+      isEnabled: true,
+      number: "01910037935",
+      type: "Personal",
+      instructions: "বিকাশ পার্সোনাল নম্বরে Send Money করুন",
+    },
+    nagad: {
+      isEnabled: true,
+      number: "01910037935",
+      type: "Personal",
+      instructions: "নগদ পার্সোনাল নম্বরে Send Money করুন",
+    },
+    rocket: {
+      isEnabled: false,
+      number: "01910037935",
+      type: "Personal",
+      instructions: "রকেট পার্সোনাল নম্বরে Send Money করুন",
+    },
+    cod: {
+      isEnabled: true,
+      title: "ক্যাশ অন ডেলিভারি",
+      instructions: "পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন",
+    },
+  },
   footer: {
     aboutText: "Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance for your home.",
     copyrightText: "© 2026 Sashroyi. All rights reserved.",
@@ -105,6 +130,7 @@ export function SettingsProvider({ children }) {
         setSettings((prev) => ({
           general: { ...prev.general, ...(data.data.general || {}) },
           header: { ...prev.header, ...(data.data.header || {}) },
+          paymentMethods: { ...prev.paymentMethods, ...(data.data.paymentMethods || {}) },
           footer: { ...prev.footer, ...(data.data.footer || {}) },
           noticeBar: { ...prev.noticeBar, ...(data.data.noticeBar || {}) },
           hero: { ...prev.hero, ...(data.data.hero || {}) },
@@ -138,6 +164,7 @@ export function SettingsProvider({ children }) {
         contact: settings.contact || DEFAULT_SETTINGS.contact,
         general: settings.general || DEFAULT_SETTINGS.general,
         header: settings.header || DEFAULT_SETTINGS.header,
+        paymentMethods: settings.paymentMethods || DEFAULT_SETTINGS.paymentMethods,
         footer: settings.footer || DEFAULT_SETTINGS.footer,
         noticeBar: settings.noticeBar || DEFAULT_SETTINGS.noticeBar,
         hero: settings.hero || DEFAULT_SETTINGS.hero,
@@ -162,6 +189,7 @@ export function useSettings() {
       contact: DEFAULT_SETTINGS.contact,
       general: DEFAULT_SETTINGS.general,
       header: DEFAULT_SETTINGS.header,
+      paymentMethods: DEFAULT_SETTINGS.paymentMethods,
       footer: DEFAULT_SETTINGS.footer,
       noticeBar: DEFAULT_SETTINGS.noticeBar,
       hero: DEFAULT_SETTINGS.hero,
