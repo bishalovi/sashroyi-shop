@@ -292,15 +292,13 @@ export default function AddProductPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
-              Subcategory (সাব-ক্যাটাগরি) *
+              Subcategory (সাব-ক্যাটাগরি - Optional)
             </label>
             <select
-              {...register("subcategory", {
-                required: "Subcategory is required",
-              })}
+              {...register("subcategory")}
               className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37] bg-white"
             >
-              <option value="">Select Subcategory</option>
+              <option value="">Select Subcategory (None)</option>
               {selectedCategoryObj?.subcategories && selectedCategoryObj.subcategories.length > 0 ? (
                 selectedCategoryObj.subcategories.map((sub, idx) => (
                   <option key={idx} value={sub.slug}>
@@ -315,11 +313,6 @@ export default function AddProductPage() {
                 </>
               )}
             </select>
-            {errors.subcategory && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.subcategory.message}
-              </p>
-            )}
           </div>
         </div>
 
@@ -350,25 +343,14 @@ export default function AddProductPage() {
 
         <div>
           <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
-            Description (পণ্যের বিবরণ) *
+            Description (পণ্যের বিবরণ - Optional)
           </label>
           <textarea
             rows={4}
-            placeholder="Enter product description..."
-            {...register("description", {
-              required: "Description is required",
-              minLength: {
-                value: 5,
-                message: "Description should be at least 5 characters",
-              },
-            })}
+            placeholder="Enter product description (Optional)..."
+            {...register("description")}
             className="w-full rounded-lg border border-[#e5dccf] p-3 outline-none focus:border-[#d4af37]"
           />
-          {errors.description && (
-            <p className="mt-1 text-sm text-red-500">
-              {errors.description.message}
-            </p>
-          )}
         </div>
 
         {/* IMAGE UPLOAD SECTION */}

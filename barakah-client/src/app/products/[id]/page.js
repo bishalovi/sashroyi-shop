@@ -107,9 +107,11 @@ export default async function ProductDetails({ params }) {
             </div>
 
             {/* Description */}
-            <p className="mt-6 text-lg text-[#0f2a44]/80 leading-relaxed whitespace-pre-line">
-              {product.description}
-            </p>
+            {product.description ? (
+              <p className="mt-6 text-lg text-[#0f2a44]/80 leading-relaxed whitespace-pre-line">
+                {product.description}
+              </p>
+            ) : null}
 
             {/* Stock */}
             <p
