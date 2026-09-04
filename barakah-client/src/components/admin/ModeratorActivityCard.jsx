@@ -26,7 +26,7 @@ const toDisplayFormat = (yyyymmdd) => {
 };
 
 const ModeratorActivityCard = () => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
 
   const todayInput = new Date().toISOString().split("T")[0];
   const todayDisplay = toDisplayFormat(todayInput);

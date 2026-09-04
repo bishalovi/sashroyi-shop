@@ -21,7 +21,7 @@ import { TbUserCancel } from "react-icons/tb";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AnalyticsCard = () => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();

@@ -13,7 +13,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function OrdersPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
   const user = JSON.parse(localStorage.getItem("barakahUser") || "{}");
   const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
