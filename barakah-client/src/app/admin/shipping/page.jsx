@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import { FaTruck, FaSave, FaCity, FaMapMarkedAlt, FaGift } from "react-icons/fa";
 
 export default function AdminShippingPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 

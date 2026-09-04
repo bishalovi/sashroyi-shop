@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const router = useRouter();
 
   const [serverMessage, setServerMessage] = useState("");

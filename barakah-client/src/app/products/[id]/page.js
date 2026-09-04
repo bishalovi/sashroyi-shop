@@ -9,7 +9,7 @@ import Reviews from "@/components/home/Reviews";
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 
 async function getProducts() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/products`, {
       next: { revalidate: 60 },

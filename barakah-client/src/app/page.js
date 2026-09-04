@@ -3,7 +3,7 @@ import ProductSection from "@/components/home/ProductSection";
 import Reviews from "@/components/home/Reviews";
 
 async function getProductsByCategory(category) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
 
   if (!baseUrl) return [];
 

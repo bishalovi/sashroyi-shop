@@ -6,7 +6,7 @@ import { Crown, Medal, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const ModeratorPerformanceCard = () => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
 
   const [loading, setLoading] = useState(true);
   const [performance, setPerformance] = useState([]);

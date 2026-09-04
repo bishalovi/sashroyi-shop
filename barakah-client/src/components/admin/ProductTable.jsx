@@ -28,7 +28,7 @@ export default function ProductTable({
   itemsPerPage = 50,
   onPageChange,
 }) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());

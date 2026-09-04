@@ -17,7 +17,7 @@ import { FaFacebookMessenger, FaPhoneAlt, FaWhatsapp } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
 
 export default function CheckoutPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const router = useRouter();
   const { cartItems, totalPrice, clearCart } = useCart();
   const { contact, cleanPhoneNumber, getWhatsAppUrl } = useSettings();

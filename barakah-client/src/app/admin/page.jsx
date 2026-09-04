@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 async function getDashboardData() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
 
   try {
     const [productsRes, ordersRes, statsRes] = await Promise.allSettled([

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FaBolt } from "react-icons/fa";
 
 export default function OfferCountdown({ product }) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const [offerConfig, setOfferConfig] = useState({
     isEnabled: true,
     title: "সীমিত সময়ের বিশেষ অফার!",

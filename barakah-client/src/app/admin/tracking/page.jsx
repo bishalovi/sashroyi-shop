@@ -32,7 +32,7 @@ import {
 } from "react-icons/fa";
 
 export default function AdminTrackingPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const [activeTab, setActiveTab] = useState("gtm");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

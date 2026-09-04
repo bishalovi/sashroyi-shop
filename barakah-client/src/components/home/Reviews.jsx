@@ -2,7 +2,7 @@ import ReviewsCarousel from "./ReviewsCarousel";
 import Container from "../shared/Container";
 
 async function getReviews() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
 
   try {
     const res = await fetch(`${baseUrl}/api/reviews`, {

@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
 export default function RegisterPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
   const [serverMessage, setServerMessage] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 

@@ -6,7 +6,7 @@ import ProductTable from "@/components/admin/ProductTable";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
 
 export default function AllProductsPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://sashroyi-api.onrender.com";
 
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
