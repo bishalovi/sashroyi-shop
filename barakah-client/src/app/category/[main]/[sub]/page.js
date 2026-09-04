@@ -3,16 +3,32 @@ import ProductSearch from "@/components/products/ProductSearch";
 import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 
+async function getCategoryData(main) {
+  const baseUrl = "https://sashroyi-api.onrender.com";
+  try {
+    const res = await fetch(`${baseUrl}/api/categories/${main}`, {
+      next: { revalidate: 30 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function getProducts(main, sub) {
   const baseUrl = "https://sashroyi-api.onrender.com";
 
   try {
-    const res = await fetch(
-      `${baseUrl}/api/products?category=${main}&subcategory=${sub}`,
-      {
-        next: { revalidate: 60 },
-      },
-    );
+    const url =
+      sub && sub !== "all"
+        ? `${baseUrl}/api/products?category=${main}&subcategory=${sub}`
+        : `${baseUrl}/api/products?category=${main}`;
+
+    const res = await fetch(url, {
+      next: { revalidate: 30 },
+    });
 
     if (!res.ok) {
       return [];
@@ -28,63 +44,55 @@ async function getProducts(main, sub) {
 
 export default async function CategoryPage({ params }) {
   const { main, sub } = await params;
-  const filteredProducts = await getProducts(main, sub);
+  const [categoryData, filteredProducts] = await Promise.all([
+    getCategoryData(main),
+    getProducts(main, sub),
+  ]);
+
+  const categoryTitle = categoryData?.name || main?.replace(/-/g, " ");
+  const subcategories = categoryData?.subcategories || [];
 
   return (
     <main className="bg-[#faf7f0] min-h-screen pb-10">
       <OfferCountdown category={main} subcategory={sub} />
       <div className="max-w-7xl mx-auto px-4 pt-8">
         {/* Title */}
-        <h1 className="text-3xl font-bold mb-6 capitalize">
-          {main?.replace("-", " ")}
+        <h1 className="text-3xl font-bold mb-6 capitalize text-[#0f2a44]">
+          {categoryTitle}
         </h1>
 
-        <div className="flex gap-2 md:gap-4 mb-8 flex-wrap">
-          <Link
-            href={`/category/${main}/natural`}
-            className={`text-xs md:text-base px-2 py-1 md:px-4 md:py-2 rounded-lg ${
-              sub === "natural" ? "bg-[#0f2a44] text-white" : "bg-white"
-            }`}
-          >
-            Natural
-          </Link>
+        {/* Dynamic Subcategories Tabs */}
+        {subcategories.length > 0 && (
+          <div className="flex gap-2 md:gap-3 mb-8 flex-wrap items-center">
+            <Link
+              href={`/category/${main}/all`}
+              className={`text-xs md:text-sm px-3 py-1.5 md:px-4 md:py-2 rounded-xl font-medium transition shadow-xs ${
+                sub === "all" || !sub
+                  ? "bg-[#0f2a44] text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-100"
+              }`}
+            >
+              All (সকল)
+            </Link>
 
-          <Link
-            href={`/category/${main}/islamic`}
-            className={`text-xs md:text-base px-2 py-1 md:px-4 md:py-2 rounded-lg ${
-              sub === "islamic" ? "bg-[#0f2a44] text-white" : "bg-white"
-            }`}
-          >
-            Islamic
-          </Link>
-
-          <Link
-            href={`/category/${main}/special1`}
-            className={`text-xs md:text-base px-2 py-1 md:px-4 md:py-2 rounded-lg ${
-              sub === "special1" ? "bg-[#0f2a44] text-white" : "bg-white"
-            }`}
-          >
-            Special 1
-          </Link>
-
-          <Link
-            href={`/category/${main}/special2`}
-            className={`text-xs md:text-base px-2 py-1 md:px-4 md:py-2 rounded-lg ${
-              sub === "special2" ? "bg-[#0f2a44] text-white" : "bg-white"
-            }`}
-          >
-            Special 2
-          </Link>
-
-          <Link
-            href={`/category/${main}/others`}
-            className={`text-xs md:text-base px-2 py-1 md:px-4 md:py-2 rounded-lg ${
-              sub === "others" ? "bg-[#0f2a44] text-white" : "bg-white"
-            }`}
-          >
-            Others
-          </Link>
-        </div>
+            {subcategories.map((item, idx) => {
+              const isSelected = sub === item.slug;
+              return (
+                <Link
+                  key={idx}
+                  href={`/category/${main}/${item.slug}`}
+                  className={`text-xs md:text-sm px-3 py-1.5 md:px-4 md:py-2 rounded-xl font-medium transition shadow-xs ${
+                    isSelected
+                      ? "bg-[#0f2a44] text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-100"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         <ProductSearch products={filteredProducts} />
       </div>

@@ -21,12 +21,14 @@ exports.getAllProducts = async (req, res) => {
 
     const query = {};
 
-    if (category) {
-      query.category = category;
+    if (category && category !== "all") {
+      const cleanCat = category.trim().replace(/[-\s]/g, "[-_\\s]?");
+      query.category = { $regex: new RegExp(`^${cleanCat}$`, "i") };
     }
 
-    if (subcategory && subcategory !== "none") {
-      query.subcategory = subcategory;
+    if (subcategory && subcategory !== "none" && subcategory !== "all") {
+      const cleanSub = subcategory.trim().replace(/[-\s]/g, "[-_\\s]?");
+      query.subcategory = { $regex: new RegExp(`^${cleanSub}$`, "i") };
     }
 
     const total = await productsCollection.countDocuments(query);
