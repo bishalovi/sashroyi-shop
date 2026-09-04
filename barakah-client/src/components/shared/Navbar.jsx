@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { FiShoppingCart } from "react-icons/fi";
+import { FiShoppingCart, FiSearch } from "react-icons/fi";
 import { FaRegUser, FaUser } from "react-icons/fa";
 import { IoMdMenu } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
@@ -116,6 +116,14 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/search"
+              className="p-2 text-[#0c2a45af] transition-colors hover:text-[#d4af37]"
+              title="Search products"
+            >
+              <FiSearch size={20} />
+            </Link>
+
             <Link
               href="/cart"
               className="relative p-2 text-[#0c2a45af] transition-colors hover:text-[#d4af37]"

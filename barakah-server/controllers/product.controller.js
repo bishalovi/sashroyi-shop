@@ -17,9 +17,19 @@ exports.getAllProducts = async (req, res) => {
     const db = await connectDB();
     const productsCollection = db.collection("products");
 
-    const { category, subcategory, page, limit } = req.query;
+    const { category, subcategory, page, limit, search } = req.query;
 
     const query = {};
+
+    if (search && search.trim()) {
+      const cleanSearch = search.trim();
+      query.$or = [
+        { name: { $regex: cleanSearch, $options: "i" } },
+        { description: { $regex: cleanSearch, $options: "i" } },
+        { category: { $regex: cleanSearch, $options: "i" } },
+        { subcategory: { $regex: cleanSearch, $options: "i" } },
+      ];
+    }
 
     if (category && category !== "all") {
       const cleanCat = category.trim().replace(/[-\s]/g, "[-_\\s]?");
