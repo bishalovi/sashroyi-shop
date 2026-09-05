@@ -233,6 +233,12 @@ exports.testPlatformConnection = async (req, res) => {
       return res.json({ success: true, platform: "tiktok", result });
     }
 
+    res.status(400).json({ success: false, message: "Unsupported test platform" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Relay Client-Side Events (ViewContent, AddToCart, InitiateCheckout) to CAPI
 exports.sendClientEvent = async (req, res) => {
   try {
