@@ -4,32 +4,39 @@ import { useEffect } from "react";
 
 export default function UTMTracker() {
   useEffect(() => {
-    const fbclid = params.get("fbclid");
-    const ttclid = params.get("ttclid");
-    const gclid = params.get("gclid");
+    if (typeof window === "undefined") return;
 
-    if (fbclid && typeof document !== "undefined") {
-      const fbcValue = `fb.1.${Date.now()}.${fbclid}`;
-      document.cookie = `_fbc=${fbcValue}; path=/; max-age=${90 * 24 * 60 * 60}; SameSite=Lax`;
-    }
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fbclid = params.get("fbclid");
+      const ttclid = params.get("ttclid");
+      const gclid = params.get("gclid");
 
-    const trackingData = {
-      utm_source: params.get("utm_source"),
-      utm_medium: params.get("utm_medium"),
-      utm_campaign: params.get("utm_campaign"),
-      fbclid,
-      ttclid,
-      gclid,
-      landing_page: window.location.href,
-    };
+      if (fbclid && typeof document !== "undefined") {
+        const fbcValue = `fb.1.${Date.now()}.${fbclid}`;
+        document.cookie = `_fbc=${fbcValue}; path=/; max-age=${90 * 24 * 60 * 60}; SameSite=Lax`;
+      }
 
-    const hasTrackingData = Object.values(trackingData).some(Boolean);
+      const trackingData = {
+        utm_source: params.get("utm_source"),
+        utm_medium: params.get("utm_medium"),
+        utm_campaign: params.get("utm_campaign"),
+        fbclid,
+        ttclid,
+        gclid,
+        landing_page: window.location.href,
+      };
 
-    if (hasTrackingData) {
-      localStorage.setItem(
-        "barakah_tracking",
-        JSON.stringify(trackingData),
-      );
+      const hasTrackingData = Object.values(trackingData).some(Boolean);
+
+      if (hasTrackingData) {
+        localStorage.setItem(
+          "barakah_tracking",
+          JSON.stringify(trackingData),
+        );
+      }
+    } catch (e) {
+      console.error("UTMTracker error:", e);
     }
   }, []);
 
