@@ -285,7 +285,7 @@ export default function EditProductPage() {
         : null;
 
       const res = await fetch(`${baseUrl}/api/products/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
