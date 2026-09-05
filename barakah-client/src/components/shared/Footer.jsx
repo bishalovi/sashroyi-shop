@@ -26,8 +26,9 @@ export default function Footer() {
 
   const defaultQuickLinks = [
     { label: "Home", url: "/" },
-    { label: "Wall Clocks", url: "/category/wall-clock/natural" },
-    { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
+    { label: "KITCHEN & DINING", url: "/category/kitchen-dining" },
+    { label: "HOME & LIVING", url: "/category/home-living" },
+    { label: "সকল পণ্য (All Products)", url: "/search?q=" },
     { label: "Facebook Group", url: fbGroup },
   ];
 
@@ -91,15 +92,30 @@ export default function Footer() {
             </h4>
 
             <div className="flex flex-col gap-2">
-              {quickLinks.map((link, idx) => (
-                <Link
-                  key={idx}
-                  href={link.url || link.href || "#"}
-                  className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {quickLinks.map((link, idx) => {
+                const targetUrl = link.url || link.href || "#";
+                const isExternal = targetUrl.startsWith("http://") || targetUrl.startsWith("https://");
+                
+                return isExternal ? (
+                  <a
+                    key={idx}
+                    href={targetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={idx}
+                    href={targetUrl}
+                    className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
