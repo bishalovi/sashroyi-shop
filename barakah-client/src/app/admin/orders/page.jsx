@@ -32,10 +32,109 @@ export default function OrdersPage() {
     all: 0,
     verification_required: 0,
     pending: 0,
+    confirmed: 0,
+    in_courier: 0,
     no_response: 0,
     delivered: 0,
     cancelled: 0,
+    returned: 0,
   });
+
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
+
+  const STATUS_OPTIONS = [
+    { value: "pending", label: "Pending", bg: "bg-amber-50 text-amber-800 border-amber-300", dot: "bg-amber-500" },
+    { value: "confirmed", label: "Confirmed", bg: "bg-blue-50 text-blue-800 border-blue-300", dot: "bg-blue-500" },
+    { value: "in_courier", label: "In Courier", bg: "bg-purple-50 text-purple-800 border-purple-300", dot: "bg-purple-500" },
+    { value: "delivered", label: "Delivered", bg: "bg-emerald-50 text-emerald-800 border-emerald-300", dot: "bg-emerald-500" },
+    { value: "cancelled", label: "Cancelled", bg: "bg-rose-50 text-rose-800 border-rose-300", dot: "bg-rose-500" },
+    { value: "returned", label: "Returned", bg: "bg-orange-50 text-orange-800 border-orange-300", dot: "bg-orange-500" },
+    { value: "no_response", label: "No Response", bg: "bg-gray-100 text-gray-700 border-gray-300", dot: "bg-gray-400" },
+    { value: "verification_required", label: "Verify", bg: "bg-indigo-50 text-indigo-800 border-indigo-300", dot: "bg-indigo-500" },
+  ];
+
+  const isAllSelected = orders.length > 0 && orders.every((o) => selectedIds.has(o._id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      const nextSet = new Set(selectedIds);
+      orders.forEach((o) => nextSet.add(o._id));
+      setSelectedIds(nextSet);
+    }
+  };
+
+  const handleToggleOrder = (id) => {
+    const nextSet = new Set(selectedIds);
+    if (nextSet.has(id)) {
+      nextSet.delete(id);
+    } else {
+      nextSet.add(id);
+    }
+    setSelectedIds(nextSet);
+  };
+
+  const handleQuickStatusChange = async (orderId, newStatus) => {
+    try {
+      setLoadingId(orderId);
+      const res = await fetch(`${baseUrl}/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus, updatedBy: user?.userName || "admin" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
+        );
+        if (selectedOrder?._id === orderId) {
+          setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+        }
+        toast.success(`স্ট্যাটাস পরিবর্তন হয়েছে: ${newStatus}`);
+        fetchCounts();
+      } else {
+        toast.error(data.message || "Failed to update status");
+      }
+    } catch (err) {
+      toast.error("Error updating status");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleBulkStatusChange = async (targetStatus) => {
+    if (selectedIds.size === 0 || !targetStatus) return;
+    try {
+      setBulkStatusLoading(true);
+      const idsArray = Array.from(selectedIds);
+      const res = await fetch(`${baseUrl}/api/orders/bulk-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderIds: idsArray,
+          status: targetStatus,
+          updatedBy: user?.userName || "admin",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrders((prev) =>
+          prev.map((o) => (selectedIds.has(o._id) ? { ...o, status: targetStatus } : o))
+        );
+        setSelectedIds(new Set());
+        toast.success(`${idsArray.length}টি অর্ডারের স্ট্যাটাস আপডেট হয়েছে: ${targetStatus}`);
+        fetchCounts();
+      } else {
+        toast.error(data.message || "Bulk update failed");
+      }
+    } catch (err) {
+      toast.error("Failed to update orders");
+    } finally {
+      setBulkStatusLoading(false);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -97,6 +196,8 @@ export default function OrdersPage() {
         setLoading(false);
       }
     };
+
+    fetchCounts();
 
     const params = new URLSearchParams(window.location.search);
     const page = Number(params.get("page")) || 1;
@@ -974,20 +1075,7 @@ ${productNames}
                   : "bg-white text-[#3d2f1f] border-[#e5dccf]"
               }`}
             >
-              All ({counts.all})
-            </button>
-
-            <button
-              onClick={() => {
-                handleFilterChange("verification_required");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "verification_required"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Verify ({counts.verification_required})
+              All ({counts.all || 0})
             </button>
 
             <button
@@ -1000,20 +1088,33 @@ ${productNames}
                   : "bg-white text-[#3d2f1f] border-[#e5dccf]"
               }`}
             >
-              Pending ({counts.pending})
+              Pending ({counts.pending || 0})
             </button>
 
             <button
               onClick={() => {
-                handleFilterChange("no_response");
+                handleFilterChange("confirmed");
               }}
               className={`btn btn-sm ${
-                statusFilter === "no_response"
+                statusFilter === "confirmed"
                   ? "bg-[#d4af37] text-white border-[#d4af37]"
                   : "bg-white text-[#3d2f1f] border-[#e5dccf]"
               }`}
             >
-              No Response ({counts.no_response})
+              Confirmed ({counts.confirmed || 0})
+            </button>
+
+            <button
+              onClick={() => {
+                handleFilterChange("in_courier");
+              }}
+              className={`btn btn-sm ${
+                statusFilter === "in_courier"
+                  ? "bg-[#d4af37] text-white border-[#d4af37]"
+                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+              }`}
+            >
+              In Courier ({counts.in_courier || 0})
             </button>
 
             <button
@@ -1026,7 +1127,7 @@ ${productNames}
                   : "bg-white text-[#3d2f1f] border-[#e5dccf]"
               }`}
             >
-              Delivered ({counts.delivered})
+              Delivered ({counts.delivered || 0})
             </button>
 
             <button
@@ -1039,11 +1140,90 @@ ${productNames}
                   : "bg-white text-[#3d2f1f] border-[#e5dccf]"
               }`}
             >
-              Cancelled ({counts.cancelled})
+              Cancelled ({counts.cancelled || 0})
+            </button>
+
+            <button
+              onClick={() => {
+                handleFilterChange("returned");
+              }}
+              className={`btn btn-sm ${
+                statusFilter === "returned"
+                  ? "bg-[#d4af37] text-white border-[#d4af37]"
+                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+              }`}
+            >
+              Returned ({counts.returned || 0})
+            </button>
+
+            <button
+              onClick={() => {
+                handleFilterChange("no_response");
+              }}
+              className={`btn btn-sm ${
+                statusFilter === "no_response"
+                  ? "bg-[#d4af37] text-white border-[#d4af37]"
+                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+              }`}
+            >
+              No Response ({counts.no_response || 0})
+            </button>
+
+            <button
+              onClick={() => {
+                handleFilterChange("verification_required");
+              }}
+              className={`btn btn-sm ${
+                statusFilter === "verification_required"
+                  ? "bg-[#d4af37] text-white border-[#d4af37]"
+                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+              }`}
+            >
+              Verify ({counts.verification_required || 0})
             </button>
           </div>
         </div>
       </div>
+
+      {/* Floating / Sticky Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0f2a44] text-white p-3.5 rounded-2xl shadow-xl border border-[#d4af37]/40 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-3">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d4af37] text-xs font-black text-[#0f2a44]">
+              {selectedIds.size}
+            </span>
+            <span className="text-sm font-bold">
+              {selectedIds.size} টি অর্ডার সিলেক্ট করা হয়েছে
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-300 font-medium">একসাথে স্ট্যাটাস বদলান:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {STATUS_OPTIONS.slice(0, 6).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={bulkStatusLoading}
+                  onClick={() => handleBulkStatusChange(opt.value)}
+                  className="btn btn-xs bg-white/10 hover:bg-[#d4af37] text-white hover:text-[#0f2a44] border-none text-[11px] font-semibold transition-all duration-150"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="btn btn-xs btn-ghost text-gray-300 hover:text-white ml-2"
+            >
+              ✕ বাদ দিন
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Empty State */}
       {orders.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#e5dccf] p-6">
@@ -1057,110 +1237,170 @@ ${productNames}
               <table className="table">
                 <thead className="bg-[#faf7f0] text-[#3d2f1f]">
                   <tr>
+                    <th className="w-8">
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-xs"
+                        checked={isAllSelected}
+                        onChange={handleToggleSelectAll}
+                      />
+                    </th>
                     <th>#</th>
                     <th>Customer</th>
                     <th>Phone</th>
                     <th>Address</th>
                     <th>Total</th>
                     <th>Items</th>
+                    <th>Status</th>
                     <th>Order Date</th>
                     <th>Action</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {orders.map((order, index) => (
-                    <tr key={order._id}>
-                      <td>{index + 1}</td>
+                  {orders.map((order, index) => {
+                    const isSelected = selectedIds.has(order._id);
+                    return (
+                      <tr key={order._id} className={isSelected ? "bg-amber-50/40" : ""}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-xs"
+                            checked={isSelected}
+                            onChange={() => handleToggleOrder(order._id)}
+                          />
+                        </td>
 
-                      <td>
-                        <div>
-                          <p className="font-semibold text-[#3d2f1f]">
-                            {order.customerName}
-                          </p>
-                          {order.notes && (
-                            <p className="text-xs text-[#7a6a58]">
-                              Notes: {order.notes}
+                        <td>{index + 1}</td>
+
+                        <td>
+                          <div>
+                            <p className="font-semibold text-[#3d2f1f]">
+                              {order.customerName}
                             </p>
-                          )}
-                        </div>
-                      </td>
+                            {order.notes && (
+                              <p className="text-xs text-[#7a6a58]">
+                                Notes: {order.notes}
+                              </p>
+                            )}
+                          </div>
+                        </td>
 
-                      <td>{order.phone}</td>
-                      <td className="max-w-55 whitespace-normal">
-                        {order.address}
-                      </td>
-                      <td>৳ {order.total}</td>
-                      <td>
-                        <div className="space-y-1 text-sm">
-                          {order.items?.map((item, i) => (
-                            <p key={i}>
-                              {item.name} × {item.quantity}
-                            </p>
-                          ))}
-                        </div>
-                      </td>
+                        <td>{order.phone}</td>
+                        <td className="max-w-55 whitespace-normal">
+                          {order.address}
+                        </td>
+                        <td>৳ {order.total}</td>
+                        <td>
+                          <div className="space-y-1 text-sm">
+                            {order.items?.map((item, i) => (
+                              <p key={i}>
+                                {item.name} × {item.quantity}
+                              </p>
+                            ))}
+                          </div>
+                        </td>
 
-                      <td>
-                        {order.createdAt
-                          ? new Date(order.createdAt).toLocaleString("en-BD", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })
-                          : "--"}
-                      </td>
-
-                      <td>
-                        <div className="flex flex-col gap-2">
-                          <button
-                            onClick={() => setSelectedOrder(order)}
-                            className="btn btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
+                        {/* Interactive Status Dropdown Pill */}
+                        <td>
+                          <select
+                            value={order.status || "pending"}
+                            onChange={(e) => handleQuickStatusChange(order._id, e.target.value)}
+                            disabled={loadingId === order._id}
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer appearance-none pr-6 focus:outline-none transition-all shadow-2xs ${
+                              order.status === "delivered"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                : order.status === "cancelled"
+                                ? "bg-rose-50 text-rose-700 border-rose-300"
+                                : order.status === "in_courier"
+                                ? "bg-purple-50 text-purple-700 border-purple-300"
+                                : order.status === "confirmed"
+                                ? "bg-blue-50 text-blue-700 border-blue-300"
+                                : order.status === "returned"
+                                ? "bg-orange-50 text-orange-700 border-orange-300"
+                                : order.status === "no_response"
+                                ? "bg-gray-100 text-gray-700 border-gray-300"
+                                : order.status === "verification_required"
+                                ? "bg-indigo-50 text-indigo-700 border-indigo-300"
+                                : "bg-amber-50 text-amber-800 border-amber-300"
+                            }`}
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
+                              backgroundRepeat: "no-repeat",
+                              backgroundPosition: "right 8px top 50%",
+                              backgroundSize: "8px auto",
+                            }}
+                            title="স্ট্যাটাস পরিবর্তন করতে ক্লিক করুন"
                           >
-                            View
-                          </button>
+                            {STATUS_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value} className="bg-white text-gray-800 font-medium">
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
 
-                          {order.status === "verification_required" ? (
+                        <td>
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleString("en-BD", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              })
+                            : "--"}
+                        </td>
+
+                        <td>
+                          <div className="flex flex-col gap-2">
                             <button
-                              onClick={() => handleVerifyOrder(order._id)}
-                              className="btn btn-sm bg-[#4f46e5] text-white border-none hover:bg-[#4338ca]"
+                              onClick={() => setSelectedOrder(order)}
+                              className="btn btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
                             >
-                              Verify
+                              View
                             </button>
-                          ) : (
-                            order.status !== "verification_required" && (
-                              <>
-                                {order.status === "delivered" ? (
-                                  <button className="btn btn-sm" disabled>
-                                    Delivered
-                                  </button>
-                                ) : order.status === "cancelled" ? (
-                                  <button className="btn btn-sm" disabled>
-                                    Cancelled
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() =>
-                                      handleMarkDelivered(order._id)
-                                    }
-                                    className="btn btn-sm bg-[#d4af37] text-white border-none hover:bg-[#c39d2f]"
-                                    disabled={loadingId === order._id}
-                                  >
-                                    {loadingId === order._id
-                                      ? "Updating..."
-                                      : "Deliver"}
-                                  </button>
-                                )}
-                              </>
-                            )
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+
+                            {order.status === "verification_required" ? (
+                              <button
+                                onClick={() => handleVerifyOrder(order._id)}
+                                className="btn btn-sm bg-[#4f46e5] text-white border-none hover:bg-[#4338ca]"
+                              >
+                                Verify
+                              </button>
+                            ) : (
+                              order.status !== "verification_required" && (
+                                <>
+                                  {order.status === "delivered" ? (
+                                    <button className="btn btn-sm" disabled>
+                                      Delivered
+                                    </button>
+                                  ) : order.status === "cancelled" ? (
+                                    <button className="btn btn-sm" disabled>
+                                      Cancelled
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        handleMarkDelivered(order._id)
+                                      }
+                                      className="btn btn-sm bg-[#d4af37] text-white border-none hover:bg-[#c39d2f]"
+                                      disabled={loadingId === order._id}
+                                    >
+                                      {loadingId === order._id
+                                        ? "Updating..."
+                                        : "Deliver"}
+                                    </button>
+                                  )}
+                                </>
+                              )
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1168,19 +1408,66 @@ ${productNames}
 
           {/* Mobile Cards */}
           <div className="grid gap-4 lg:hidden">
-            {orders.map((order, index) => (
-              <div
-                key={order._id}
-                className="bg-white rounded-2xl border border-[#e5dccf] p-4 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold text-[#3d2f1f]">
-                      {index + 1}. {order.customerName}
-                    </p>
-                    <p className="text-sm text-[#7a6a58]">{order.phone}</p>
+            {orders.map((order, index) => {
+              const isSelected = selectedIds.has(order._id);
+              return (
+                <div
+                  key={order._id}
+                  className={`bg-white rounded-2xl border p-4 shadow-sm transition-all ${
+                    isSelected ? "border-[#d4af37] bg-amber-50/40" : "border-[#e5dccf]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm mt-0.5"
+                        checked={isSelected}
+                        onChange={() => handleToggleOrder(order._id)}
+                      />
+                      <div>
+                        <p className="font-bold text-[#3d2f1f]">
+                          {index + 1}. {order.customerName}
+                        </p>
+                        <p className="text-sm text-[#7a6a58]">{order.phone}</p>
+                      </div>
+                    </div>
+
+                    <select
+                      value={order.status || "pending"}
+                      onChange={(e) => handleQuickStatusChange(order._id, e.target.value)}
+                      disabled={loadingId === order._id}
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold border cursor-pointer appearance-none pr-5 focus:outline-none shrink-0 ${
+                        order.status === "delivered"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                          : order.status === "cancelled"
+                          ? "bg-rose-50 text-rose-700 border-rose-300"
+                          : order.status === "in_courier"
+                          ? "bg-purple-50 text-purple-700 border-purple-300"
+                          : order.status === "confirmed"
+                          ? "bg-blue-50 text-blue-700 border-blue-300"
+                          : order.status === "returned"
+                          ? "bg-orange-50 text-orange-700 border-orange-300"
+                          : order.status === "no_response"
+                          ? "bg-gray-100 text-gray-700 border-gray-300"
+                          : order.status === "verification_required"
+                          ? "bg-indigo-50 text-indigo-700 border-indigo-300"
+                          : "bg-amber-50 text-amber-800 border-amber-300"
+                      }`}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "right 6px top 50%",
+                        backgroundSize: "7px auto",
+                      }}
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} className="bg-white text-gray-800">
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
 
                 <div className="mt-4 space-y-2 text-sm text-[#3d2f1f]">
                   {order.area && (
@@ -1553,16 +1840,43 @@ ${productNames}
                   </h3>
 
                   <div className="space-y-2 text-sm text-[#3d2f1f]">
-                    <p>
-                      <span className="font-semibold">Status:</span>{" "}
-                      {selectedOrder.status === "delivered"
-                        ? "Delivered"
-                        : selectedOrder.status === "cancelled"
-                          ? "Cancelled"
-                          : selectedOrder.status === "pending"
-                            ? "Pending"
-                            : "No Response"}
-                    </p>
+                    <div className="flex items-center justify-between py-1 border-b border-[#e5dccf]/60">
+                      <span className="font-semibold">Status:</span>
+                      <select
+                        value={selectedOrder.status || "pending"}
+                        onChange={(e) => handleQuickStatusChange(selectedOrder._id, e.target.value)}
+                        disabled={loadingId === selectedOrder._id}
+                        className={`px-3 py-1 rounded-full text-xs font-bold border cursor-pointer appearance-none pr-6 focus:outline-none transition-all ${
+                          selectedOrder.status === "delivered"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                            : selectedOrder.status === "cancelled"
+                            ? "bg-rose-50 text-rose-700 border-rose-300"
+                            : selectedOrder.status === "in_courier"
+                            ? "bg-purple-50 text-purple-700 border-purple-300"
+                            : selectedOrder.status === "confirmed"
+                            ? "bg-blue-50 text-blue-700 border-blue-300"
+                            : selectedOrder.status === "returned"
+                            ? "bg-orange-50 text-orange-700 border-orange-300"
+                            : selectedOrder.status === "no_response"
+                            ? "bg-gray-100 text-gray-700 border-gray-300"
+                            : selectedOrder.status === "verification_required"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-300"
+                            : "bg-amber-50 text-amber-800 border-amber-300"
+                        }`}
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 8px top 50%",
+                          backgroundSize: "8px auto",
+                        }}
+                      >
+                        {STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-white text-gray-800">
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
                     <p>
                       <span className="font-semibold">Order Date:</span>{" "}

@@ -22,6 +22,7 @@ const {
   updateWhatsAppStatus,
   updateCallCount,
   updateOrderStatus,
+  bulkUpdateOrderStatus,
 } = require("../controllers/order.controller");
 
 router.post("/", createOrder);
@@ -37,6 +38,7 @@ router.get("/export", getOrdersForExport);
 router.get("/by-date", getOrdersByDate);
 router.get("/moderator-activity", getModeratorActivity);
 router.get("/moderator-performance", getModeratorPerformance);
+router.patch("/bulk-status", bulkUpdateOrderStatus);
 router.patch("/:id/deliver", markOrderDelivered);
 router.patch("/:id/steadfast", sendToSteadfast);
 router.patch("/:id/pathao", sendToPathao);

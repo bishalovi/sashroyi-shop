@@ -394,16 +394,22 @@ exports.getOrderCounts = async (req, res) => {
     const [
       all,
       pending,
-      no_response,
+      confirmed,
+      in_courier,
       delivered,
       cancelled,
+      returned,
+      no_response,
       verification_required,
     ] = await Promise.all([
       ordersCollection.countDocuments(),
       ordersCollection.countDocuments({ status: "pending" }),
-      ordersCollection.countDocuments({ status: "no_response" }),
+      ordersCollection.countDocuments({ status: "confirmed" }),
+      ordersCollection.countDocuments({ status: "in_courier" }),
       ordersCollection.countDocuments({ status: "delivered" }),
       ordersCollection.countDocuments({ status: "cancelled" }),
+      ordersCollection.countDocuments({ status: "returned" }),
+      ordersCollection.countDocuments({ status: "no_response" }),
       ordersCollection.countDocuments({ status: "verification_required" }),
     ]);
 
@@ -412,9 +418,12 @@ exports.getOrderCounts = async (req, res) => {
       data: {
         all,
         pending,
-        no_response,
+        confirmed,
+        in_courier,
         delivered,
         cancelled,
+        returned,
+        no_response,
         verification_required,
       },
     });
@@ -423,6 +432,39 @@ exports.getOrderCounts = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+exports.bulkUpdateOrderStatus = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const ordersCollection = db.collection("orders");
+    const { orderIds, status, updatedBy } = req.body;
+
+    if (!Array.isArray(orderIds) || orderIds.length === 0 || !status) {
+      return res.status(400).json({ success: false, message: "Invalid parameters" });
+    }
+
+    const objectIds = orderIds.filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
+    const updateDoc = {
+      status,
+      updatedAt: new Date(),
+    };
+    if (updatedBy) updateDoc.updatedBy = updatedBy;
+    if (status === "delivered") updateDoc.deliveredAt = new Date();
+
+    const result = await ordersCollection.updateMany(
+      { _id: { $in: objectIds } },
+      { $set: updateDoc }
+    );
+
+    res.json({
+      success: true,
+      message: `${result.modifiedCount} orders updated to ${status}`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
