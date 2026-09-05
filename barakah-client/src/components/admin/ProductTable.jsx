@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { FiDownload } from "react-icons/fi";
 import { FaFacebook } from "react-icons/fa";
 
 export default function ProductTable({
@@ -265,22 +264,29 @@ export default function ProductTable({
         </div>
 
         <div className="flex items-center gap-2">
-          {selectedIds.size > 0 && (
-            <button
-              onClick={() => handleExportMetaCSV(false)}
-              className="btn btn-sm bg-[#1877F2] text-white hover:bg-[#166fe5] border-none flex items-center gap-2"
-              title="Download Meta Catalog CSV for selected products"
-            >
-              <FaFacebook /> Export Selected ({selectedIds.size})
-            </button>
-          )}
-
           <button
-            onClick={() => handleExportMetaCSV(true)}
-            className="btn btn-sm bg-[#0f2a44] text-white hover:bg-[#d4af37] hover:text-[#0f2a44] border-none flex items-center gap-2"
-            title="Download Meta Catalog CSV for all products on this page"
+            onClick={() => {
+              if (selectedIds.size === 0) {
+                Swal.fire({
+                  title: "কোনো প্রোডাক্ট সিলেক্ট করা নেই",
+                  text: "প্রোডাক্ট সিলেক্ট করুন অথবা 'Select All' এ টিক দিন।",
+                  icon: "info",
+                  confirmButtonColor: "#1877F2",
+                });
+                return;
+              }
+              handleExportMetaCSV(false);
+            }}
+            disabled={selectedIds.size === 0}
+            className={`btn btn-sm flex items-center gap-2 border-none transition-all ${
+              selectedIds.size > 0
+                ? "bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm font-medium"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+            title="Download Meta Catalog CSV for selected products"
           >
-            <FiDownload /> Export All (Meta CSV)
+            <FaFacebook className={selectedIds.size > 0 ? "text-white" : "text-gray-400"} />
+            Export Meta CSV {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
           </button>
         </div>
       </div>
