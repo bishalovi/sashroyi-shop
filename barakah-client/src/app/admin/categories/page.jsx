@@ -35,10 +35,7 @@ export default function AdminCategoriesPage() {
   const [newCatName, setNewCatName] = useState("");
   const [newCatSlug, setNewCatSlug] = useState("");
   const [newCatDesc, setNewCatDesc] = useState("");
-  const [newSubcategories, setNewSubcategories] = useState([
-    { name: "Natural", slug: "natural" },
-    { name: "Islamic", slug: "islamic" },
-  ]);
+  const [newSubcategories, setNewSubcategories] = useState([]);
   const [tempSubName, setTempSubName] = useState("");
 
   // Edit Category Modal State

@@ -127,7 +127,7 @@ export default function OrderSuccessPage() {
             </Link>
 
             <Link
-              href="/category/wall-clock/islamic"
+              href="/search"
               className="rounded-2xl border border-[#0f2a44]/15 px-3 py-4 text-center font-semibold text-[#0f2a44] transition hover:bg-[#faf7f0]"
             >
               কেনাকাটা চালিয়ে যান

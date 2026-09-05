@@ -57,14 +57,14 @@ export default function Hero() {
 
             <div className="flex flex-wrap gap-4">
               <Link
-                href={heroConfig.primaryBtnLink || "/category/wall-clock/natural"}
+                href={heroConfig.primaryBtnLink || "/search"}
                 className="inline-flex items-center gap-2 rounded-lg bg-[#d4af37] px-7 py-3.5 font-semibold text-[#1a1a1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
               >
                 {heroConfig.primaryBtnText || "Shop Now"} <FaArrowRight />
               </Link>
 
               <Link
-                href={heroConfig.secondaryBtnLink || "/category/wall-canvas/natural"}
+                href={heroConfig.secondaryBtnLink || "/search"}
                 className="inline-flex items-center gap-2 rounded-lg border-2 border-white/40 px-7 py-3.5 font-semibold text-white transition-all duration-300 hover:bg-white/10"
               >
                 {heroConfig.secondaryBtnText || "Explore Categories"}

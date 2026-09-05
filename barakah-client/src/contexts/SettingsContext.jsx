@@ -13,16 +13,14 @@ export const DEFAULT_SETTINGS = {
   },
   header: {
     shopName: "Sashroyi",
-    tagline: "Blessings in every moment",
+    tagline: "Best Quality Products at Affordable Prices",
     logoUrl: "",
     faviconUrl: "",
     navLinks: [
       { label: "Home", url: "/" },
-      { label: "Wall Clock", url: "/category/wall-clock/natural" },
-      { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
-      { label: "Wall Art", url: "/category/wall-art/natural" },
-      { label: "Round Clock", url: "/category/round-clock/natural" },
-      { label: "Others", url: "/category/others/natural" },
+      { label: "All Products", url: "/search" },
+      { label: "Kitchen & Dining", url: "/category/kitchen-dining" },
+      { label: "Home & Living", url: "/category/home-living" },
     ],
   },
   paymentMethods: {
@@ -51,13 +49,13 @@ export const DEFAULT_SETTINGS = {
     },
   },
   footer: {
-    aboutText: "Premium Islamic Wall Clocks & Canvas Art. Crafted with elegance for your home.",
+    aboutText: "আপনার বিশ্বস্ত অনলাইন শপ। সেরা মানের পণ্য সুলভ মূল্যে পৌঁছে দেওয়াই আমাদের লক্ষ্য।",
     copyrightText: "© 2026 Sashroyi. All rights reserved.",
     quickLinks: [
       { label: "Home", url: "/" },
-      { label: "Wall Clocks", url: "/category/wall-clock/natural" },
-      { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
-      { label: "Facebook Group", url: "https://facebook.com/groups/" },
+      { label: "All Products", url: "/search" },
+      { label: "Kitchen & Dining", url: "/category/kitchen-dining" },
+      { label: "Home & Living", url: "/category/home-living" },
     ],
   },
   noticeBar: {
@@ -68,14 +66,14 @@ export const DEFAULT_SETTINGS = {
     textColor: "#f2c94c",
   },
   hero: {
-    badgeText: "Blessings in every moment",
-    title: "Sashroyi - Islamic Clock & Canvas",
+    badgeText: "Quality You Can Trust",
+    title: "Sashroyi - Best Deals Online",
     subtitle:
-      "Discover curated collections of premium Islamic wall clocks and canvas art. Crafted with elegance for those who value faith and beauty.",
+      "Explore top quality products at the most affordable prices in Bangladesh.",
     primaryBtnText: "Shop Now",
-    primaryBtnLink: "/category/wall-clock/natural",
+    primaryBtnLink: "/search",
     secondaryBtnText: "Explore Categories",
-    secondaryBtnLink: "/category/wall-canvas/natural",
+    secondaryBtnLink: "/search",
     videoUrl: "https://www.youtube.com/embed/",
   },
   contact: {

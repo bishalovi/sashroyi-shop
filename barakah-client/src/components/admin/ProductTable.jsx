@@ -104,11 +104,12 @@ export default function ProductTable({
       const availability = p.inStock ? "in stock" : "out of stock";
       const condition = "new";
       const price = `"${Number(p.price || 0).toFixed(2)} BDT"`;
-      const link = `https://ghor.niorashopping.com/products/${p._id}`;
+      const siteOrigin = typeof window !== "undefined" ? window.location.origin : "https://sashroyi.shop";
+      const link = `${siteOrigin}/products/${p.slug || p._id}`;
       const image_link = p.image || "";
-      const brand = `"Barakah"`;
-      const googleCategory = `"Home & Garden > Decor > Clocks"`;
-      const fbCategory = `"home_goods"`;
+      const brand = `"Sashroyi"`;
+      const googleCategory = p.category ? `"${p.category.replace(/"/g, '""')}"` : `"General"`;
+      const fbCategory = p.category ? `"${p.category.replace(/"/g, '""')}"` : `"general"`;
 
       return [
         id,

@@ -24,11 +24,9 @@ export default function Navbar() {
 
   const defaultNavLinks = [
     { label: "Home", url: "/" },
-    { label: "Wall Clock", url: "/category/wall-clock/natural" },
-    { label: "Wall Canvas", url: "/category/wall-canvas/natural" },
-    { label: "Wall Art", url: "/category/wall-art/natural" },
-    { label: "Round Clock", url: "/category/round-clock/natural" },
-    { label: "Others", url: "/category/others/natural" },
+    { label: "All Products", url: "/search" },
+    { label: "Kitchen & Dining", url: "/category/kitchen-dining" },
+    { label: "Home & Living", url: "/category/home-living" },
   ];
 
   const navLinks = header?.navLinks && header.navLinks.length > 0
