@@ -8,30 +8,42 @@ import Reviews from "@/components/home/Reviews";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 
-async function getProducts() {
+async function getSingleProduct(id) {
   const baseUrl = "https://sashroyi-api.onrender.com";
   try {
-    const res = await fetch(`${baseUrl}/api/products`, {
-      next: { revalidate: 60 },
+    const res = await fetch(`${baseUrl}/api/products/${id}`, {
+      cache: "no-store",
     });
 
     if (!res.ok) {
-      return [];
+      return null;
     }
 
     const result = await res.json();
-    return result.data || [];
+    return result.data || null;
   } catch (error) {
-    console.error("Failed to fetch products:", error);
+    console.error("Failed to fetch product:", error);
+    return null;
+  }
+}
+
+async function getRelatedProducts(category, excludeId) {
+  const baseUrl = "https://sashroyi-api.onrender.com";
+  try {
+    const res = await fetch(`${baseUrl}/api/products?category=${category}&limit=6`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.data || []).filter((p) => p._id !== excludeId).slice(0, 4);
+  } catch {
     return [];
   }
 }
 
 export default async function ProductDetails({ params }) {
   const { id } = await params;
-  const products = await getProducts();
-
-  const product = products.find((p) => p._id === id || p.slug === id);
+  const product = await getSingleProduct(id);
 
   if (!product) {
     return (
@@ -46,10 +58,7 @@ export default async function ProductDetails({ params }) {
     );
   }
 
-  // related products
-  const relatedProducts = products
-    .filter((p) => p.category === product.category && p._id !== product._id)
-    .slice(0, 4);
+  const relatedProducts = await getRelatedProducts(product.category, product._id);
 
   const imageSrc = product.image && (product.image.startsWith("http") || product.image.startsWith("/"))
     ? product.image

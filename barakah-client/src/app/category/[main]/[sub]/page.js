@@ -7,7 +7,7 @@ async function getCategoryData(main) {
   const baseUrl = "https://sashroyi-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/categories/${main}`, {
-      next: { revalidate: 30 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -27,7 +27,7 @@ async function getProducts(main, sub) {
         : `${baseUrl}/api/products?category=${main}`;
 
     const res = await fetch(url, {
-      next: { revalidate: 30 },
+      cache: "no-store",
     });
 
     if (!res.ok) {

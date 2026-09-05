@@ -7,7 +7,7 @@ const baseUrl = "https://sashroyi-api.onrender.com";
 async function getCategories() {
   try {
     const res = await fetch(`${baseUrl}/api/categories`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return [];
     const result = await res.json();
@@ -23,7 +23,7 @@ async function getProductsByCategory(categorySlug) {
     const res = await fetch(
       `${baseUrl}/api/products?category=${categorySlug}&limit=8`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
       },
     );
     if (!res.ok) return [];
@@ -38,7 +38,7 @@ async function getProductsByCategory(categorySlug) {
 async function getAllProducts() {
   try {
     const res = await fetch(`${baseUrl}/api/products?limit=50`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return [];
     const result = await res.json();
