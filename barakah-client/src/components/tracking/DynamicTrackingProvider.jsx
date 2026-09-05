@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function DynamicTrackingProvider() {
   const pathname = usePathname();
@@ -119,15 +120,13 @@ export default function DynamicTrackingProvider() {
       .catch((err) => console.log("Tracking config fetch error:", err));
   }, [baseUrl]);
 
-  // Track PageView on route navigation
+  // Track PageView on route navigation (Browser + Server CAPI)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (typeof window.fbq === "function") {
-        window.fbq("track", "PageView");
-      }
-      if (typeof window.ttq?.page === "function") {
-        window.ttq.page();
-      }
+      trackMetaEvent("PageView", {
+        page_path: pathname,
+        page_title: typeof document !== "undefined" ? document.title : "",
+      });
     }
   }, [pathname]);
 
