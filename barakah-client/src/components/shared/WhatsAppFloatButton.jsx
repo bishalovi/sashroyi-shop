@@ -4,6 +4,8 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { FaWhatsapp } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
+import { trackMetaEvent } from "@/lib/metaTracking";
+import { pushToDataLayer } from "@/lib/gtm";
 
 export default function WhatsAppFloatButton() {
   const pathname = usePathname();
@@ -29,6 +31,17 @@ export default function WhatsAppFloatButton() {
   };
 
   const handleWhatsAppClick = () => {
+    pushToDataLayer({
+      event: "contact",
+      contact_method: "whatsapp",
+      page: pathname,
+    });
+
+    trackMetaEvent("Contact", {
+      content_name: "Floating WhatsApp Chat",
+      channel: "WhatsApp",
+    });
+
     const url = getWhatsAppUrl(getPageMessage());
     window.open(url, "_blank");
   };

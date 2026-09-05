@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -6,6 +6,9 @@ import Container from "@/components/shared/Container";
 import ProductCard from "@/components/products/ProductCard";
 import SearchBar from "@/components/home/SearchBar";
 import { FiSearch } from "react-icons/fi";
+
+import { trackMetaEvent } from "@/lib/metaTracking";
+import { pushToDataLayer } from "@/lib/gtm";
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -21,6 +24,16 @@ function SearchContent() {
       setLoading(false);
       return;
     }
+
+    pushToDataLayer({
+      event: "search",
+      search_term: query,
+    });
+
+    trackMetaEvent("Search", {
+      search_string: query,
+      content_type: "product",
+    });
 
     setLoading(true);
     fetch(`${baseUrl}/api/products?search=${encodeURIComponent(query)}&limit=50`)

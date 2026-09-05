@@ -167,6 +167,49 @@ export default function CheckoutPage() {
     [totalPrice, shippingCost],
   );
 
+  const handleSelectPaymentMethod = (method) => {
+    setPaymentMethod(method);
+
+    const items = cartItems.map((item) => ({
+      id: item.selectedVariationId
+        ? `${item._id || item.id}_${item.selectedVariationId}`
+        : String(item._id || item.id || ""),
+      quantity: Number(item.quantity || 1),
+      item_price: Number(item.price || 0),
+    }));
+
+    const paymentLabel =
+      method === "cod"
+        ? (paymentMethods?.cod?.title || "Cash on Delivery")
+        : (method === "bkash" ? "bKash" : (method === "nagad" ? "Nagad" : "Rocket"));
+
+    pushToDataLayer({
+      event: "add_payment_info",
+      ecommerce: {
+        currency: "BDT",
+        value: Number(finalTotal || totalPrice || 0),
+        payment_type: paymentLabel,
+        items,
+      },
+    });
+
+    trackMetaEvent(
+      "AddPaymentInfo",
+      {
+        content_ids: items.map((i) => i.id),
+        content_type: "product",
+        value: Number(finalTotal || totalPrice || 0),
+        currency: "BDT",
+        contents: items,
+      },
+      {
+        name: formValues.name || "",
+        phone: formValues.phone || "",
+        address: formValues.address || "",
+      }
+    );
+  };
+
   const saveAbandonedOrder = async (data) => {
     try {
       const sessionId = getCheckoutSessionId();
@@ -500,7 +543,7 @@ export default function CheckoutPage() {
                           value="cod"
                           className="radio radio-primary radio-sm"
                           checked={paymentMethod === "cod"}
-                          onChange={() => setPaymentMethod("cod")}
+                          onChange={() => handleSelectPaymentMethod("cod")}
                         />
                         <span className="font-semibold text-[#0f2a44]">
                           {paymentMethods?.cod?.title || "ক্যাশ অন ডেলিভারি"}
@@ -531,7 +574,7 @@ export default function CheckoutPage() {
                             value="bkash"
                             className="radio radio-secondary radio-sm"
                             checked={paymentMethod === "bkash"}
-                            onChange={() => setPaymentMethod("bkash")}
+                            onChange={() => handleSelectPaymentMethod("bkash")}
                           />
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-pink-600">বিকাশ (bKash)</span>
@@ -584,7 +627,7 @@ export default function CheckoutPage() {
                             value="nagad"
                             className="radio radio-warning radio-sm"
                             checked={paymentMethod === "nagad"}
-                            onChange={() => setPaymentMethod("nagad")}
+                            onChange={() => handleSelectPaymentMethod("nagad")}
                           />
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-orange-600">নগদ (Nagad)</span>
@@ -637,7 +680,7 @@ export default function CheckoutPage() {
                             value="rocket"
                             className="radio radio-secondary radio-sm"
                             checked={paymentMethod === "rocket"}
-                            onChange={() => setPaymentMethod("rocket")}
+                            onChange={() => handleSelectPaymentMethod("rocket")}
                           />
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-purple-600">রকেট (Rocket)</span>
