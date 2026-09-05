@@ -365,9 +365,25 @@ export default function ProductTable({
                       </div>
 
                       <div>
-                        <div className="font-bold">{product.name}</div>
-                        <div className="text-sm opacity-50">
-                          {product.subcategory || "—"}
+                        <div className="font-bold flex items-center gap-2 flex-wrap">
+                          <span>{product.name}</span>
+                          {product.productType === "variable" && Array.isArray(product.variations) && product.variations.length > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/15 to-amber-500/25 text-[#966f00] text-[11px] font-bold border border-[#d4af37]/40 shadow-xs shrink-0"
+                              title={product.variations.map((v) => `${v.name} (৳${v.price})`).join(" | ")}
+                            >
+                              <span>⚡</span>
+                              <span>{product.variations.length} ভ্যারিয়েশন</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                          <span>{product.subcategory || "—"}</span>
+                          {product.productType === "variable" && Array.isArray(product.variations) && product.variations.length > 0 && (
+                            <span className="text-[#966f00] font-medium bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/60">
+                              প্যাক: {product.variations.map((v) => v.name).join(", ")}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -443,11 +459,18 @@ export default function ProductTable({
                 />
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">
-                    {(currentPage - 1) * itemsPerPage + index + 1}. {product.name}
-                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="font-bold truncate">
+                      {(currentPage - 1) * itemsPerPage + index + 1}. {product.name}
+                    </p>
+                    {product.productType === "variable" && Array.isArray(product.variations) && product.variations.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-[#966f00] text-[10px] font-bold border border-amber-300 shrink-0">
+                        ⚡ {product.variations.length} ভ্যারিয়েশন
+                      </span>
+                    )}
+                  </div>
 
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-0.5">
                     {product.category} • {product.subcategory || "—"}
                   </p>
 
