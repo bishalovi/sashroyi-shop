@@ -12,6 +12,8 @@ import {
   FiSliders,
   FiTruck,
   FiSettings,
+  FiLayers,
+  FiStar,
 } from "react-icons/fi";
 import { MdOutlineShoppingCartCheckout } from "react-icons/md";
 
@@ -54,6 +56,18 @@ export default function AdminSidebar() {
           href="/admin/products/add"
           icon={<FiPlus />}
           label="Add Product"
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          href="/admin/categories"
+          icon={<FiLayers />}
+          label="Categories"
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          href="/admin/reviews"
+          icon={<FiStar />}
+          label="Customer Reviews"
           collapsed={collapsed}
         />
         <SidebarItem
