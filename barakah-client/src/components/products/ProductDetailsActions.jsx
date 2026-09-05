@@ -6,6 +6,7 @@ import BuyNowButton from "../../app/products/[id]/BuyNowButton";
 import { FaWhatsapp } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
 import { pushToDataLayer } from "@/lib/gtm";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function ProductDetailsActions({ product }) {
   const [quantity, setQuantity] = useState(1);
@@ -46,22 +47,43 @@ export default function ProductDetailsActions({ product }) {
   const handleSelectVariation = (variation) => {
     setSelectedVariation(variation);
 
-    // Dynamic Meta Pixel / DataLayer ViewContent on variation switch
+    const variationPrice = Number(variation.price || 0);
+    const variationItemId = `${product?._id || product?.id}_${variation.id}`;
+    const variationName = `${product?.name || "Product"} (${variation.name})`;
+
+    // Dynamic GTM DataLayer
     pushToDataLayer({
       event: "view_item",
       ecommerce: {
         currency: "BDT",
-        value: Number(variation.price || 0),
+        value: variationPrice,
         items: [
           {
-            item_id: `${product?._id || product?.id}_${variation.id}`,
-            item_name: `${product?.name || "Product"} (${variation.name})`,
+            item_id: variationItemId,
+            item_name: variationName,
             item_variant: variation.name,
-            price: Number(variation.price || 0),
+            price: variationPrice,
             quantity: 1,
           },
         ],
       },
+    });
+
+    // Dynamic Meta Pixel & Server CAPI ViewContent
+    trackMetaEvent("ViewContent", {
+      content_name: variationName,
+      content_category: product?.category || "General",
+      content_ids: [variationItemId],
+      content_type: "product",
+      value: variationPrice,
+      currency: "BDT",
+      contents: [
+        {
+          id: variationItemId,
+          quantity: 1,
+          item_price: variationPrice,
+        },
+      ],
     });
   };
 
