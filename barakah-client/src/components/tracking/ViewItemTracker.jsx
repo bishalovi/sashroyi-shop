@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { pushToDataLayer } from "@/lib/gtm";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function ViewItemTracker({ product }) {
   useEffect(() => {
@@ -29,6 +30,15 @@ export default function ViewItemTracker({ product }) {
           },
         ],
       },
+    });
+
+    trackMetaEvent("ViewContent", {
+      content_name: initialName,
+      content_category: product.category || "General",
+      content_ids: [initialItemId],
+      content_type: "product",
+      value: initialPrice,
+      currency: "BDT",
     });
   }, [product?._id]);
 

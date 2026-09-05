@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { pushToDataLayer } from "@/lib/gtm";
+import { trackMetaEvent } from "@/lib/metaTracking";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
 import { FaFacebookMessenger, FaPhoneAlt, FaWhatsapp, FaCopy, FaCheck } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
@@ -35,6 +36,48 @@ export default function CheckoutPage() {
   });
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+
+  // Track InitiateCheckout
+  useEffect(() => {
+    if (cartItems.length === 0) return;
+
+    const items = cartItems.map((item) => ({
+      item_id: item.selectedVariationId
+        ? `${item._id || item.id}_${item.selectedVariationId}`
+        : String(item._id || item.id || ""),
+      id: item.selectedVariationId
+        ? `${item._id || item.id}_${item.selectedVariationId}`
+        : String(item._id || item.id || ""),
+      item_name: item.variationTitle
+        ? (item.name.includes(item.variationTitle) ? item.name : `${item.name} (${item.variationTitle})`)
+        : item.name || "",
+      item_variant: item.variationTitle || "Default",
+      price: Number(item.price || 0),
+      quantity: Number(item.quantity || 1),
+    }));
+
+    pushToDataLayer({
+      event: "begin_checkout",
+      ecommerce: {
+        currency: "BDT",
+        value: Number(totalPrice || 0),
+        items,
+      },
+    });
+
+    trackMetaEvent("InitiateCheckout", {
+      content_ids: items.map((i) => i.id),
+      content_type: "product",
+      value: Number(totalPrice || 0),
+      currency: "BDT",
+      num_items: items.reduce((acc, i) => acc + i.quantity, 0),
+      contents: items.map((i) => ({
+        id: i.id,
+        quantity: i.quantity,
+        item_price: i.price,
+      })),
+    });
+  }, []);
 
   useEffect(() => {
     if (!baseUrl) return;

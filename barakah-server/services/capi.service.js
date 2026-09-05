@@ -69,12 +69,15 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
+    const externalId = order.phone ? hashData(String(order.phone).replace(/\D/g, "")) : null;
+
     const userData = {
       client_ip_address: clientIp || "127.0.0.1",
       client_user_agent: userAgent || "Mozilla/5.0",
       country: [hashData("bd")],
     };
 
+    if (externalId) userData.external_id = [externalId];
     if (order.phone) userData.ph = [formatPhone(order.phone)];
     if (order.email) userData.em = [hashData(order.email)];
     if (firstName) userData.fn = [hashData(firstName)];
@@ -134,6 +137,67 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
   }
 }
 
+async function sendMetaCapiGenericEvent({ eventName, eventId, eventSourceUrl, customData, userParams = {}, metaConfig, clientIp, userAgent }) {
+  try {
+    if (!metaConfig || !metaConfig.isEnabled || !metaConfig.isCapiEnabled) {
+      return { skipped: true, reason: "Meta CAPI is not enabled" };
+    }
+
+    const { pixelId, capiAccessToken, testEventCode } = metaConfig;
+    if (!pixelId || !capiAccessToken) {
+      return { skipped: true, reason: "Missing Pixel ID or CAPI Access Token" };
+    }
+
+    const finalEventId = String(eventId || `evt_${Date.now()}_${Math.floor(Math.random() * 1000)}`);
+    const eventTime = Math.floor(Date.now() / 1000);
+
+    const userData = {
+      client_ip_address: clientIp || "127.0.0.1",
+      client_user_agent: userAgent || "Mozilla/5.0",
+      country: [hashData("bd")],
+    };
+
+    if (userParams.phone) {
+      userData.ph = [formatPhone(userParams.phone)];
+      userData.external_id = [hashData(String(userParams.phone).replace(/\D/g, ""))];
+    } else if (userParams.externalId) {
+      userData.external_id = [hashData(String(userParams.externalId))];
+    }
+
+    if (userParams.email) userData.em = [hashData(userParams.email)];
+    if (userParams.fbc) userData.fbc = userParams.fbc;
+    if (userParams.fbp) userData.fbp = userParams.fbp;
+
+    const eventData = {
+      event_name: eventName,
+      event_time: eventTime,
+      event_id: finalEventId,
+      action_source: "website",
+      event_source_url: eventSourceUrl || "https://sashroyi.shop",
+      user_data: userData,
+      custom_data: customData || {},
+    };
+
+    const payload = { data: [eventData] };
+    if (testEventCode && testEventCode.trim() !== "") {
+      payload.test_event_code = testEventCode.trim();
+    }
+
+    const url = `https://graph.facebook.com/v19.0/${pixelId.trim()}/events?access_token=${capiAccessToken.trim()}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    return await response.json();
+  } catch (error) {
+    console.error(`[META CAPI ${eventName} ERROR]:`, error.message);
+    return { error: error.message };
+  }
+}
+
 async function sendTikTokEventsApiPurchase({ order, tiktokConfig, clientIp, userAgent }) {
   try {
     if (!tiktokConfig || !tiktokConfig.isEnabled || !tiktokConfig.isCapiEnabled) {
@@ -158,6 +222,7 @@ async function sendTikTokEventsApiPurchase({ order, tiktokConfig, clientIp, user
       let digits = String(order.phone).replace(/\D/g, "");
       if (digits.startsWith("01") && digits.length === 11) digits = "88" + digits;
       userObj.phone_number = hashData(digits);
+      userObj.external_id = hashData(digits);
     }
     if (order.email) userObj.email = hashData(order.email);
     if (order.ttclid) userObj.ttclid = order.ttclid;
@@ -217,5 +282,6 @@ async function sendTikTokEventsApiPurchase({ order, tiktokConfig, clientIp, user
 
 module.exports = {
   sendMetaCapiPurchase,
+  sendMetaCapiGenericEvent,
   sendTikTokEventsApiPurchase,
 };

@@ -16,6 +16,7 @@ const {
   updateAdminTrackingSettings,
   deletePlatformSettings,
   testPlatformConnection,
+  sendClientEvent,
 } = require("../controllers/tracking.controller");
 
 router.get("/public", getPublicTrackingSettings);
@@ -23,5 +24,6 @@ router.get("/admin", getAdminTrackingSettings);
 router.put("/admin", updateAdminTrackingSettings);
 router.delete("/admin/:platform", deletePlatformSettings);
 router.post("/admin/test-event", testPlatformConnection);
+router.post("/events", sendClientEvent);
 
 module.exports = router;

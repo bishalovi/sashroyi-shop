@@ -16,7 +16,11 @@
  */
 
 const connectDB = require("../config/db");
-const { sendMetaCapiPurchase, sendTikTokEventsApiPurchase } = require("../services/capi.service");
+const {
+  sendMetaCapiPurchase,
+  sendMetaCapiGenericEvent,
+  sendTikTokEventsApiPurchase,
+} = require("../services/capi.service");
 
 const SETTINGS_KEY = "main_tracking_config";
 
@@ -229,7 +233,34 @@ exports.testPlatformConnection = async (req, res) => {
       return res.json({ success: true, platform: "tiktok", result });
     }
 
-    res.status(400).json({ success: false, message: "Unsupported test platform" });
+// Relay Client-Side Events (ViewContent, AddToCart, InitiateCheckout) to CAPI
+exports.sendClientEvent = async (req, res) => {
+  try {
+    const { eventName, eventId, eventSourceUrl, customData, userParams } = req.body || {};
+    if (!eventName) {
+      return res.status(400).json({ success: false, message: "Missing eventName" });
+    }
+
+    const config = await getTrackingConfigFromDB();
+    const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    const userAgent = req.headers["user-agent"];
+
+    const results = {};
+
+    if (config.facebook?.isEnabled && config.facebook?.isCapiEnabled) {
+      results.facebook = await sendMetaCapiGenericEvent({
+        eventName,
+        eventId,
+        eventSourceUrl,
+        customData,
+        userParams,
+        metaConfig: config.facebook,
+        clientIp,
+        userAgent,
+      });
+    }
+
+    res.json({ success: true, results });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
