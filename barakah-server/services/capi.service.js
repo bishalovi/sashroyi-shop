@@ -33,6 +33,23 @@ function formatPhone(phone) {
   return hashData(digits);
 }
 
+function formatCity(address) {
+  if (!address) return null;
+  const lower = String(address).toLowerCase();
+  if (lower.includes("dhaka") || lower.includes("ঢাকা")) return hashData("dhaka");
+  if (lower.includes("chittagong") || lower.includes("chattogram") || lower.includes("চট্টগ্রাম")) return hashData("chattogram");
+  if (lower.includes("sylhet") || lower.includes("সিলেট")) return hashData("sylhet");
+  if (lower.includes("rajshahi") || lower.includes("রাজশাহী")) return hashData("rajshahi");
+  if (lower.includes("khulna") || lower.includes("খুলনা")) return hashData("khulna");
+  if (lower.includes("barisal") || lower.includes("বরিশাল")) return hashData("barisal");
+  if (lower.includes("rangpur") || lower.includes("রংপুর")) return hashData("rangpur");
+  if (lower.includes("mymensingh") || lower.includes("ময়মনসিংহ")) return hashData("mymensingh");
+  if (lower.includes("narayanganj") || lower.includes("নারায়ণগঞ্জ")) return hashData("narayanganj");
+  if (lower.includes("gazipur") || lower.includes("গাজীপুর")) return hashData("gazipur");
+  if (lower.includes("cumilla") || lower.includes("কুমিল্লা")) return hashData("cumilla");
+  return null;
+}
+
 async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) {
   try {
     if (!metaConfig || !metaConfig.isEnabled || !metaConfig.isCapiEnabled) {
@@ -48,19 +65,32 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
     const eventId = String(order._id || order.orderId || `order_${Date.now()}`);
     const eventTime = Math.floor(Date.now() / 1000);
 
+    const nameParts = (order.customerName || "").trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     const userData = {
       client_ip_address: clientIp || "127.0.0.1",
       client_user_agent: userAgent || "Mozilla/5.0",
+      country: [hashData("bd")],
     };
 
     if (order.phone) userData.ph = [formatPhone(order.phone)];
     if (order.email) userData.em = [hashData(order.email)];
-    if (order.customerName) userData.fn = [hashData(order.customerName.split(" ")[0])];
+    if (firstName) userData.fn = [hashData(firstName)];
+    if (lastName) userData.ln = [hashData(lastName)];
+    const cityHash = formatCity(order.address);
+    if (cityHash) userData.ct = [cityHash];
     if (order.fbclid) userData.fbc = `fb.1.${Date.now()}.${order.fbclid}`;
     if (order.fbp) userData.fbp = order.fbp;
 
     const contents = (order.items || []).map((item) => ({
-      id: String(item.productId || item._id || ""),
+      id: String(
+        item.selectedVariationId
+          ? `${item.productId || item._id}_${item.selectedVariationId}`
+          : (item.productId || item._id || "")
+      ),
+      title: item.variationTitle ? `${item.name} (${item.variationTitle})` : (item.name || ""),
       quantity: Number(item.quantity || 1),
       item_price: Number(item.price || 0),
     }));
@@ -70,7 +100,7 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
       event_time: eventTime,
       event_id: eventId,
       action_source: "website",
-      event_source_url: "https://ghor.niorashopping.com/checkout",
+      event_source_url: order.eventSourceUrl || "https://sashroyi.shop/checkout",
       user_data: userData,
       custom_data: {
         currency: "BDT",
@@ -78,6 +108,7 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
         content_type: "product",
         contents: contents,
         order_id: eventId,
+        num_items: (order.items || []).reduce((acc, i) => acc + (Number(i.quantity) || 1), 0),
       },
     };
 

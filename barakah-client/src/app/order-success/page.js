@@ -20,6 +20,25 @@ export default function OrderSuccessPage() {
       return;
     }
 
+    const transactionId = String(order._id || order.orderId || `order_${Date.now()}`);
+    const contents = (order.items || []).map((item) => ({
+      id: item.selectedVariationId
+        ? `${item.productId || item._id}_${item.selectedVariationId}`
+        : (item.productId || item._id || ""),
+      content_id: item.selectedVariationId
+        ? `${item.productId || item._id}_${item.selectedVariationId}`
+        : (item.productId || item._id || ""),
+      item_name: item.variationTitle
+        ? (item.name.includes(item.variationTitle) ? item.name : `${item.name} (${item.variationTitle})`)
+        : (item.name || ""),
+      content_name: item.name || "",
+      item_variant: item.variationTitle || "Default",
+      price: Number(item.price || 0),
+      item_price: Number(item.price || 0),
+      quantity: Number(item.quantity || 1),
+    }));
+
+    // 1. Google Tag Manager DataLayer
     pushToDataLayer({
       event: "purchase",
       traffic_source: tracking.utm_source || "direct",
@@ -34,22 +53,50 @@ export default function OrderSuccessPage() {
       shipping_type: order.shippingType,
       payment_method: order.paymentMethod,
       ecommerce: {
-        transaction_id: order._id || order.orderId || "BARAKAH_ORDER",
+        transaction_id: transactionId,
         value: Number(order.total || 0),
         currency: "BDT",
-        items: (order.items || []).map((item) => ({
-          item_id: item.selectedVariationId
-            ? `${item.productId || item._id}_${item.selectedVariationId}`
-            : (item.productId || item._id || ""),
-          item_name: item.variationTitle
-            ? (item.name.includes(item.variationTitle) ? item.name : `${item.name} (${item.variationTitle})`)
-            : (item.name || ""),
-          item_variant: item.variationTitle || "Default",
-          price: Number(item.price || 0),
-          quantity: Number(item.quantity || 1),
-        })),
+        items: contents,
       },
     });
+
+    // 2. Facebook (Meta) Pixel Client-Side Deduplication
+    if (typeof window !== "undefined" && typeof window.fbq === "function") {
+      window.fbq(
+        "track",
+        "Purchase",
+        {
+          value: Number(order.total || 0),
+          currency: "BDT",
+          content_type: "product",
+          contents: contents.map((c) => ({
+            id: c.id,
+            quantity: c.quantity,
+            item_price: c.price,
+          })),
+          num_items: contents.reduce((acc, i) => acc + (Number(i.quantity) || 1), 0),
+        },
+        { eventID: transactionId }
+      );
+    }
+
+    // 3. TikTok Pixel Client-Side Deduplication
+    if (typeof window !== "undefined" && typeof window.ttq?.track === "function") {
+      window.ttq.track(
+        "CompletePayment",
+        {
+          value: Number(order.total || 0),
+          currency: "BDT",
+          contents: contents.map((c) => ({
+            content_id: c.id,
+            content_name: c.item_name,
+            quantity: c.quantity,
+            price: c.price,
+          })),
+        },
+        { event_id: transactionId }
+      );
+    }
 
     localStorage.removeItem("barakah_last_order");
   }, []);
