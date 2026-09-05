@@ -88,38 +88,28 @@ export default function ProductDetailsActions({ product }) {
   };
 
   return (
-    <div className="mt-3">
-      {/* Live Dynamic Price Display with Variation Pack Badge */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl sm:text-3xl font-extrabold text-[#0f2a44] tracking-tight">
-            ৳ {activePrice}
-          </span>
-
-          {/* Osthir Variation Pack Badge right next to the price */}
-          {isVariable && selectedVariation?.name && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs sm:text-sm font-bold bg-gradient-to-r from-[#d4af37]/20 via-amber-100 to-[#d4af37]/25 text-[#0f2a44] border border-[#d4af37] shadow-xs transition-all duration-300 transform hover:scale-105">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37] animate-pulse"></span>
-              <span>({selectedVariation.name})</span>
-            </span>
-          )}
-        </div>
+    <div className="mt-4">
+      {/* Live Dynamic Price Display */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-3xl font-bold text-[#0f2a44]">
+          ৳ {activePrice}
+        </span>
 
         {activeOldPrice && activeOldPrice > activePrice && (
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 line-through text-sm sm:text-base">
+          <>
+            <span className="text-gray-400 line-through text-lg">
               ৳ {activeOldPrice}
             </span>
-            <span className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+            <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
               ৳{activeOldPrice - activePrice} ছাড়
             </span>
-          </div>
+          </>
         )}
       </div>
 
       {/* Stock Status */}
       <p
-        className={`mb-3 font-medium text-xs sm:text-sm ${
+        className={`mb-5 font-medium text-sm ${
           isInStock ? "text-green-600" : "text-red-500"
         }`}
       >
@@ -128,19 +118,19 @@ export default function ProductDetailsActions({ product }) {
 
       {/* Variation Selection Pills */}
       {isVariable && (
-        <div className="mb-3.5 rounded-xl border border-[#d4af37]/30 bg-[#faf7f0]/70 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs sm:text-sm font-bold text-[#0f2a44]">
+        <div className="mb-6 rounded-2xl border border-[#d4af37]/30 bg-[#faf7f0]/70 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-bold text-[#0f2a44]">
               পরিমাণ / প্যাকেজ সিলেক্ট করুন:
             </label>
             {selectedVariation?.name && (
-              <span className="text-[11px] font-semibold text-[#0f2a44] bg-[#d4af37]/20 px-2 py-0.5 rounded-full border border-[#d4af37]/40">
+              <span className="text-xs font-semibold text-[#0f2a44] bg-[#d4af37]/20 px-2.5 py-0.5 rounded-full border border-[#d4af37]/40">
                 ✓ {selectedVariation.name}
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {product.variations.map((v) => {
               const isSelected = selectedVariation?.id === v.id;
               const hasDiscount = v.oldPrice && Number(v.oldPrice) > Number(v.price);
@@ -151,36 +141,36 @@ export default function ProductDetailsActions({ product }) {
                   key={v.id}
                   type="button"
                   onClick={() => handleSelectVariation(v)}
-                  className={`relative flex flex-col justify-between p-2.5 rounded-lg border text-left transition-all duration-200 cursor-pointer ${
+                  className={`relative flex flex-col justify-between p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? "border-[#d4af37] bg-white ring-2 ring-[#d4af37] shadow-sm"
+                      ? "border-[#d4af37] bg-white ring-2 ring-[#d4af37] shadow-md"
                       : "border-gray-200 bg-white/80 hover:border-[#d4af37]/60 hover:bg-white"
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-0.5">
-                    <span className="text-xs sm:text-sm font-bold text-[#0f2a44]">
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-sm font-bold text-[#0f2a44]">
                       {v.name}
                     </span>
                     {isSelected && (
-                      <span className="h-3.5 w-3.5 rounded-full bg-[#d4af37] text-white flex items-center justify-center text-[9px] font-bold">
+                      <span className="h-4 w-4 rounded-full bg-[#d4af37] text-white flex items-center justify-center text-[10px] font-bold">
                         ✓
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-baseline gap-1.5 mt-0.5">
-                    <span className="text-sm sm:text-base font-bold text-[#0f2a44]">
+                  <div className="flex items-baseline gap-1.5 mt-1">
+                    <span className="text-base font-bold text-[#0f2a44]">
                       ৳{v.price}
                     </span>
                     {v.oldPrice && (
-                      <span className="text-[11px] text-gray-400 line-through">
+                      <span className="text-xs text-gray-400 line-through">
                         ৳{v.oldPrice}
                       </span>
                     )}
                   </div>
 
                   {saveAmount > 0 && (
-                    <span className="mt-1 inline-block text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    <span className="mt-1.5 inline-block text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                       ৳{saveAmount} সাশ্রয়
                     </span>
                   )}
@@ -192,24 +182,24 @@ export default function ProductDetailsActions({ product }) {
       )}
 
       {/* Quantity */}
-      <div className="mb-3.5">
-        <p className="mb-1 text-xs sm:text-sm font-medium text-[#0f2a44]">Quantity (পরিমাণ)</p>
+      <div className="mb-6">
+        <p className="mb-2 text-sm font-medium text-[#0f2a44]">Quantity (পরিমাণ)</p>
 
-        <div className="flex items-center w-fit rounded-full border border-[#0f2a44]/15 bg-white px-1.5 py-0.5">
+        <div className="flex items-center w-fit rounded-full border border-[#0f2a44]/15 bg-white px-2 py-1">
           <button
             onClick={decreaseQuantity}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-[#f8f6f1]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#0f2a44] transition hover:bg-[#f8f6f1]"
           >
             -
           </button>
 
-          <span className="min-w-8 text-center text-base font-medium text-[#0f2a44]">
+          <span className="min-w-10 text-center text-lg font-medium text-[#0f2a44]">
             {quantity}
           </span>
 
           <button
             onClick={increaseQuantity}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-[#f8f6f1]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#0f2a44] transition hover:bg-[#f8f6f1]"
           >
             +
           </button>
@@ -217,20 +207,20 @@ export default function ProductDetailsActions({ product }) {
       </div>
 
       {/* Primary Actions */}
-      <div className="flex flex-col sm:flex-row gap-2.5">
+      <div className="flex flex-col sm:flex-row gap-4">
         <AddToCartButton product={activeProduct} quantity={quantity} />
         <BuyNowButton product={activeProduct} quantity={quantity} />
       </div>
 
       {/* WhatsApp Action Button */}
-      <div className="mt-2.5">
+      <div className="mt-4">
         <button
           onClick={handleWhatsAppOrder}
           type="button"
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-xs transition-all duration-300 hover:bg-[#20ba59] hover:shadow-sm active:scale-[0.99] cursor-pointer"
+          className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#20ba59] hover:shadow-md active:scale-[0.99] cursor-pointer"
         >
-          <FaWhatsapp size={20} />
-          <span>হোয়াটসঅ্যাপে অর্ডার / বিস্তারিত জানুন</span>
+          <FaWhatsapp size={22} />
+          হোয়াটসঅ্যাপে অর্ডার / বিস্তারিত জানুন
         </button>
       </div>
     </div>

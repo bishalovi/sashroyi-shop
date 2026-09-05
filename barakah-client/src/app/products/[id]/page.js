@@ -56,22 +56,21 @@ export default async function ProductDetails({ params }) {
     : DEFAULT_PLACEHOLDER;
 
   return (
-    <main className="bg-[#faf7f0] min-h-screen pb-8">
+    <main className="bg-[#faf7f0] min-h-screen pb-10">
+      <OfferCountdown product={product} />
       <ViewItemTracker product={product} />
-      <div className="max-w-7xl mx-auto px-4 pt-3 sm:pt-4">
-        <OfferCountdown product={product} />
-
+      <div className="max-w-7xl mx-auto px-4">
         {/* Breadcrumb */}
-        <div className="text-xs sm:text-sm text-[#0f2a44]/60 mb-3">
-          <Link href="/" className="hover:underline">Home</Link> /{" "}
+        <div className="text-sm text-[#0f2a44]/60 mb-6">
+          <Link href="/">Home</Link> /{" "}
           <span className="capitalize">{product.category}</span> /{" "}
-          <span className="font-medium text-[#0f2a44]">{product.name}</span>
+          <span>{product.name}</span>
         </div>
 
         {/* Main */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
           {/* Image */}
-          <div className="bg-white rounded-2xl overflow-hidden aspect-square relative shadow-xs border border-[#0f2a44]/5 max-w-md lg:max-w-none mx-auto w-full">
+          <div className="bg-white rounded-2xl overflow-hidden aspect-square relative shadow-sm border border-[#0f2a44]/5">
             <Image
               src={imageSrc}
               alt={product.name}
@@ -85,18 +84,18 @@ export default async function ProductDetails({ params }) {
           {/* Info */}
           <div>
             {product.badge && (
-              <span className="inline-block mb-1.5 px-2.5 py-0.5 bg-[#d4af37] text-white rounded font-semibold text-xs shadow-xs">
+              <span className="inline-block mb-3 px-3 py-1 bg-[#d4af37] text-white rounded font-medium text-sm">
                 {product.badge}
               </span>
             )}
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#0f2a44] mt-0.5">
+            <p className="text-3xl font-bold text-[#0f2a44] mt-2">
               {product.name}
-            </h1>
+            </p>
 
             {/* Description */}
             {product.description ? (
-              <p className="mt-2 text-sm sm:text-base text-[#0f2a44]/80 leading-relaxed whitespace-pre-line border-b border-[#0f2a44]/10 pb-2.5">
+              <p className="mt-4 text-base text-[#0f2a44]/80 leading-relaxed whitespace-pre-line border-b border-[#0f2a44]/10 pb-4">
                 {product.description}
               </p>
             ) : null}
@@ -108,12 +107,12 @@ export default async function ProductDetails({ params }) {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="mb-8 pt-4 border-t border-[#0f2a44]/10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-[#0f2a44]">
+          <div>
+            <h2 className="text-2xl font-bold mb-6 text-[#0f2a44]">
               Related Products
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {relatedProducts.map((p) => (
                 <ProductCard key={p._id} product={p} />
               ))}
@@ -121,9 +120,7 @@ export default async function ProductDetails({ params }) {
           </div>
         )}
 
-        <div className="border-t border-[#0f2a44]/10">
-          <Reviews className="py-6 sm:py-8" />
-        </div>
+        <Reviews />
       </div>
     </main>
   );

@@ -17,13 +17,23 @@ export default function ProductCard({ product }) {
       : DEFAULT_PLACEHOLDER
   );
 
+  const isVariable =
+    product?.productType === "variable" &&
+    Array.isArray(product?.variations) &&
+    product.variations.length > 0;
+  const defaultVar = isVariable
+    ? product.variations.find((v) => v.isDefault) || product.variations[0]
+    : null;
+  const displayPrice = defaultVar ? Number(defaultVar.price ?? product?.price ?? 0) : Number(product?.price ?? 0);
+  const displayOldPrice = defaultVar ? (defaultVar.oldPrice ? Number(defaultVar.oldPrice) : product?.oldPrice) : product?.oldPrice;
+  const packName = defaultVar?.name;
+
   const getTargetProduct = () => {
-    if (product?.productType === "variable" && Array.isArray(product?.variations) && product.variations.length > 0) {
-      const defaultVar = product.variations.find((v) => v.isDefault) || product.variations[0];
+    if (isVariable && defaultVar) {
       return {
         ...product,
-        price: Number(defaultVar.price || product.price),
-        oldPrice: defaultVar.oldPrice ? Number(defaultVar.oldPrice) : product.oldPrice,
+        price: displayPrice,
+        oldPrice: displayOldPrice,
         selectedVariationId: defaultVar.id,
         variationTitle: defaultVar.name,
       };
@@ -92,17 +102,28 @@ export default function ProductCard({ product }) {
           {product?.name || "Untitled Product"}
         </p>
 
-        {/* Price  */}
-        <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-[#0f2a44]">
-            ৳ {product?.price || 0}
-          </span>
-
-          {product?.oldPrice ? (
-            <span className="text-sm text-gray-400 line-through">
-              ৳ {product.oldPrice}
+        {/* Price & Variation Pack Badge */}
+        <div className="flex items-center justify-between gap-1.5 my-1 min-h-[30px]">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-base font-extrabold text-[#0f2a44]">
+              ৳ {displayPrice}
             </span>
-          ) : null}
+            {displayOldPrice && displayOldPrice > displayPrice ? (
+              <span className="text-xs text-gray-400 line-through">
+                ৳ {displayOldPrice}
+              </span>
+            ) : null}
+          </div>
+
+          {isVariable && packName && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/15 text-[#966f00] text-[11px] font-bold border border-[#d4af37]/40 shadow-[0_2px_8px_rgba(212,175,55,0.12)] group-hover:scale-105 transition-transform duration-200 shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#d4af37]"></span>
+              </span>
+              <span className="tracking-tight">{packName}</span>
+            </span>
+          )}
         </div>
 
         {/* add to cart + buy now */}
