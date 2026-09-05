@@ -58,11 +58,13 @@ app.use("/api/settings", settingsRoutes);
 
 const PORT = process.env.PORT || 8000;
 
-async function startServer() {
-  try {
-    const db = await connectDB();
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-    // Create performance indexes
+// Initialize database and performance indexes in background
+connectDB()
+  .then(async (db) => {
     try {
       await db.collection("products").createIndex({ slug: 1 });
       await db.collection("products").createIndex({ category: 1, subcategory: 1 });
@@ -71,16 +73,11 @@ async function startServer() {
       await db.collection("categories").createIndex({ order: 1 });
       await db.collection("orders").createIndex({ createdAt: -1 });
       await db.collection("settings").createIndex({ key: 1 });
+      console.log("Database connected and indexes verified");
     } catch (indexErr) {
-      console.log("Indexes initialized or already exist");
+      console.log("Indexes initialized");
     }
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("Server failed to start:", error.message);
-  }
-}
-
-startServer();
+  })
+  .catch((err) => {
+    console.error("Database connection warning:", err.message);
+  });

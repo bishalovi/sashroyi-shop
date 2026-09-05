@@ -1,22 +1,17 @@
 const nodemailer = require("nodemailer");
+let transporter = null;
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("SMTP VERIFY ERROR:", error);
-  } else {
-    console.log("SMTP SERVER READY");
-  }
-});
+if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+  transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+}
 
 async function sendAdminOrderNotification(orderData) {
   const {
