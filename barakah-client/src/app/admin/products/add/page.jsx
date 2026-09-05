@@ -253,9 +253,16 @@ export default function AddProductPage() {
         body: JSON.stringify(productData),
       });
 
-      const result = await res.json();
+      const text = await res.text();
+      let result = {};
+      try {
+        result = JSON.parse(text);
+      } catch (err) {
+        console.error("Non-JSON response received:", text);
+        throw new Error(res.ok ? "Unexpected response format" : `Server returned error (${res.status})`);
+      }
 
-      if (!res.ok) {
+      if (!res.ok || !result.success) {
         throw new Error(result.message || "প্রোডাক্ট সংরক্ষণ করা যায়নি");
       }
 

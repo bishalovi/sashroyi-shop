@@ -300,9 +300,16 @@ export default function EditProductPage() {
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("Non-JSON response received:", text);
+        throw new Error(res.ok ? "Unexpected response format" : `Server returned error (${res.status})`);
+      }
 
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to update product");
       }
 

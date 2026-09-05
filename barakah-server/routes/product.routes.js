@@ -14,6 +14,7 @@ router.get("/", getAllProducts);
 router.put("/reorder", reorderProducts);
 router.get("/:id", getSingleProduct);
 router.post("/", createProduct);
+router.put("/:id", updateProduct);
 router.patch("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 
