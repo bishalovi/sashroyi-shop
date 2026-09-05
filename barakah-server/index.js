@@ -60,7 +60,20 @@ const PORT = process.env.PORT || 8000;
 
 async function startServer() {
   try {
-    await connectDB();
+    const db = await connectDB();
+
+    // Create performance indexes
+    try {
+      await db.collection("products").createIndex({ slug: 1 });
+      await db.collection("products").createIndex({ category: 1, subcategory: 1 });
+      await db.collection("products").createIndex({ order: 1, createdAt: -1 });
+      await db.collection("categories").createIndex({ slug: 1 });
+      await db.collection("categories").createIndex({ order: 1 });
+      await db.collection("orders").createIndex({ createdAt: -1 });
+      await db.collection("settings").createIndex({ key: 1 });
+    } catch (indexErr) {
+      console.log("Indexes initialized or already exist");
+    }
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
