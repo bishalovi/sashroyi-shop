@@ -3,11 +3,13 @@ import ProductSearch from "@/components/products/ProductSearch";
 import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 
+export const revalidate = 10;
+
 async function getCategoryData(main) {
   const baseUrl = "https://sashroyi-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/categories/${main}`, {
-      cache: "no-store",
+      next: { revalidate: 10 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -27,7 +29,7 @@ async function getProducts(main, sub) {
         : `${baseUrl}/api/products?category=${main}`;
 
     const res = await fetch(url, {
-      cache: "no-store",
+      next: { revalidate: 10 },
     });
 
     if (!res.ok) {

@@ -8,11 +8,13 @@ import Reviews from "@/components/home/Reviews";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 
+export const revalidate = 10;
+
 async function getSingleProduct(id) {
   const baseUrl = "https://sashroyi-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/products/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 10 },
     });
 
     if (!res.ok) {
@@ -31,7 +33,7 @@ async function getRelatedProducts(category, excludeId) {
   const baseUrl = "https://sashroyi-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/products?category=${category}&limit=6`, {
-      cache: "no-store",
+      next: { revalidate: 10 },
     });
     if (!res.ok) return [];
     const json = await res.json();

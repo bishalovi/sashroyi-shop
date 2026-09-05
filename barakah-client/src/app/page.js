@@ -4,10 +4,12 @@ import Reviews from "@/components/home/Reviews";
 
 const baseUrl = "https://sashroyi-api.onrender.com";
 
+export const revalidate = 10;
+
 async function getCategories() {
   try {
     const res = await fetch(`${baseUrl}/api/categories`, {
-      cache: "no-store",
+      next: { revalidate: 10 },
     });
     if (!res.ok) return [];
     const result = await res.json();
@@ -23,7 +25,7 @@ async function getProductsByCategory(categorySlug) {
     const res = await fetch(
       `${baseUrl}/api/products?category=${categorySlug}&limit=8`,
       {
-        cache: "no-store",
+        next: { revalidate: 10 },
       },
     );
     if (!res.ok) return [];
@@ -38,7 +40,7 @@ async function getProductsByCategory(categorySlug) {
 async function getAllProducts() {
   try {
     const res = await fetch(`${baseUrl}/api/products?limit=50`, {
-      cache: "no-store",
+      next: { revalidate: 10 },
     });
     if (!res.ok) return [];
     const result = await res.json();
