@@ -108,6 +108,37 @@ export default function CheckoutPage() {
     }
   }, [paymentMethods, paymentMethod]);
 
+  const handleSelectPaymentMethod = (method) => {
+    setPaymentMethod(method);
+
+    const items = cartItems.map((item) => ({
+      id: item.selectedVariationId
+        ? `${item._id || item.id}_${item.selectedVariationId}`
+        : String(item._id || item.id || ""),
+      quantity: Number(item.quantity || 1),
+      item_price: Number(item.price || 0),
+    }));
+
+    trackMetaEvent("AddPaymentInfo", {
+      content_ids: items.map((i) => i.id),
+      content_type: "product",
+      value: Number(finalTotal || 0),
+      currency: "BDT",
+      payment_type:
+        method === "cod"
+          ? "Cash on Delivery"
+          : method === "bkash"
+          ? "bKash"
+          : method === "nagad"
+          ? "Nagad"
+          : method === "rocket"
+          ? "Rocket"
+          : method,
+      contents: items,
+      num_items: items.reduce((acc, i) => acc + i.quantity, 0),
+    });
+  };
+
   const handleCopyNumber = (num, e) => {
     if (e) e.stopPropagation();
     if (!num) return;
@@ -166,49 +197,6 @@ export default function CheckoutPage() {
     () => totalPrice + shippingCost,
     [totalPrice, shippingCost],
   );
-
-  const handleSelectPaymentMethod = (method) => {
-    setPaymentMethod(method);
-
-    const items = cartItems.map((item) => ({
-      id: item.selectedVariationId
-        ? `${item._id || item.id}_${item.selectedVariationId}`
-        : String(item._id || item.id || ""),
-      quantity: Number(item.quantity || 1),
-      item_price: Number(item.price || 0),
-    }));
-
-    const paymentLabel =
-      method === "cod"
-        ? (paymentMethods?.cod?.title || "Cash on Delivery")
-        : (method === "bkash" ? "bKash" : (method === "nagad" ? "Nagad" : "Rocket"));
-
-    pushToDataLayer({
-      event: "add_payment_info",
-      ecommerce: {
-        currency: "BDT",
-        value: Number(finalTotal || totalPrice || 0),
-        payment_type: paymentLabel,
-        items,
-      },
-    });
-
-    trackMetaEvent(
-      "AddPaymentInfo",
-      {
-        content_ids: items.map((i) => i.id),
-        content_type: "product",
-        value: Number(finalTotal || totalPrice || 0),
-        currency: "BDT",
-        contents: items,
-      },
-      {
-        name: formValues.name || "",
-        phone: formValues.phone || "",
-        address: formValues.address || "",
-      }
-    );
-  };
 
   const saveAbandonedOrder = async (data) => {
     try {
@@ -678,7 +666,7 @@ export default function CheckoutPage() {
                             type="radio"
                             name="paymentMethod"
                             value="rocket"
-                            className="radio radio-secondary radio-sm"
+                            className="radio radio-accent radio-sm"
                             checked={paymentMethod === "rocket"}
                             onChange={() => handleSelectPaymentMethod("rocket")}
                           />

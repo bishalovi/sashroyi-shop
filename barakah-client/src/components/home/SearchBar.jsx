@@ -6,8 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
-import { trackMetaEvent } from "@/lib/metaTracking";
-import { pushToDataLayer } from "@/lib/gtm";
 
 export default function SearchBar() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,21 +56,9 @@ export default function SearchBar() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    const query = searchTerm.trim();
-    if (query) {
+    if (searchTerm.trim()) {
       setIsOpen(false);
-
-      pushToDataLayer({
-        event: "search",
-        search_term: query,
-      });
-
-      trackMetaEvent("Search", {
-        search_string: query,
-        content_type: "product",
-      });
-
-      router.push(`/search?q=${encodeURIComponent(query)}`);
+      router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
 

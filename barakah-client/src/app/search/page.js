@@ -7,8 +7,8 @@ import ProductCard from "@/components/products/ProductCard";
 import SearchBar from "@/components/home/SearchBar";
 import { FiSearch } from "react-icons/fi";
 
-import { trackMetaEvent } from "@/lib/metaTracking";
 import { pushToDataLayer } from "@/lib/gtm";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -25,6 +25,7 @@ function SearchContent() {
       return;
     }
 
+    // Track Meta & GTM Search event
     pushToDataLayer({
       event: "search",
       search_term: query,

@@ -98,24 +98,6 @@ export default function ProductDetailsActions({ product }) {
   const handleWhatsAppOrder = () => {
     const currentUrl = typeof window !== "undefined" ? window.location.href : "";
     const variationText = selectedVariation?.name ? `\n🏷️ প্যাকেজ: ${selectedVariation.name}` : "";
-
-    pushToDataLayer({
-      event: "contact",
-      contact_method: "whatsapp_product_order",
-      product_name: product?.name || "",
-      product_price: activePrice,
-      quantity,
-    });
-
-    trackMetaEvent("Contact", {
-      content_name: product?.name || "Product",
-      content_ids: [selectedVariation?.id ? `${product?._id || product?.id}_${selectedVariation.id}` : String(product?._id || product?.id || "")],
-      content_type: "product",
-      value: activePrice * quantity,
-      currency: "BDT",
-      channel: "WhatsApp",
-    });
-
     const msg = `হ্যালো! আমি এই প্রোডাক্টটি সম্পর্কে বিস্তারিত জানতে / অর্ডার করতে চাই:
 
 📦 প্রোডাক্ট: ${product?.name || "Product"}${variationText}

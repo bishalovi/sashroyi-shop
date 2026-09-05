@@ -46,14 +46,13 @@ function formatCity(address) {
   if (lower.includes("mymensingh") || lower.includes("ময়মনসিংহ")) return hashData("mymensingh");
   if (lower.includes("narayanganj") || lower.includes("নারায়ণগঞ্জ")) return hashData("narayanganj");
   if (lower.includes("gazipur") || lower.includes("গাজীপুর")) return hashData("gazipur");
-  if (lower.includes("cumilla") || lower.includes("comilla") || lower.includes("কুমিল্লা")) return hashData("cumilla");
-  return hashData("dhaka");
+  if (lower.includes("cumilla") || lower.includes("কুমিল্লা")) return hashData("cumilla");
+  return null;
 }
 
 function formatZip(address) {
   if (!address) return hashData("1200");
   const lower = String(address).toLowerCase();
-  if (lower.includes("dhaka") || lower.includes("ঢাকা") || lower.includes("mirpur") || lower.includes("uttara") || lower.includes("gulshan") || lower.includes("dhanmondi") || lower.includes("mohammadpur") || lower.includes("banani") || lower.includes("badda")) return hashData("1200");
   if (lower.includes("chittagong") || lower.includes("chattogram") || lower.includes("চট্টগ্রাম")) return hashData("4000");
   if (lower.includes("sylhet") || lower.includes("সিলেট")) return hashData("3100");
   if (lower.includes("rajshahi") || lower.includes("রাজশাহী")) return hashData("6000");
@@ -65,7 +64,7 @@ function formatZip(address) {
   if (lower.includes("narayanganj") || lower.includes("নারায়ণগঞ্জ")) return hashData("1400");
   if (lower.includes("cumilla") || lower.includes("comilla") || lower.includes("কুমিল্লা")) return hashData("3500");
   if (lower.includes("bogura") || lower.includes("bogra") || lower.includes("বগুড়া")) return hashData("5800");
-  if (lower.includes("jessore") || lower.includes("jashore") || lower.includes("যশোর")) return hashData("7400");
+  if (lower.includes("jessore") || lower.includes("যশোর")) return hashData("7400");
   if (lower.includes("cox") || lower.includes("কক্সবাজার")) return hashData("4700");
   return hashData("1200");
 }
