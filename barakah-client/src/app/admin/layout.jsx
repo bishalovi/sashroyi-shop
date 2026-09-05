@@ -11,11 +11,9 @@ import { toast } from "react-toastify";
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
 
   const closeDrawer = () => {
-    setDrawerOpen(false);
     const drawerCheckbox = document.getElementById("admin-drawer");
     if (drawerCheckbox) {
       drawerCheckbox.checked = false;
@@ -77,13 +75,7 @@ export default function AdminLayout({ children }) {
     <AdminRoute>
       <div className="drawer lg:drawer-open min-h-screen">
         {/* Toggle checkbox */}
-        <input
-          id="admin-drawer"
-          type="checkbox"
-          className="drawer-toggle"
-          checked={drawerOpen}
-          onChange={(e) => setDrawerOpen(e.target.checked)}
-        />
+        <input id="admin-drawer" type="checkbox" className="drawer-toggle" />
 
         {/* Main content */}
         <div className="drawer-content flex flex-col bg-[#faf7f0]">
@@ -93,8 +85,8 @@ export default function AdminLayout({ children }) {
               {/* Mobile menu button */}
               <label
                 htmlFor="admin-drawer"
-                onClick={() => setDrawerOpen((prev) => !prev)}
                 className="btn btn-square btn-ghost cursor-pointer"
+                aria-label="open sidebar"
               >
                 <IoMdMenu size={22} />
               </label>
@@ -121,11 +113,7 @@ export default function AdminLayout({ children }) {
 
         {/* Sidebar */}
         <div className="drawer-side z-50">
-          <label
-            htmlFor="admin-drawer"
-            className="drawer-overlay cursor-pointer"
-            onClick={() => setDrawerOpen(false)}
-          ></label>
+          <label htmlFor="admin-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
 
           <aside className="min-h-full w-64 bg-white border-r border-[#e5dccf] py-6 px-4 flex flex-col justify-between">
             <ul className="pt-12 lg:pt-0 menu text-[#3d2f1f] w-full gap-1">
