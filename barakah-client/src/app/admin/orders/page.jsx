@@ -11,10 +11,11 @@ import { LuCopy, LuPhone } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function OrdersPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
-  const user = JSON.parse(localStorage.getItem("barakahUser") || "{}");
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
