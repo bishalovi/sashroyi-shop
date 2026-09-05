@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings, FiGrid, FiStar } from "react-icons/fi";
 import { IoMdMenu } from "react-icons/io";
 import { usePathname } from "next/navigation";
@@ -9,6 +10,17 @@ import { MdOutlineShoppingCartCheckout } from "react-icons/md";
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+
+  const closeDrawer = () => {
+    const drawerCheckbox = document.getElementById("admin-drawer");
+    if (drawerCheckbox) {
+      drawerCheckbox.checked = false;
+    }
+  };
+
+  useEffect(() => {
+    closeDrawer();
+  }, [pathname]);
 
   const isExact = (path) => pathname === path;
   const isProductsPage =
@@ -47,7 +59,7 @@ export default function AdminLayout({ children }) {
         </div>
 
         {/* Sidebar */}
-        <div className="drawer-side">
+        <div className="drawer-side z-50">
           <label htmlFor="admin-drawer" className="drawer-overlay"></label>
 
           <aside className="min-h-full w-64 bg-white border-r border-[#e5dccf] py-6 px-4">
@@ -56,6 +68,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin"
+                  onClick={closeDrawer}
                   className={isExact("/admin") ? "bg-[#d4af37] text-white" : ""}
                 >
                   <FiHome />
@@ -67,6 +80,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/categories"
+                  onClick={closeDrawer}
                   className={isCategoriesPage ? "bg-[#d4af37] text-white" : ""}
                 >
                   <FiGrid />
@@ -78,6 +92,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/reviews"
+                  onClick={closeDrawer}
                   className={isReviewsPage ? "bg-[#d4af37] text-white" : ""}
                 >
                   <FiStar />
@@ -89,6 +104,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/products"
+                  onClick={closeDrawer}
                   className={isProductsPage ? "bg-[#d4af37] text-white" : ""}
                 >
                   <FiBox />
@@ -100,6 +116,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/products/add"
+                  onClick={closeDrawer}
                   className={
                     isExact("/admin/products/add")
                       ? "bg-[#d4af37] text-white"
@@ -115,6 +132,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/orders"
+                  onClick={closeDrawer}
                   className={
                     isExact("/admin/orders") ? "bg-[#d4af37] text-white" : ""
                   }
@@ -128,6 +146,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/abandoned-orders"
+                  onClick={closeDrawer}
                   className={
                     isExact("/admin/abandoned-orders")
                       ? "bg-[#d4af37] text-white"
@@ -143,6 +162,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/tracking"
+                  onClick={closeDrawer}
                   className={
                     isExact("/admin/tracking") ? "bg-[#d4af37] text-white" : ""
                   }
@@ -156,6 +176,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/shipping"
+                  onClick={closeDrawer}
                   className={
                     isExact("/admin/shipping") ? "bg-[#d4af37] text-white" : ""
                   }
@@ -169,6 +190,7 @@ export default function AdminLayout({ children }) {
               <li>
                 <Link
                   href="/admin/settings"
+                  onClick={closeDrawer}
                   className={
                     isExact("/admin/settings") ? "bg-[#d4af37] text-white" : ""
                   }
