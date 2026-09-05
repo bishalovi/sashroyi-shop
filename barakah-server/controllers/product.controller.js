@@ -316,26 +316,41 @@ exports.deleteProduct = async (req, res) => {
   try {
     const db = await connectDB();
     const productsCollection = db.collection("products");
+    const reviewsCollection = db.collection("reviews");
     const { id } = req.params;
 
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "Invalid product ID" });
     }
 
-    const result = await productsCollection.deleteOne({
-      _id: new ObjectId(id),
-    });
-
-    if (result.deletedCount === 0) {
+    const productToDelete = await productsCollection.findOne({ _id: new ObjectId(id) });
+    if (!productToDelete) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
       });
     }
 
+    const result = await productsCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    // Auto cleanup linked reviews and references
+    try {
+      await reviewsCollection.deleteMany({
+        $or: [
+          { productId: id },
+          { productId: new ObjectId(id) },
+          ...(productToDelete.slug ? [{ productId: productToDelete.slug }] : []),
+        ],
+      });
+    } catch (cleanErr) {
+      // Non-blocking cleanup
+    }
+
     res.json({
       success: true,
-      message: "Product deleted successfully",
+      message: "Product and associated records cleaned successfully",
     });
   } catch (error) {
     res.status(500).json({
