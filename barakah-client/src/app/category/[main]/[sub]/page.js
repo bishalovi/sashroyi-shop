@@ -2,6 +2,7 @@ import Link from "next/link";
 import ProductSearch from "@/components/products/ProductSearch";
 import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
+import CategoryViewTracker from "@/components/tracking/CategoryViewTracker";
 
 export const revalidate = 10;
 
@@ -56,6 +57,12 @@ export default async function CategoryPage({ params }) {
 
   return (
     <main className="bg-[#faf7f0] min-h-screen pb-10">
+      <CategoryViewTracker
+        categoryName={categoryTitle}
+        categorySlug={main}
+        subcategorySlug={sub}
+        products={filteredProducts}
+      />
       <OfferCountdown category={main} subcategory={sub} />
       <div className="max-w-7xl mx-auto px-4 pt-8">
         {/* Title */}
