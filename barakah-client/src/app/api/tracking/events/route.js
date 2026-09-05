@@ -20,6 +20,22 @@ function formatPhone(phone) {
   return hashData(digits);
 }
 
+function formatCity(address) {
+  if (!address) return null;
+  const lower = String(address).toLowerCase();
+  if (lower.includes("dhaka") || lower.includes("ঢাকা")) return hashData("dhaka");
+  if (lower.includes("chittagong") || lower.includes("chattogram") || lower.includes("চট্টগ্রাম")) return hashData("chattogram");
+  if (lower.includes("sylhet") || lower.includes("সিলেট")) return hashData("sylhet");
+  if (lower.includes("rajshahi") || lower.includes("রাজশাহী")) return hashData("rajshahi");
+  if (lower.includes("khulna") || lower.includes("খুলনা")) return hashData("khulna");
+  if (lower.includes("barisal") || lower.includes("বরিশাল")) return hashData("barisal");
+  if (lower.includes("rangpur") || lower.includes("রংপুর")) return hashData("rangpur");
+  if (lower.includes("mymensingh") || lower.includes("ময়মনসিংহ")) return hashData("mymensingh");
+  if (lower.includes("gazipur") || lower.includes("গাজীপুর")) return hashData("gazipur");
+  if (lower.includes("cumilla") || lower.includes("comilla") || lower.includes("কুমিল্লা")) return hashData("cumilla");
+  return hashData("dhaka");
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -38,20 +54,39 @@ export async function POST(req) {
     const finalEventId = String(eventId || `evt_${Date.now()}_${Math.floor(Math.random() * 1000)}`);
     const eventTime = Math.floor(Date.now() / 1000);
 
+    const externalId = userParams.phone
+      ? hashData(String(userParams.phone).replace(/\D/g, ""))
+      : (userParams.externalId ? hashData(String(userParams.externalId)) : hashData(clientIp + userAgent));
+
     const userData = {
       client_ip_address: clientIp,
       client_user_agent: userAgent,
       country: [hashData("bd")],
+      external_id: [externalId],
     };
+
+    if (userParams.name) {
+      const parts = String(userParams.name).trim().split(/\s+/);
+      userData.fn = [hashData(parts[0])];
+      if (parts.length > 1) {
+        userData.ln = [hashData(parts.slice(1).join(" "))];
+      }
+    }
 
     if (userParams.phone) {
       userData.ph = [formatPhone(userParams.phone)];
-      userData.external_id = [hashData(String(userParams.phone).replace(/\D/g, ""))];
-    } else if (userParams.externalId) {
-      userData.external_id = [hashData(String(userParams.externalId))];
     }
 
-    if (userParams.email) userData.em = [hashData(userParams.email)];
+    if (userParams.email) {
+      userData.em = [hashData(userParams.email)];
+    }
+
+    const cityHash = formatCity(userParams.address || userParams.city);
+    if (cityHash) {
+      userData.ct = [cityHash];
+      userData.st = [cityHash];
+    }
+
     if (userParams.fbc) userData.fbc = userParams.fbc;
     if (userParams.fbp) userData.fbp = userParams.fbp;
 

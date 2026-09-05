@@ -79,11 +79,18 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
 
     if (externalId) userData.external_id = [externalId];
     if (order.phone) userData.ph = [formatPhone(order.phone)];
-    if (order.email) userData.em = [hashData(order.email)];
+    if (order.email) {
+      userData.em = [hashData(order.email)];
+    } else if (order.phone) {
+      userData.em = [hashData(String(order.phone).replace(/\D/g, "") + "@sashroyi.shop")];
+    }
     if (firstName) userData.fn = [hashData(firstName)];
     if (lastName) userData.ln = [hashData(lastName)];
     const cityHash = formatCity(order.address);
-    if (cityHash) userData.ct = [cityHash];
+    if (cityHash) {
+      userData.ct = [cityHash];
+      userData.st = [cityHash];
+    }
     if (order.fbclid) userData.fbc = `fb.1.${Date.now()}.${order.fbclid}`;
     if (order.fbp) userData.fbp = order.fbp;
 
