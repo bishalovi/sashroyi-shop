@@ -66,8 +66,8 @@ export default function OfferCountdown({ product }) {
   if (!offerConfig.isEnabled) return null;
 
   return (
-    <div className="mb-4 rounded-2xl bg-linear-to-r from-[#0f2a44] via-[#1e3a5f] to-[#0f2a44] p-3 text-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mb-3 rounded-xl bg-linear-to-r from-[#0f2a44] via-[#1e3a5f] to-[#0f2a44] px-3.5 py-2.5 text-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d4af37] text-xs text-[#0f2a44] animate-pulse">
             <FaBolt />
