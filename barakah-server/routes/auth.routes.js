@@ -4,8 +4,6 @@ const router = express.Router();
 const {
   registerUser,
   loginUser,
-  makeAdmin,
-  forceSetAdmin,
   getAllUsers,
   createStaffUser,
   updateUserRole,
@@ -14,8 +12,6 @@ const {
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.all("/make-admin", makeAdmin);
-router.post("/force-admin", forceSetAdmin);
 
 router.get("/users", getAllUsers);
 router.post("/staff", createStaffUser);

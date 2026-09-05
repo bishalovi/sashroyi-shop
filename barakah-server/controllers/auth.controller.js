@@ -47,7 +47,7 @@ exports.registerUser = async (req, res) => {
     }
 
     const totalUsers = await usersCollection.countDocuments();
-    const assignedRole = req.body.role || (totalUsers === 0 ? "barakahAdmin1234" : "customer");
+    const assignedRole = totalUsers === 0 ? "barakahAdmin1234" : "customer";
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
