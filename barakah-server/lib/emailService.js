@@ -1,24 +1,31 @@
 const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+let transporter = null;
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("SMTP VERIFY ERROR:", error);
-  } else {
-    console.log("SMTP SERVER READY");
+if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+  try {
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
+    });
+  } catch (err) {
+    console.log("Email transporter init skipped:", err.message);
   }
-});
+}
 
 async function sendAdminOrderNotification(orderData) {
+  if (!transporter) {
+    console.log("Email notification skipped: GMAIL credentials not configured or transporter unavailable.");
+    return false;
+  }
   const {
     customerName,
     phone,
