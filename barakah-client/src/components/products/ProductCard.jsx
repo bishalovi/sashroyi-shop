@@ -17,10 +17,24 @@ export default function ProductCard({ product }) {
       : DEFAULT_PLACEHOLDER
   );
 
+  const getTargetProduct = () => {
+    if (product?.productType === "variable" && Array.isArray(product?.variations) && product.variations.length > 0) {
+      const defaultVar = product.variations.find((v) => v.isDefault) || product.variations[0];
+      return {
+        ...product,
+        price: Number(defaultVar.price || product.price),
+        oldPrice: defaultVar.oldPrice ? Number(defaultVar.oldPrice) : product.oldPrice,
+        selectedVariationId: defaultVar.id,
+        variationTitle: defaultVar.name,
+      };
+    }
+    return product;
+  };
+
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product);
+    addToCart(getTargetProduct());
   };
 
   const handleBuyNow = (e) => {
@@ -28,7 +42,7 @@ export default function ProductCard({ product }) {
     e.stopPropagation();
 
     clearCart();
-    addToCart({ ...product, quantity: 1 });
+    addToCart({ ...getTargetProduct(), quantity: 1 });
     router.push("/checkout");
   };
 

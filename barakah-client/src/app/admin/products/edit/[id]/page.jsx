@@ -40,7 +40,10 @@ export default function EditProductPage() {
     productCode: "",
     inStock: true,
     isFreeShipping: false,
+    productType: "single",
   });
+
+  const [variations, setVariations] = useState([]);
 
   // Dynamic Categories
   const [categoriesList, setCategoriesList] = useState([]);
@@ -52,6 +55,57 @@ export default function EditProductPage() {
   const [newImageFile, setNewImageFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [uploadMode, setUploadMode] = useState("current"); // 'current', 'file', 'url'
+
+  // Quick Preset Helper
+  const applyPcsPreset = () => {
+    setVariations([
+      { id: `var_${Date.now()}_1`, name: "১ পিস", price: formData.price || "", oldPrice: formData.oldPrice || "", inStock: true, isDefault: true },
+      { id: `var_${Date.now()}_2`, name: "২ পিস (স্পেশাল অফার)", price: "", oldPrice: "", inStock: true, isDefault: false },
+      { id: `var_${Date.now()}_3`, name: "৩ পিস (ধামাকা অফার)", price: "", oldPrice: "", inStock: true, isDefault: false },
+    ]);
+    toast.info("১ পিস, ২ পিস, ৩ পিস টেমপ্লেট যোগ করা হয়েছে। মূল্য বসিয়ে দিন।", { position: "top-right" });
+  };
+
+  const addCustomVariation = () => {
+    const newIdx = variations.length + 1;
+    setVariations((prev) => [
+      ...prev,
+      {
+        id: `var_${Date.now()}_${newIdx}`,
+        name: `${newIdx} পিস`,
+        price: "",
+        oldPrice: "",
+        inStock: true,
+        isDefault: prev.length === 0,
+      },
+    ]);
+  };
+
+  const removeVariation = (index) => {
+    if (variations.length <= 1) {
+      toast.warning("কমপক্ষে একটি ভেরিয়েশন থাকতে হবে", { position: "top-right" });
+      return;
+    }
+    const filtered = variations.filter((_, idx) => idx !== index);
+    if (!filtered.some((v) => v.isDefault) && filtered.length > 0) {
+      filtered[0].isDefault = true;
+    }
+    setVariations(filtered);
+  };
+
+  const updateVariationField = (index, field, value) => {
+    setVariations((prev) => {
+      const copy = [...prev];
+      if (field === "isDefault") {
+        return copy.map((item, idx) => ({
+          ...item,
+          isDefault: idx === index,
+        }));
+      }
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
 
   // Fetch categories
   useEffect(() => {
@@ -103,7 +157,18 @@ export default function EditProductPage() {
             productCode: product.productCode || "",
             inStock: product.inStock ?? true,
             isFreeShipping: product.isFreeShipping ?? false,
+            productType: product.productType || (product.variations && product.variations.length > 0 ? "variable" : "single"),
           });
+
+          if (product.variations && product.variations.length > 0) {
+            setVariations(product.variations);
+          } else {
+            setVariations([
+              { id: "var_1", name: "১ পিস", price: product.price || "", oldPrice: product.oldPrice || "", inStock: true, isDefault: true },
+              { id: "var_2", name: "২ পিস (স্পেশাল অফার)", price: "", oldPrice: "", inStock: true, isDefault: false },
+              { id: "var_3", name: "৩ পিস (ধামাকা অফার)", price: "", oldPrice: "", inStock: true, isDefault: false },
+            ]);
+          }
         } else {
           toast.error(data.message || "Product not found", {
             position: "top-right",
@@ -163,6 +228,36 @@ export default function EditProductPage() {
 
     try {
       setUpdating(true);
+
+      // Validation for Variable products
+      if (formData.productType === "variable") {
+        if (!variations || variations.length === 0) {
+          toast.error("ভেরিয়েশন প্রোডাক্টের জন্য অন্তত একটি ভেরিয়েশন অপশন প্রয়োজন", { position: "top-right" });
+          setUpdating(false);
+          return;
+        }
+
+        for (let i = 0; i < variations.length; i++) {
+          const v = variations[i];
+          if (!v.name || !v.name.trim()) {
+            toast.error(`ভেরিয়েশন #${i + 1} এর নাম দিন`, { position: "top-right" });
+            setUpdating(false);
+            return;
+          }
+          if (!v.price || Number(v.price) <= 0) {
+            toast.error(`ভেরিয়েশন "${v.name}" এর বিক্রয় মূল্য দিন`, { position: "top-right" });
+            setUpdating(false);
+            return;
+          }
+        }
+      } else {
+        if (!formData.price || Number(formData.price) <= 0) {
+          toast.error("অনুগ্রহ করে প্রোডাক্টের সঠিক বিক্রয় মূল্য দিন", { position: "top-right" });
+          setUpdating(false);
+          return;
+        }
+      }
+
       let finalImageUrl = formData.image;
 
       if (uploadMode === "file" && newImageFile) {
@@ -185,8 +280,12 @@ export default function EditProductPage() {
 
       setUpdateStatus("প্রোডাক্ট আপডেট করা হচ্ছে...");
 
+      const defaultVariation = formData.productType === "variable"
+        ? variations.find((v) => v.isDefault) || variations[0]
+        : null;
+
       const res = await fetch(`${baseUrl}/api/products/${id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
@@ -194,8 +293,10 @@ export default function EditProductPage() {
           ...formData,
           slug: (formData.slug || generateSlug(formData.name)).trim(),
           image: finalImageUrl,
-          price: Number(formData.price),
-          oldPrice: formData.oldPrice ? Number(formData.oldPrice) : null,
+          productType: formData.productType,
+          price: formData.productType === "variable" && defaultVariation ? Number(defaultVariation.price) : Number(formData.price),
+          oldPrice: formData.productType === "variable" && defaultVariation ? (defaultVariation.oldPrice ? Number(defaultVariation.oldPrice) : null) : (formData.oldPrice ? Number(formData.oldPrice) : null),
+          variations: formData.productType === "variable" ? variations : [],
         }),
       });
 
@@ -350,33 +451,193 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
-              Price (বিক্রয় মূল্য ৳) *
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37]"
-              required
-            />
+        {/* PRODUCT PRICING TYPE SELECTOR */}
+        <div className="rounded-xl border-2 border-[#d4af37]/40 bg-[#faf7f0]/60 p-4">
+          <label className="mb-2 block text-sm font-bold text-[#3d2f1f]">
+            📦 Product Pricing Type (প্রোডাক্টের ধরণ)
+          </label>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => setFormData((prev) => ({ ...prev, productType: "single" }))}
+              className={`py-2.5 px-4 rounded-lg font-medium text-sm border text-center transition ${
+                formData.productType === "single"
+                  ? "bg-[#0f2a44] text-white border-[#0f2a44] shadow"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-[#d4af37]"
+              }`}
+            >
+              🏷️ Single Product (একক মূল্য)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData((prev) => ({ ...prev, productType: "variable" }));
+                if (variations.length === 0) applyPcsPreset();
+              }}
+              className={`py-2.5 px-4 rounded-lg font-medium text-sm border text-center transition ${
+                formData.productType === "variable"
+                  ? "bg-[#0f2a44] text-white border-[#0f2a44] shadow"
+                  : "bg-white text-gray-700 border-gray-300 hover:border-[#d4af37]"
+              }`}
+            >
+              ✨ Multi-Pack / Variation (১ পিস, ২ পিস, ৩ পিস)
+            </button>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
-              Old Price (আগের মূল্য ৳)
-            </label>
-            <input
-              type="number"
-              name="oldPrice"
-              value={formData.oldPrice}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37]"
-            />
-          </div>
+          {/* SINGLE PRODUCT PRICING */}
+          {formData.productType === "single" ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
+                  Price (বিক্রয় মূল্য ৳) *
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  placeholder="Enter price"
+                  className="w-full rounded-xl border border-[#e5dccf] bg-white px-4 py-3 outline-none focus:border-[#d4af37]"
+                  required={formData.productType === "single"}
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#3d2f1f]">
+                  Old Price (আগের মূল্য ৳ - Optional)
+                </label>
+                <input
+                  type="number"
+                  name="oldPrice"
+                  value={formData.oldPrice || ""}
+                  onChange={handleChange}
+                  placeholder="Enter old price"
+                  className="w-full rounded-xl border border-[#e5dccf] bg-white px-4 py-3 outline-none focus:border-[#d4af37]"
+                />
+              </div>
+            </div>
+          ) : (
+            /* VARIATION / MULTI-PACK BUILDER */
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#e5dccf]">
+                <p className="text-xs text-gray-600">
+                  গ্রাহক যে ভেরিয়েশন সিলেক্ট করবে, <strong>তাত্ক্ষণিকভাবে ডিসপ্লে প্রাইস ও মেটা পিক্সেল ট্র্যাকিং</strong> আপডেট হবে।
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={applyPcsPreset}
+                    className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-900 px-2.5 py-1 rounded font-medium hover:bg-amber-200 transition"
+                  >
+                    ⚡ ১/২/৩ পিস টেমপ্লেট
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addCustomVariation}
+                    className="inline-flex items-center gap-1 text-xs bg-[#0f2a44] text-white px-3 py-1 rounded font-medium hover:bg-opacity-90 transition"
+                  >
+                    + নতুন অপশন যোগ
+                  </button>
+                </div>
+              </div>
+
+              {/* Variations List */}
+              <div className="space-y-3">
+                {variations.map((v, index) => (
+                  <div
+                    key={v.id || index}
+                    className={`p-3 rounded-lg border bg-white transition flex flex-col md:flex-row gap-3 items-start md:items-center ${
+                      v.isDefault ? "border-[#d4af37] ring-1 ring-[#d4af37]/30 bg-amber-50/20" : "border-gray-200"
+                    }`}
+                  >
+                    {/* Default Radio */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <input
+                        type="radio"
+                        id={`default_edit_var_${index}`}
+                        name="default_edit_variation"
+                        checked={v.isDefault}
+                        onChange={() => updateVariationField(index, "isDefault", true)}
+                        className="h-4 w-4 accent-[#d4af37] cursor-pointer"
+                      />
+                      <label
+                        htmlFor={`default_edit_var_${index}`}
+                        className={`text-xs font-semibold cursor-pointer ${
+                          v.isDefault ? "text-[#d4af37]" : "text-gray-500"
+                        }`}
+                      >
+                        {v.isDefault ? "ডিফল্ট" : "সিলেক্ট"}
+                      </label>
+                    </div>
+
+                    {/* Title / Name */}
+                    <div className="flex-1 w-full">
+                      <label className="block text-[11px] font-medium text-gray-600 mb-0.5">
+                        প্যাকের নাম (যেমন: ১ পিস, ২ পিস ইত্যাদি)
+                      </label>
+                      <input
+                        type="text"
+                        value={v.name}
+                        onChange={(e) => updateVariationField(index, "name", e.target.value)}
+                        placeholder="e.g. ১ পিস / ২ পিস (অফার)"
+                        className="w-full text-sm font-medium border border-gray-300 rounded px-2.5 py-1.5 outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+
+                    {/* Selling Price */}
+                    <div className="w-full md:w-28">
+                      <label className="block text-[11px] font-medium text-gray-600 mb-0.5">
+                        বিক্রয় মূল্য (৳) *
+                      </label>
+                      <input
+                        type="number"
+                        value={v.price}
+                        onChange={(e) => updateVariationField(index, "price", e.target.value)}
+                        placeholder="৳ 500"
+                        className="w-full text-sm font-semibold text-[#0f2a44] border border-gray-300 rounded px-2.5 py-1.5 outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+
+                    {/* Old Price */}
+                    <div className="w-full md:w-28">
+                      <label className="block text-[11px] font-medium text-gray-600 mb-0.5">
+                        পূর্বের মূল্য (৳)
+                      </label>
+                      <input
+                        type="number"
+                        value={v.oldPrice || ""}
+                        onChange={(e) => updateVariationField(index, "oldPrice", e.target.value)}
+                        placeholder="৳ 650"
+                        className="w-full text-sm text-gray-500 border border-gray-300 rounded px-2.5 py-1.5 outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+
+                    {/* In Stock toggle & Remove */}
+                    <div className="flex items-center gap-3 self-end md:self-center shrink-0 pt-1 md:pt-4">
+                      <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={v.inStock !== false}
+                          onChange={(e) => updateVariationField(index, "inStock", e.target.checked)}
+                          className="h-3.5 w-3.5 accent-[#d4af37]"
+                        />
+                        <span>স্টক</span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariation(index)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded transition"
+                        title="Delete Variation"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* IMAGE SECTION */}

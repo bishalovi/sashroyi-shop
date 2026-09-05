@@ -93,36 +93,14 @@ export default async function ProductDetails({ params }) {
               {product.name}
             </p>
 
-            {/* Price */}
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-2xl font-bold text-[#0f2a44]">
-                ৳ {product.price}
-              </span>
-
-              {product.oldPrice && (
-                <span className="text-gray-400 line-through text-lg">
-                  ৳ {product.oldPrice}
-                </span>
-              )}
-            </div>
-
             {/* Description */}
             {product.description ? (
-              <p className="mt-6 text-lg text-[#0f2a44]/80 leading-relaxed whitespace-pre-line">
+              <p className="mt-4 text-base text-[#0f2a44]/80 leading-relaxed whitespace-pre-line border-b border-[#0f2a44]/10 pb-4">
                 {product.description}
               </p>
             ) : null}
 
-            {/* Stock */}
-            <p
-              className={`mt-4 font-medium ${
-                product.inStock ? "text-green-600" : "text-red-500"
-              }`}
-            >
-              {product.inStock ? "✓ In Stock (স্টকে আছে)" : "✗ Out of Stock"}
-            </p>
-
-            {/* Buttons */}
+            {/* Price, Variations, Stock, Quantity & Order Buttons */}
             <ProductDetailsActions product={product} />
           </div>
         </div>

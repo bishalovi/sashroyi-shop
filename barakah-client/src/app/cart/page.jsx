@@ -74,66 +74,74 @@ export default function CartPage() {
             <div className="grid gap-8 lg:grid-cols-[1.8fr_0.9fr]">
               {/* Left side */}
               <div className="space-y-5">
-                {cartItems.map((item) => (
-                  <div
-                    key={item._id}
-                    className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-[#f8f6f1]">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
+                {cartItems.map((item) => {
+                  const itemKey = item.cartKey || item._id;
+                  return (
+                    <div
+                      key={itemKey}
+                      className="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-[#f8f6f1]">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+
+                        <div>
+                          <h2 className="text-lg font-semibold text-[#0f2a44]">
+                            {item.name}
+                          </h2>
+                          {item.variationTitle && (
+                            <span className="inline-block mt-0.5 text-xs font-semibold bg-amber-50 text-[#d4af37] px-2 py-0.5 rounded border border-[#d4af37]/30">
+                              {item.variationTitle}
+                            </span>
+                          )}
+                          <p className="text-sm text-[#0f2a44]/65 capitalize mt-1">
+                            {item.category?.replace("-", " ")}
+                          </p>
+                          <p className="mt-1.5 text-xl font-bold text-[#0f2a44]">
+                            ৳ {(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
                       </div>
 
-                      <div>
-                        <h2 className="text-lg font-semibold text-[#0f2a44]">
-                          {item.name}
-                        </h2>
-                        <p className="text-md text-[#0f2a44]/65 capitalize">
-                          {item.category?.replace("-", " ")}
-                        </p>
-                        <p className="mt-2 text-xl font-bold text-[#0f2a44]">
-                          ৳ {(item.price * item.quantity).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                      <button
-                        onClick={() => removeFromCart(item._id)}
-                        className="text-[#0f2a44]/65 transition hover:text-red-500"
-                        aria-label="Remove item"
-                      >
-                        <FaTrashAlt size={18} />
-                      </button>
-
-                      <div className="flex items-center rounded-full border border-[#0f2a44]/15 bg-[#f8f6f1] px-2 py-1">
+                      <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
                         <button
-                          onClick={() => decreaseQuantity(item._id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-white"
+                          onClick={() => removeFromCart(itemKey)}
+                          className="text-[#0f2a44]/65 transition hover:text-red-500"
+                          aria-label="Remove item"
                         >
-                          -
+                          <FaTrashAlt size={18} />
                         </button>
 
-                        <span className="min-w-8 text-center text-lg font-medium text-[#0f2a44]">
-                          {item.quantity}
-                        </span>
+                        <div className="flex items-center rounded-full border border-[#0f2a44]/15 bg-[#f8f6f1] px-2 py-1">
+                          <button
+                            onClick={() => decreaseQuantity(itemKey)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-white"
+                          >
+                            -
+                          </button>
 
-                        <button
-                          onClick={() => increaseQuantity(item._id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-white"
-                        >
-                          +
-                        </button>
+                          <span className="min-w-8 text-center text-lg font-medium text-[#0f2a44]">
+                            {item.quantity}
+                          </span>
+
+                          <button
+                            onClick={() => increaseQuantity(itemKey)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-white"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Right side */}

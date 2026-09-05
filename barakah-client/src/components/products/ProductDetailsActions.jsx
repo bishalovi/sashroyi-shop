@@ -1,14 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import AddToCartButton from "@/components/cart/AddToCartButton";
 import BuyNowButton from "../../app/products/[id]/BuyNowButton";
 import { FaWhatsapp } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
+import { pushToDataLayer } from "@/lib/gtm";
 
 export default function ProductDetailsActions({ product }) {
   const [quantity, setQuantity] = useState(1);
   const { getWhatsAppUrl } = useSettings();
+
+  const isVariable =
+    product?.productType === "variable" &&
+    Array.isArray(product?.variations) &&
+    product.variations.length > 0;
+
+  const defaultVariation = useMemo(() => {
+    if (!isVariable) return null;
+    return product.variations.find((v) => v.isDefault) || product.variations[0];
+  }, [isVariable, product?.variations]);
+
+  const [selectedVariation, setSelectedVariation] = useState(defaultVariation);
+
+  useEffect(() => {
+    if (defaultVariation) {
+      setSelectedVariation(defaultVariation);
+    }
+  }, [defaultVariation]);
+
+  const activePrice = selectedVariation ? Number(selectedVariation.price || 0) : Number(product?.price || 0);
+  const activeOldPrice = selectedVariation ? (selectedVariation.oldPrice ? Number(selectedVariation.oldPrice) : null) : (product?.oldPrice ? Number(product.oldPrice) : null);
+  const isInStock = selectedVariation ? selectedVariation.inStock !== false : product?.inStock !== false;
+
+  const activeProduct = useMemo(() => {
+    return {
+      ...product,
+      price: activePrice,
+      oldPrice: activeOldPrice,
+      selectedVariationId: selectedVariation?.id || null,
+      variationTitle: selectedVariation?.name || null,
+    };
+  }, [product, activePrice, activeOldPrice, selectedVariation]);
+
+  const handleSelectVariation = (variation) => {
+    setSelectedVariation(variation);
+
+    // Dynamic Meta Pixel / DataLayer ViewContent on variation switch
+    pushToDataLayer({
+      event: "view_item",
+      ecommerce: {
+        currency: "BDT",
+        value: Number(variation.price || 0),
+        items: [
+          {
+            item_id: `${product?._id || product?.id}_${variation.id}`,
+            item_name: `${product?.name || "Product"} (${variation.name})`,
+            item_variant: variation.name,
+            price: Number(variation.price || 0),
+            quantity: 1,
+          },
+        ],
+      },
+    });
+  };
 
   const increaseQuantity = () => {
     setQuantity((prev) => prev + 1);
@@ -20,10 +75,11 @@ export default function ProductDetailsActions({ product }) {
 
   const handleWhatsAppOrder = () => {
     const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+    const variationText = selectedVariation?.name ? `\n🏷️ প্যাকেজ: ${selectedVariation.name}` : "";
     const msg = `হ্যালো! আমি এই প্রোডাক্টটি সম্পর্কে বিস্তারিত জানতে / অর্ডার করতে চাই:
 
-📦 প্রোডাক্ট: ${product?.name || "Product"}
-💰 মূল্য: ৳${product?.price || ""}
+📦 প্রোডাক্ট: ${product?.name || "Product"}${variationText}
+💰 মূল্য: ৳${activePrice}
 🔢 পরিমাণ: ${quantity}
 🔗 লিঙ্ক: ${currentUrl}`;
 
@@ -32,10 +88,102 @@ export default function ProductDetailsActions({ product }) {
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-4">
+      {/* Live Dynamic Price Display */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-3xl font-bold text-[#0f2a44]">
+          ৳ {activePrice}
+        </span>
+
+        {activeOldPrice && activeOldPrice > activePrice && (
+          <>
+            <span className="text-gray-400 line-through text-lg">
+              ৳ {activeOldPrice}
+            </span>
+            <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+              ৳{activeOldPrice - activePrice} ছাড়
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Stock Status */}
+      <p
+        className={`mb-5 font-medium text-sm ${
+          isInStock ? "text-green-600" : "text-red-500"
+        }`}
+      >
+        {isInStock ? "✓ In Stock (স্টকে আছে)" : "✗ Out of Stock (স্টক শেষ)"}
+      </p>
+
+      {/* Variation Selection Pills */}
+      {isVariable && (
+        <div className="mb-6 rounded-2xl border border-[#d4af37]/30 bg-[#faf7f0]/70 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-bold text-[#0f2a44]">
+              পরিমাণ / প্যাকেজ সিলেক্ট করুন:
+            </label>
+            {selectedVariation?.name && (
+              <span className="text-xs font-semibold text-[#0f2a44] bg-[#d4af37]/20 px-2.5 py-0.5 rounded-full border border-[#d4af37]/40">
+                ✓ {selectedVariation.name}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+            {product.variations.map((v) => {
+              const isSelected = selectedVariation?.id === v.id;
+              const hasDiscount = v.oldPrice && Number(v.oldPrice) > Number(v.price);
+              const saveAmount = hasDiscount ? Number(v.oldPrice) - Number(v.price) : 0;
+
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => handleSelectVariation(v)}
+                  className={`relative flex flex-col justify-between p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                    isSelected
+                      ? "border-[#d4af37] bg-white ring-2 ring-[#d4af37] shadow-md"
+                      : "border-gray-200 bg-white/80 hover:border-[#d4af37]/60 hover:bg-white"
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-sm font-bold text-[#0f2a44]">
+                      {v.name}
+                    </span>
+                    {isSelected && (
+                      <span className="h-4 w-4 rounded-full bg-[#d4af37] text-white flex items-center justify-center text-[10px] font-bold">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline gap-1.5 mt-1">
+                    <span className="text-base font-bold text-[#0f2a44]">
+                      ৳{v.price}
+                    </span>
+                    {v.oldPrice && (
+                      <span className="text-xs text-gray-400 line-through">
+                        ৳{v.oldPrice}
+                      </span>
+                    )}
+                  </div>
+
+                  {saveAmount > 0 && (
+                    <span className="mt-1.5 inline-block text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      ৳{saveAmount} সাশ্রয়
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Quantity */}
       <div className="mb-6">
-        <p className="mb-3 text-sm font-medium text-[#0f2a44]">Quantity (পরিমাণ)</p>
+        <p className="mb-2 text-sm font-medium text-[#0f2a44]">Quantity (পরিমাণ)</p>
 
         <div className="flex items-center w-fit rounded-full border border-[#0f2a44]/15 bg-white px-2 py-1">
           <button
@@ -60,8 +208,8 @@ export default function ProductDetailsActions({ product }) {
 
       {/* Primary Actions */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <AddToCartButton product={product} quantity={quantity} />
-        <BuyNowButton product={product} quantity={quantity} />
+        <AddToCartButton product={activeProduct} quantity={quantity} />
+        <BuyNowButton product={activeProduct} quantity={quantity} />
       </div>
 
       {/* WhatsApp Action Button */}

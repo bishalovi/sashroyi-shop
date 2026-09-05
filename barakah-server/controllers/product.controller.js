@@ -137,9 +137,35 @@ exports.createProduct = async (req, res) => {
       productCode,
       inStock,
       isFreeShipping,
+      productType,
+      variations,
     } = req.body;
 
     const finalSlug = (slug || generateSlug(name) || `product-${Date.now()}`).trim();
+
+    // Sanitize variations if provided
+    let cleanVariations = [];
+    if (Array.isArray(variations) && variations.length > 0) {
+      cleanVariations = variations.map((v, idx) => ({
+        id: v.id ? String(v.id) : `var_${Date.now()}_${idx}`,
+        name: v.name?.trim() || `প্যাকেজ ${idx + 1}`,
+        price: Number(v.price) || 0,
+        oldPrice: v.oldPrice ? Number(v.oldPrice) : 0,
+        inStock: typeof v.inStock === "boolean" ? v.inStock : true,
+        isDefault: Boolean(v.isDefault),
+      }));
+
+      // Ensure at least one is default
+      if (!cleanVariations.some((v) => v.isDefault)) {
+        cleanVariations[0].isDefault = true;
+      }
+    }
+
+    const isVariable = productType === "variable" && cleanVariations.length > 0;
+    const defaultVar = isVariable ? cleanVariations.find((v) => v.isDefault) || cleanVariations[0] : null;
+
+    const finalPrice = isVariable && defaultVar ? Number(defaultVar.price) : Number(price) || 0;
+    const finalOldPrice = isVariable && defaultVar ? (defaultVar.oldPrice ? Number(defaultVar.oldPrice) : 0) : Number(oldPrice) || 0;
 
     const newProduct = {
       name: name?.trim() || "",
@@ -147,8 +173,10 @@ exports.createProduct = async (req, res) => {
       category: category?.trim() || "",
       subcategory: subcategory?.trim() || "",
       description: description?.trim() || "",
-      price: Number(price) || 0,
-      oldPrice: Number(oldPrice) || 0,
+      price: finalPrice,
+      oldPrice: finalOldPrice,
+      productType: isVariable ? "variable" : "single",
+      variations: cleanVariations,
       image: image?.trim() || "",
       badge: badge?.trim() || "",
       productCode: productCode?.trim() || "",
@@ -197,6 +225,8 @@ exports.updateProduct = async (req, res) => {
       productCode,
       inStock,
       isFreeShipping,
+      productType,
+      variations,
     } = req.body;
 
     const existingProduct = await productsCollection.findOne({
@@ -214,14 +244,47 @@ exports.updateProduct = async (req, res) => {
       ? slug.trim()
       : existingProduct.slug || generateSlug(name || existingProduct.name);
 
+    // Sanitize variations
+    let cleanVariations = [];
+    if (Array.isArray(variations)) {
+      cleanVariations = variations.map((v, idx) => ({
+        id: v.id ? String(v.id) : `var_${Date.now()}_${idx}`,
+        name: v.name?.trim() || `প্যাকেজ ${idx + 1}`,
+        price: Number(v.price) || 0,
+        oldPrice: v.oldPrice ? Number(v.oldPrice) : 0,
+        inStock: typeof v.inStock === "boolean" ? v.inStock : true,
+        isDefault: Boolean(v.isDefault),
+      }));
+
+      if (cleanVariations.length > 0 && !cleanVariations.some((v) => v.isDefault)) {
+        cleanVariations[0].isDefault = true;
+      }
+    } else if (existingProduct.variations) {
+      cleanVariations = existingProduct.variations;
+    }
+
+    const targetType = productType !== undefined ? productType : existingProduct.productType || "single";
+    const isVariable = targetType === "variable" && cleanVariations.length > 0;
+    const defaultVar = isVariable ? cleanVariations.find((v) => v.isDefault) || cleanVariations[0] : null;
+
+    let finalPrice = price !== undefined ? Number(price) : existingProduct.price;
+    let finalOldPrice = oldPrice !== undefined ? Number(oldPrice) : existingProduct.oldPrice;
+
+    if (isVariable && defaultVar) {
+      finalPrice = Number(defaultVar.price);
+      finalOldPrice = defaultVar.oldPrice ? Number(defaultVar.oldPrice) : 0;
+    }
+
     const updatedDoc = {
       name: name?.trim() || existingProduct.name,
       slug: finalSlug,
       category: category?.trim() || existingProduct.category,
       description: description?.trim() || existingProduct.description || "",
       subcategory: subcategory?.trim() || existingProduct.subcategory || "",
-      price: price !== undefined ? Number(price) : existingProduct.price,
-      oldPrice: oldPrice !== undefined ? Number(oldPrice) : existingProduct.oldPrice,
+      productType: isVariable ? "variable" : "single",
+      variations: cleanVariations,
+      price: finalPrice,
+      oldPrice: finalOldPrice,
       image: image?.trim() || existingProduct.image,
       badge: badge !== undefined ? badge.trim() : existingProduct.badge || "",
       productCode: productCode !== undefined ? productCode.trim() : existingProduct.productCode || "",

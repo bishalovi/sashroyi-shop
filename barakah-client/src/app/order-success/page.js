@@ -38,8 +38,13 @@ export default function OrderSuccessPage() {
         value: Number(order.total || 0),
         currency: "BDT",
         items: (order.items || []).map((item) => ({
-          item_id: item.productId || item._id || "",
-          item_name: item.name || "",
+          item_id: item.selectedVariationId
+            ? `${item.productId || item._id}_${item.selectedVariationId}`
+            : (item.productId || item._id || ""),
+          item_name: item.variationTitle
+            ? (item.name.includes(item.variationTitle) ? item.name : `${item.name} (${item.variationTitle})`)
+            : (item.name || ""),
+          item_variant: item.variationTitle || "Default",
           price: Number(item.price || 0),
           quantity: Number(item.quantity || 1),
         })),

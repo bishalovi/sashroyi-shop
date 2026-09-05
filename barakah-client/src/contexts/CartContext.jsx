@@ -18,8 +18,16 @@ export function CartProvider({ children }) {
     localStorage.setItem("barakah-cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
+  const getItemKey = (item) => {
+    return `${item._id || item.id}_${item.selectedVariationId || "single"}`;
+  };
+
   const addToCart = (product) => {
     const selectedQuantity = product.quantity || 1;
+    const cartKey = getItemKey(product);
+    const itemName = product.variationTitle
+      ? `${product.name} (${product.variationTitle})`
+      : product.name || "";
 
     toast.success("Product added to cart!", {
       position: "top-right",
@@ -32,8 +40,11 @@ export function CartProvider({ children }) {
         value: Number(product.price || 0) * Number(selectedQuantity),
         items: [
           {
-            item_id: product._id || "",
-            item_name: product.name || "",
+            item_id: product.selectedVariationId
+              ? `${product._id || product.id}_${product.selectedVariationId}`
+              : String(product._id || product.id || ""),
+            item_name: itemName,
+            item_variant: product.variationTitle || "Default",
             price: Number(product.price || 0),
             quantity: Number(selectedQuantity),
           },
@@ -42,42 +53,51 @@ export function CartProvider({ children }) {
     });
 
     setCartItems((prev) => {
-      const existingItem = prev.find((item) => item._id === product._id);
+      const existingItem = prev.find((item) => getItemKey(item) === cartKey);
 
       if (existingItem) {
         return prev.map((item) =>
-          item._id === product._id
+          getItemKey(item) === cartKey
             ? { ...item, quantity: item.quantity + selectedQuantity }
             : item,
         );
       }
 
-      return [...prev, { ...product, quantity: selectedQuantity }];
+      return [
+        ...prev,
+        {
+          ...product,
+          cartKey,
+          quantity: selectedQuantity,
+        },
+      ];
     });
   };
 
-  const removeFromCart = (productId) => {
+  const removeFromCart = (keyOrId) => {
     toast.success("Product removed from cart!", {
       position: "top-right",
     });
-    setCartItems((prev) => prev.filter((item) => item._id !== productId));
+    setCartItems((prev) =>
+      prev.filter((item) => getItemKey(item) !== keyOrId && item._id !== keyOrId && item.cartKey !== keyOrId),
+    );
   };
 
-  const increaseQuantity = (productId) => {
+  const increaseQuantity = (keyOrId) => {
     setCartItems((prev) =>
       prev.map((item) =>
-        item._id === productId
+        getItemKey(item) === keyOrId || item._id === keyOrId || item.cartKey === keyOrId
           ? { ...item, quantity: item.quantity + 1 }
           : item,
       ),
     );
   };
 
-  const decreaseQuantity = (productId) => {
+  const decreaseQuantity = (keyOrId) => {
     setCartItems((prev) =>
       prev
         .map((item) =>
-          item._id === productId
+          getItemKey(item) === keyOrId || item._id === keyOrId || item.cartKey === keyOrId
             ? { ...item, quantity: item.quantity - 1 }
             : item,
         )

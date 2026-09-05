@@ -195,8 +195,13 @@ export default function CheckoutPage() {
         currency: "BDT",
         value: Number(finalTotal.toFixed(2)),
         items: cartItems.map((item) => ({
-          item_id: item._id || item.productId || "",
-          item_name: item.name || "",
+          item_id: item.selectedVariationId
+            ? `${item._id || item.productId}_${item.selectedVariationId}`
+            : (item._id || item.productId || ""),
+          item_name: item.variationTitle
+            ? `${item.name} (${item.variationTitle})`
+            : (item.name || ""),
+          item_variant: item.variationTitle || "Default",
           price: Number(item.price || 0),
           quantity: Number(item.quantity || 1),
         })),
@@ -242,7 +247,9 @@ export default function CheckoutPage() {
       accountLast4: isDigitalPayment ? data.accountLast4 : "",
       items: cartItems.map((item) => ({
         productId: item._id,
-        name: item.name,
+        name: item.variationTitle ? `${item.name} (${item.variationTitle})` : item.name,
+        variationTitle: item.variationTitle || null,
+        selectedVariationId: item.selectedVariationId || null,
         price: Number(item.price.toFixed(2)),
         quantity: item.quantity,
         image: item.image,
@@ -766,14 +773,19 @@ export default function CheckoutPage() {
               <div className="space-y-4">
                 {cartItems.map((item, index) => (
                   <div
-                    key={item._id || item.productId || index}
+                    key={item.cartKey || item._id || item.productId || index}
                     className="flex items-center justify-between gap-4 border-b border-[#0f2a44]/10 pb-4"
                   >
                     <div>
                       <p className="font-medium text-[#0f2a44]">
                         {item.name}
                       </p>
-                      <p className="text-sm text-[#0f2a44]/60">
+                      {item.variationTitle && (
+                        <span className="inline-block text-xs font-semibold bg-amber-50 text-[#d4af37] px-2 py-0.5 rounded border border-[#d4af37]/30 mt-0.5">
+                          {item.variationTitle}
+                        </span>
+                      )}
+                      <p className="text-sm text-[#0f2a44]/60 mt-0.5">
                         পরিমাণ: {item.quantity}
                       </p>
                     </div>
