@@ -8,6 +8,16 @@
 
 const API_BASE_URL = "https://sashroyi-api.onrender.com";
 
+function getCookie(name) {
+  if (typeof document === "undefined") return "";
+  try {
+    const match = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[2]) : "";
+  } catch {
+    return "";
+  }
+}
+
 function getTrackingData() {
   if (typeof window === "undefined") return {};
   try {
@@ -19,12 +29,16 @@ function getTrackingData() {
 
 function getOrCreateVisitorId() {
   if (typeof window === "undefined") return "visitor_0";
-  let vid = localStorage.getItem("barakah_visitor_id");
-  if (!vid) {
-    vid = "v_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
-    localStorage.setItem("barakah_visitor_id", vid);
+  try {
+    let vid = localStorage.getItem("barakah_visitor_id");
+    if (!vid) {
+      vid = "v_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+      localStorage.setItem("barakah_visitor_id", vid);
+    }
+    return vid;
+  } catch {
+    return "visitor_0";
   }
-  return vid;
 }
 
 export async function trackMetaEvent(eventName, customData = {}, userParams = {}) {
@@ -34,12 +48,16 @@ export async function trackMetaEvent(eventName, customData = {}, userParams = {}
   const visitorId = getOrCreateVisitorId();
   const eventId = customData.eventId || `${eventName.toLowerCase()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
+  const cookieFbp = getCookie("_fbp");
+  const cookieFbc = getCookie("_fbc");
+
   const finalUserParams = {
     externalId: userParams.phone || userParams.externalId || visitorId,
     phone: userParams.phone || "",
     email: userParams.email || "",
     fbclid: tracking.fbclid || "",
-    fbp: tracking.fbp || "",
+    fbp: cookieFbp || tracking.fbp || "",
+    fbc: cookieFbc || (tracking.fbclid ? `fb.1.${Date.now()}.${tracking.fbclid}` : ""),
     ...userParams,
   };
 
