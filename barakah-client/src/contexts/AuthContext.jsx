@@ -6,17 +6,18 @@ import { toast } from "react-toastify";
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedUser = localStorage.getItem("barakahUser");
-        return storedUser ? JSON.parse(storedUser) : null;
-      } catch {
-        return null;
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("barakahUser");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
+    } catch {
+      setUser(null);
     }
-    return null;
-  });
+  }, []);
 
   const login = (userData) => {
     setUser(userData);

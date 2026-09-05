@@ -8,16 +8,27 @@ import { toast } from "react-toastify";
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [cartItems, setCartItems] = useState(() => {
-    if (typeof window === "undefined") return [];
-
-    const storedCart = localStorage.getItem("barakah-cart");
-    return storedCart ? JSON.parse(storedCart) : [];
-  });
+  const [cartItems, setCartItems] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("barakah-cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    try {
+      const storedCart = localStorage.getItem("barakah-cart");
+      if (storedCart) {
+        setCartItems(JSON.parse(storedCart));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("barakah-cart", JSON.stringify(cartItems));
+    }
+  }, [cartItems, isLoaded]);
 
   const getItemKey = (item) => {
     return `${item._id || item.id}_${item.selectedVariationId || "single"}`;
