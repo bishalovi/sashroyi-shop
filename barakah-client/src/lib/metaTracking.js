@@ -86,9 +86,9 @@ export async function trackMetaEvent(eventName, customData = {}, userParams = {}
     }
   }
 
-  // 3. Server-Side CAPI Relay Dispatch
+  // 3. Server-Side CAPI Relay Dispatch (Vercel Serverless Route)
   try {
-    fetch(`${API_BASE_URL}/api/tracking/events`, {
+    fetch("/api/tracking/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
