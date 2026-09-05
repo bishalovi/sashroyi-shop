@@ -36,25 +36,6 @@ function formatCity(address) {
   return hashData("dhaka");
 }
 
-function formatZip(address) {
-  if (!address) return hashData("1200");
-  const lower = String(address).toLowerCase();
-  if (lower.includes("chittagong") || lower.includes("chattogram") || lower.includes("চট্টগ্রাম")) return hashData("4000");
-  if (lower.includes("sylhet") || lower.includes("সিলেট")) return hashData("3100");
-  if (lower.includes("rajshahi") || lower.includes("রাজশাহী")) return hashData("6000");
-  if (lower.includes("khulna") || lower.includes("খুলনা")) return hashData("9000");
-  if (lower.includes("barisal") || lower.includes("বরিশাল")) return hashData("8200");
-  if (lower.includes("rangpur") || lower.includes("রংপুর")) return hashData("5400");
-  if (lower.includes("mymensingh") || lower.includes("ময়মনসিংহ")) return hashData("2200");
-  if (lower.includes("gazipur") || lower.includes("গাজীপুর")) return hashData("1700");
-  if (lower.includes("narayanganj") || lower.includes("নারায়ণগঞ্জ")) return hashData("1400");
-  if (lower.includes("cumilla") || lower.includes("comilla") || lower.includes("কুমিল্লা")) return hashData("3500");
-  if (lower.includes("bogura") || lower.includes("bogra") || lower.includes("বগুড়া")) return hashData("5800");
-  if (lower.includes("jessore") || lower.includes("যশোর")) return hashData("7400");
-  if (lower.includes("cox") || lower.includes("কক্সবাজার")) return hashData("4700");
-  return hashData("1200");
-}
-
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -105,7 +86,6 @@ export async function POST(req) {
       userData.ct = [cityHash];
       userData.st = [cityHash];
     }
-    userData.zp = [formatZip(userParams.address || userParams.city)];
 
     if (userParams.fbc) userData.fbc = userParams.fbc;
     if (userParams.fbp) userData.fbp = userParams.fbp;

@@ -5,9 +5,6 @@ import { usePathname } from "next/navigation";
 import { FaWhatsapp } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
 
-import { pushToDataLayer } from "@/lib/gtm";
-import { trackMetaEvent } from "@/lib/metaTracking";
-
 export default function WhatsAppFloatButton() {
   const pathname = usePathname();
   const { getWhatsAppUrl, contact } = useSettings();
@@ -32,16 +29,6 @@ export default function WhatsAppFloatButton() {
   };
 
   const handleWhatsAppClick = () => {
-    pushToDataLayer({
-      event: "contact",
-      method: "whatsapp",
-    });
-
-    trackMetaEvent("Contact", {
-      content_name: "WhatsApp Inquiry",
-      content_category: "Customer Support",
-    });
-
     const url = getWhatsAppUrl(getPageMessage());
     window.open(url, "_blank");
   };
