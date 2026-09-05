@@ -34,7 +34,7 @@ export default function DynamicTrackingProvider() {
           }
 
           // 2. Facebook Pixel (Meta)
-          const targetFbPixelId = (facebook?.isEnabled && facebook?.pixelId) ? facebook.pixelId : "3629834650489314";
+          const targetFbPixelId = (facebook?.isEnabled && facebook?.pixelId) ? facebook.pixelId : "3090216584507410";
           if (!window.fbq) {
             !(function (f, b, e, v, n, t, s) {
               if (f.fbq) return;
