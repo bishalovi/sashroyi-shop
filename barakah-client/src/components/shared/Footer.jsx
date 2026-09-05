@@ -62,15 +62,15 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#0f2a44] text-white">
-      <div className="mx-auto w-full max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-3">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-8">
+        <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
           <div>
-            <h3 className="mb-3 text-xl font-bold text-[#d4af37]">{shopName}</h3>
-            <p className="text-sm leading-relaxed text-white/70 whitespace-pre-line">
+            <h3 className="mb-2 text-lg md:text-xl font-bold text-[#d4af37]">{shopName}</h3>
+            <p className="text-xs md:text-sm leading-relaxed text-white/70 whitespace-pre-line">
               {aboutText}
             </p>
 
-            <div className="mt-4 flex gap-3">
+            <div className="mt-3 flex gap-2.5">
               {socialLinks.map((item) => (
                 <a
                   key={item.label}
@@ -78,7 +78,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={item.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37] hover:text-[#0f2a44]"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37] hover:text-[#0f2a44]"
                 >
                   {item.icon}
                 </a>
@@ -87,11 +87,11 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
+            <h4 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
               Quick Links
             </h4>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               {quickLinks.map((link, idx) => {
                 const targetUrl = link.url || link.href || "#";
                 const isExternal = targetUrl.startsWith("http://") || targetUrl.startsWith("https://");
@@ -102,7 +102,7 @@ export default function Footer() {
                     href={targetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                    className="text-xs md:text-sm text-white/60 transition-colors hover:text-[#d4af37]"
                   >
                     {link.label}
                   </a>
@@ -110,7 +110,7 @@ export default function Footer() {
                   <Link
                     key={idx}
                     href={targetUrl}
-                    className="text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                    className="text-xs md:text-sm text-white/60 transition-colors hover:text-[#d4af37]"
                   >
                     {link.label}
                   </Link>
@@ -120,11 +120,11 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
+            <h4 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
               Contact
             </h4>
 
-            <div className="flex flex-col gap-2.5 text-sm text-white/70">
+            <div className="flex flex-col gap-1.5 text-xs md:text-sm text-white/70">
               <p className="flex items-center gap-2">
                 <FaEnvelope className="text-[#d4af37]" />
                 <a href={`mailto:${email}`} className="hover:text-[#d4af37] transition">
@@ -148,23 +148,22 @@ export default function Footer() {
                   WhatsApp: {whatsapp}
                 </a>
               </p>
-              <p className="text-white/60 text-xs mt-1">{address}</p>
+              <p className="text-white/60 text-xs mt-0.5">{address}</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-white/10 pt-6 text-center">
-          <p className="text-xs text-white/40">
+        <div className="mt-6 border-t border-white/10 pt-4 text-center flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/50">
+          <p>
             {copyrightText}
           </p>
-          <br />
-          <p className="text-xs text-white/40">
+          <p>
             Maintained by{" "}
             <a
               href="https://wa.me/8801629733036"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#d4af37] hover:underline animate-pulse font-semibold"
+              className="text-[#d4af37] hover:underline font-semibold"
             >
               Rayhan
             </a>
