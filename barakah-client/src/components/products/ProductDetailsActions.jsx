@@ -89,21 +89,31 @@ export default function ProductDetailsActions({ product }) {
 
   return (
     <div className="mt-4">
-      {/* Live Dynamic Price Display */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-3xl font-bold text-[#0f2a44]">
-          ৳ {activePrice}
-        </span>
+      {/* Live Dynamic Price Display with Variation Pack Badge */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="text-3xl sm:text-4xl font-extrabold text-[#0f2a44] tracking-tight">
+            ৳ {activePrice}
+          </span>
+
+          {/* Osthir Variation Pack Badge right next to the price */}
+          {isVariable && selectedVariation?.name && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#d4af37]/20 via-amber-100 to-[#d4af37]/25 text-[#0f2a44] border-2 border-[#d4af37] shadow-sm transition-all duration-300 transform hover:scale-105">
+              <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-pulse"></span>
+              <span>({selectedVariation.name})</span>
+            </span>
+          )}
+        </div>
 
         {activeOldPrice && activeOldPrice > activePrice && (
-          <>
-            <span className="text-gray-400 line-through text-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 line-through text-base sm:text-lg">
               ৳ {activeOldPrice}
             </span>
-            <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full shadow-sm">
               ৳{activeOldPrice - activePrice} ছাড়
             </span>
-          </>
+          </div>
         )}
       </div>
 
