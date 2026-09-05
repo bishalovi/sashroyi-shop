@@ -14,10 +14,14 @@ const {
   getPublicShippingSettings,
   getAdminShippingSettings,
   updateAdminShippingSettings,
+  testSteadfastConnection,
+  testPathaoConnection,
 } = require("../controllers/shipping.controller");
 
 router.get("/public", getPublicShippingSettings);
 router.get("/admin", getAdminShippingSettings);
 router.put("/admin", updateAdminShippingSettings);
+router.post("/test-steadfast", testSteadfastConnection);
+router.post("/test-pathao", testPathaoConnection);
 
 module.exports = router;

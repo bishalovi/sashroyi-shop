@@ -1291,7 +1291,7 @@ exports.sendToPathao = async (req, res) => {
       });
     }
 
-    const payload = transformOrderToPathao(order);
+    const payload = await transformOrderToPathao(order);
 
     const pathaoResponse = await callPathao(payload);
 

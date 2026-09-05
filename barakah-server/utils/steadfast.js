@@ -1,3 +1,5 @@
+const connectDB = require("../config/db");
+
 const calculateCOD = (paymentMethod, total) => {
   // Always send real order price regardless of payment method
   return Math.round(Number(total));
@@ -15,30 +17,56 @@ const transformOrderToSteadfast = (order) => {
   };
 };
 
-const callSteadfast = async (payload, account) => {
-  const apiUrl = process.env.STEADFAST_API_URL;
-  let apiKey;
-  let secretKey;
+const getSteadfastCredentials = async (account) => {
+  let apiUrl = process.env.STEADFAST_API_URL || "https://portal.packzy.com/api/v1";
+  let apiKey = "";
+  let secretKey = "";
 
-  switch (account) {
-    case "narayanganj":
-      apiKey = process.env.STEADFAST_API_KEY_NARAYANGANJ;
-      secretKey = process.env.STEADFAST_SECRET_KEY_NARAYANGANJ;
-      break;
+  try {
+    const db = await connectDB();
+    const config = await db.collection("shipping_settings").findOne({ key: "main_shipping_config" });
+    const steadfast = config?.couriers?.steadfast;
 
-    case "badda":
-      apiKey = process.env.STEADFAST_API_KEY_BADDA;
-      secretKey = process.env.STEADFAST_SECRET_KEY_BADDA;
-      break;
-
-    case "jamalpur":
-      apiKey = process.env.STEADFAST_API_KEY_JAMALPUR;
-      secretKey = process.env.STEADFAST_SECRET_KEY_JAMALPUR;
-      break;
-
-    default:
-      throw new Error("Invalid Steadfast account.");
+    if (steadfast) {
+      if (steadfast.apiUrl) apiUrl = steadfast.apiUrl.trim();
+      if (account && steadfast.accounts?.[account]?.apiKey && steadfast.accounts?.[account]?.secretKey) {
+        apiKey = steadfast.accounts[account].apiKey.trim();
+        secretKey = steadfast.accounts[account].secretKey.trim();
+      } else if (steadfast.apiKey && steadfast.secretKey) {
+        apiKey = steadfast.apiKey.trim();
+        secretKey = steadfast.secretKey.trim();
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load Steadfast config from DB:", err.message);
   }
+
+  if (!apiKey || !secretKey) {
+    switch (account) {
+      case "narayanganj":
+        apiKey = process.env.STEADFAST_API_KEY_NARAYANGANJ || process.env.STEADFAST_API_KEY;
+        secretKey = process.env.STEADFAST_SECRET_KEY_NARAYANGANJ || process.env.STEADFAST_SECRET_KEY;
+        break;
+      case "badda":
+        apiKey = process.env.STEADFAST_API_KEY_BADDA || process.env.STEADFAST_API_KEY;
+        secretKey = process.env.STEADFAST_SECRET_KEY_BADDA || process.env.STEADFAST_SECRET_KEY;
+        break;
+      case "jamalpur":
+        apiKey = process.env.STEADFAST_API_KEY_JAMALPUR || process.env.STEADFAST_API_KEY;
+        secretKey = process.env.STEADFAST_SECRET_KEY_JAMALPUR || process.env.STEADFAST_SECRET_KEY;
+        break;
+      default:
+        apiKey = process.env.STEADFAST_API_KEY || process.env.STEADFAST_API_KEY_NARAYANGANJ;
+        secretKey = process.env.STEADFAST_SECRET_KEY || process.env.STEADFAST_SECRET_KEY_NARAYANGANJ;
+        break;
+    }
+  }
+
+  return { apiUrl, apiKey, secretKey };
+};
+
+const callSteadfast = async (payload, account) => {
+  const { apiUrl, apiKey, secretKey } = await getSteadfastCredentials(account);
 
   if (!apiUrl || !apiKey || !secretKey) {
     throw new Error("Steadfast API credentials not configured.");
