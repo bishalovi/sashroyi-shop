@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/incompatible-library */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
