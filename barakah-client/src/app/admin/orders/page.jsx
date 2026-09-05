@@ -1560,7 +1560,8 @@ ${productNames}
                   )}
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
           <div className="mt-8">
             {/* Mobile pagination */}
@@ -2106,7 +2107,6 @@ ${productNames}
                   </div>
                 </div>
               </div>
-
               {selectedOrder.fraudCheck && (
                 <div className="rounded-xl border border-base-300 bg-base-100 p-4 sm:p-6 space-y-6 text-base-content">
                   {/* 1. TOP HEADER & METRIC STRIP */}
