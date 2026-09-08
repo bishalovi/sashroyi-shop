@@ -1488,15 +1488,6 @@ ${productNames}
             >
               Verify ({counts.verification_required || 0})
             </button>
-
-            <button
-              onClick={() => handleExportOrders()}
-              className="btn btn-sm bg-[#0f2a44] text-white hover:bg-[#1a3d60] border-none flex items-center gap-1.5 shadow-sm ml-auto"
-              title="Download orders in CSV format"
-            >
-              <LuDownload className="w-3.5 h-3.5" />
-              <span>Export Orders</span>
-            </button>
           </div>
         </div>
       </div>
