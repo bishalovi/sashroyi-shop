@@ -23,6 +23,7 @@ const {
   updateCallCount,
   updateOrderStatus,
   bulkUpdateOrderStatus,
+  updateOrderPricing,
 } = require("../controllers/order.controller");
 
 router.post("/", createOrder);
@@ -47,5 +48,7 @@ router.patch("/:id/verify", verifyOrder);
 router.patch("/:id/whatsapp", updateWhatsAppStatus);
 router.patch("/:id/call", updateCallCount);
 router.patch("/:id/status", updateOrderStatus);
+router.patch("/:id/pricing", updateOrderPricing);
+
 
 module.exports = router;

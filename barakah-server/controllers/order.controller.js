@@ -1682,3 +1682,51 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
+
+exports.updateOrderPricing = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const ordersCollection = db.collection("orders");
+
+    const { id } = req.params;
+    const { items, shippingCost, discount, subtotal, total, updatedBy } = req.body;
+
+    const updateFields = {
+      updatedAt: new Date(),
+    };
+
+    if (updatedBy) updateFields.updatedBy = updatedBy;
+    if (Array.isArray(items)) updateFields.items = items;
+    if (shippingCost !== undefined) updateFields.shippingCost = Number(shippingCost) || 0;
+    if (discount !== undefined) updateFields.discount = Number(discount) || 0;
+    if (subtotal !== undefined) updateFields.subtotal = Number(subtotal) || 0;
+    if (total !== undefined) updateFields.total = Number(total) || 0;
+
+    const result = await ordersCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateFields }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    const updatedOrder = await ordersCollection.findOne({ _id: new ObjectId(id) });
+
+    res.status(200).json({
+      success: true,
+      message: "Order pricing updated successfully.",
+      data: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Update Order Pricing Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+

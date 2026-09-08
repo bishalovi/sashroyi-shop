@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
-import { LuCopy, LuPhone } from "react-icons/lu";
+import { LuCopy, LuPhone, LuPencil, LuSave } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -41,6 +41,116 @@ export default function OrdersPage() {
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
+
+  // Order Pricing & Items Edit States
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [priceEditItems, setPriceEditItems] = useState([]);
+  const [priceEditShippingCost, setPriceEditShippingCost] = useState(0);
+  const [priceEditDiscount, setPriceEditDiscount] = useState(0);
+  const [savingPrice, setSavingPrice] = useState(false);
+
+  const handleStartEditPricing = (order) => {
+    setIsEditingPrice(true);
+    setPriceEditItems(
+      (order.items || []).map((item) => ({
+        name: item.name || "",
+        productCode: item.productCode || "",
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
+        image: item.image || "",
+      }))
+    );
+    setPriceEditShippingCost(Number(order.shippingCost) || 0);
+    setPriceEditDiscount(Number(order.discount) || 0);
+  };
+
+  const handleCancelEditPricing = () => {
+    setIsEditingPrice(false);
+  };
+
+  const handleItemQuantityChange = (index, delta) => {
+    setPriceEditItems((prev) =>
+      prev.map((item, i) => {
+        if (i === index) {
+          const nextQty = Math.max(1, Number(item.quantity || 1) + delta);
+          return { ...item, quantity: nextQty };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleItemQuantityDirectChange = (index, val) => {
+    const nextQty = Math.max(1, parseInt(val, 10) || 1);
+    setPriceEditItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, quantity: nextQty } : item))
+    );
+  };
+
+  const handleItemPriceChange = (index, newPrice) => {
+    setPriceEditItems((prev) =>
+      prev.map((item, i) => {
+        if (i === index) {
+          return { ...item, price: Math.max(0, Number(newPrice) || 0) };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleSavePricing = async () => {
+    if (!selectedOrder) return;
+    try {
+      setSavingPrice(true);
+      const subtotal = priceEditItems.reduce(
+        (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
+        0
+      );
+      const shipping = Number(priceEditShippingCost) || 0;
+      const discount = Number(priceEditDiscount) || 0;
+      const total = Math.max(0, subtotal + shipping - discount);
+
+      const res = await fetch(`${baseUrl}/api/orders/${selectedOrder._id}/pricing`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: priceEditItems,
+          shippingCost: shipping,
+          discount: discount,
+          subtotal: subtotal,
+          total: total,
+          updatedBy: user?.userName || "admin",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const updatedOrder = data.data || {
+          ...selectedOrder,
+          items: priceEditItems,
+          shippingCost: shipping,
+          discount: discount,
+          subtotal: subtotal,
+          total: total,
+        };
+
+        setSelectedOrder(updatedOrder);
+        setOrders((prev) =>
+          prev.map((o) => (o._id === selectedOrder._id ? { ...o, ...updatedOrder } : o))
+        );
+        setIsEditingPrice(false);
+        toast.success("অর্ডারের দাম ও তথ্য সফলভাবে আপডেট হয়েছে!");
+      } else {
+        toast.error(data.message || "Failed to update order pricing");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error updating order pricing");
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
 
   const STATUS_OPTIONS = [
     { value: "pending", label: "Pending", bg: "bg-amber-50 text-amber-800 border-amber-300", dot: "bg-amber-500" },
@@ -1353,12 +1463,23 @@ ${productNames}
                         </td>
 
                         <td>
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-1.5">
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="btn btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
+                              className="btn btn-xs sm:btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
                             >
                               View
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                handleStartEditPricing(order);
+                              }}
+                              className="btn btn-xs sm:btn-sm bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 flex items-center justify-center gap-1 font-semibold"
+                            >
+                              <LuPencil className="w-3 h-3" />
+                              <span>Edit Price</span>
                             </button>
 
                             {order.status === "verification_required" ? (
@@ -1519,12 +1640,24 @@ ${productNames}
                 </div>
 
                 <div className="mt-4 flex flex-col gap-2">
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="btn btn-sm w-full bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
-                  >
-                    View Order
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="btn btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
+                    >
+                      View Order
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        handleStartEditPricing(order);
+                      }}
+                      className="btn btn-sm bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 flex items-center justify-center gap-1 font-semibold"
+                    >
+                      <LuPencil className="w-3.5 h-3.5" />
+                      <span>Edit Price</span>
+                    </button>
+                  </div>
 
                   {order.status === "verification_required" ? (
                     <button
@@ -1636,7 +1769,10 @@ ${productNames}
       {selectedOrder && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setSelectedOrder(null)}
+          onClick={() => {
+            setSelectedOrder(null);
+            setIsEditingPrice(false);
+          }}
         >
           <div
             className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl"
@@ -1653,7 +1789,10 @@ ${productNames}
               </div>
 
               <button
-                onClick={() => setSelectedOrder(null)}
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setIsEditingPrice(false);
+                }}
                 className="text-black hover:text-red-700 transition-colors cursor-pointer text-xl"
               >
                 <RxCross1 />
@@ -2000,6 +2139,13 @@ ${productNames}
                       <span className="font-semibold">Shipping:</span> ৳{" "}
                       {selectedOrder.shippingCost || 0}
                     </p>
+
+                    {selectedOrder.discount ? (
+                      <p className="text-rose-600">
+                        <span className="font-semibold">Discount:</span> -৳{" "}
+                        {selectedOrder.discount || 0}
+                      </p>
+                    ) : null}
 
                     <p className="text-base font-bold text-[#3d2f1f]">
                       Total: ৳ {selectedOrder.total || 0}
@@ -2356,51 +2502,342 @@ ${productNames}
                 </div>
               )}
 
-              {/* Ordered Items */}
-              <div className="rounded-xl border border-[#e5dccf] p-4">
-                <h3 className="mb-4 font-semibold text-[#3d2f1f]">
-                  Ordered Items
-                </h3>
+              {/* Ordered Items & Pricing */}
+              <div className="rounded-xl border border-[#e5dccf] p-4 bg-white">
+                <div className="flex items-center justify-between mb-4 border-b border-[#e5dccf]/60 pb-3">
+                  <div>
+                    <h3 className="font-semibold text-[#3d2f1f] text-base">
+                      Ordered Items & Pricing
+                    </h3>
+                    <p className="text-xs text-[#7a6a58]">
+                      {isEditingPrice
+                        ? "Edit quantities, unit prices, shipping & discount below"
+                        : "View items and adjust pricing if necessary"}
+                    </p>
+                  </div>
 
-                <div className="space-y-3">
-                  {selectedOrder.items?.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between gap-4 rounded-xl border border-[#f1eadf] p-3"
+                  {!isEditingPrice ? (
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditPricing(selectedOrder)}
+                      className="btn btn-xs sm:btn-sm bg-[#d4af37] text-white border-none hover:bg-[#b89528] flex items-center gap-1.5 font-medium shadow-sm"
                     >
-                      <div className="flex items-center gap-3">
-                        {item.image && (
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            className="h-24 w-24 rounded-lg border border-[#e5dccf] object-cover"
-                            width={64}
-                            height={64}
-                          />
+                      <LuPencil className="w-3.5 h-3.5" />
+                      <span>Edit Price / Items</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCancelEditPricing}
+                        disabled={savingPrice}
+                        className="btn btn-xs sm:btn-sm bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300 font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSavePricing}
+                        disabled={savingPrice}
+                        className="btn btn-xs sm:btn-sm bg-emerald-600 text-white hover:bg-emerald-700 border-none font-medium flex items-center gap-1"
+                      >
+                        {savingPrice ? (
+                          <span>Saving...</span>
+                        ) : (
+                          <>
+                            <LuSave className="w-3.5 h-3.5" />
+                            <span>Save Changes</span>
+                          </>
                         )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {!isEditingPrice ? (
+                  /* Standard View Mode */
+                  <div className="space-y-3">
+                    {selectedOrder.items?.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between gap-4 rounded-xl border border-[#f1eadf] p-3 hover:bg-[#faf7f2]/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.image && (
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              className="h-20 w-20 rounded-lg border border-[#e5dccf] object-cover"
+                              width={64}
+                              height={64}
+                            />
+                          )}
+
+                          <div>
+                            <p className="font-medium text-[#3d2f1f]">
+                              {item.name}
+                            </p>
+                            {item.productCode && (
+                              <p className="text-xs text-[#7a6a58]">
+                                Code: {item.productCode}
+                              </p>
+                            )}
+                            <p className="text-xs text-[#7a6a58] mt-0.5">
+                              Qty: <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right text-sm text-[#3d2f1f]">
+                          <p className="text-xs text-gray-500">Unit: ৳{item.price}</p>
+                          <p className="font-bold text-base text-[#3d2f1f]">
+                            ৳ {(item.price || 0) * (item.quantity || 0)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Interactive Edit Mode */
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      {priceEditItems.map((item, index) => {
+                        const itemSubtotal = (Number(item.price) || 0) * (Number(item.quantity) || 0);
+                        return (
+                          <div
+                            key={index}
+                            className="rounded-xl border border-amber-200 bg-amber-50/30 p-3.5 space-y-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                {item.image && (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="h-14 w-14 rounded-lg border border-[#e5dccf] object-cover"
+                                    width={56}
+                                    height={56}
+                                  />
+                                )}
+                                <div>
+                                  <p className="font-medium text-[#3d2f1f] text-sm">
+                                    {item.name}
+                                  </p>
+                                  {item.productCode && (
+                                    <p className="text-xs text-[#7a6a58]">
+                                      Code: {item.productCode}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs text-[#7a6a58]">Item Total:</span>
+                                <p className="font-bold text-base text-[#3d2f1f]">
+                                  ৳ {itemSubtotal}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-amber-100">
+                              {/* Quantity Control */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                  Quantity (পরিমাণ)
+                                </label>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleItemQuantityChange(index, -1)}
+                                    disabled={Number(item.quantity) <= 1}
+                                    className="w-8 h-8 rounded-lg bg-white border border-gray-300 font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40 flex items-center justify-center text-sm shadow-sm"
+                                  >
+                                    -
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity}
+                                    onChange={(e) => handleItemQuantityDirectChange(index, e.target.value)}
+                                    className="w-16 h-8 text-center rounded-lg border border-gray-300 font-bold text-sm focus:outline-none focus:border-[#d4af37] bg-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleItemQuantityChange(index, 1)}
+                                    className="w-8 h-8 rounded-lg bg-white border border-gray-300 font-bold text-gray-700 hover:bg-gray-100 flex items-center justify-center text-sm shadow-sm"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Unit Price Control */}
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                  Unit Price / একক মূল্য (৳)
+                                </label>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">
+                                    ৳
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={item.price}
+                                    onChange={(e) => handleItemPriceChange(index, e.target.value)}
+                                    className="w-full h-8 pl-7 pr-3 rounded-lg border border-gray-300 font-bold text-sm focus:outline-none focus:border-[#d4af37] bg-white"
+                                    placeholder="0"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Shipping & Discount Adjustments */}
+                    <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600">
+                        Delivery & Discount Adjustments
+                      </h4>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Shipping / ডেলিভারি চার্জ (৳)
+                          </label>
+                          <div className="relative mb-2">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={priceEditShippingCost}
+                              onChange={(e) => setPriceEditShippingCost(Number(e.target.value) || 0)}
+                              className="w-full h-9 pl-7 pr-3 rounded-lg border border-gray-300 font-bold text-sm focus:outline-none focus:border-[#d4af37] bg-white"
+                              placeholder="0"
+                            />
+                          </div>
+                          {/* Quick shipping buttons */}
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setPriceEditShippingCost(0)}
+                              className={`text-[11px] px-2 py-0.5 rounded border transition-colors ${
+                                priceEditShippingCost === 0
+                                  ? "bg-[#d4af37] text-white border-[#d4af37] font-semibold"
+                                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                              }`}
+                            >
+                              Free (৳0)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPriceEditShippingCost(60)}
+                              className={`text-[11px] px-2 py-0.5 rounded border transition-colors ${
+                                priceEditShippingCost === 60
+                                  ? "bg-[#d4af37] text-white border-[#d4af37] font-semibold"
+                                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                              }`}
+                            >
+                              Inside (৳60)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPriceEditShippingCost(120)}
+                              className={`text-[11px] px-2 py-0.5 rounded border transition-colors ${
+                                priceEditShippingCost === 120
+                                  ? "bg-[#d4af37] text-white border-[#d4af37] font-semibold"
+                                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                              }`}
+                            >
+                              Outside (৳120)
+                            </button>
+                          </div>
+                        </div>
 
                         <div>
-                          <p className="font-medium text-[#3d2f1f]">
-                            {item.name}
-                          </p>
-                          <p className="text-sm text-[#7a6a58]">
-                            {item.productCode}
-                          </p>
-                          <p className="text-sm text-[#7a6a58]">
-                            Qty: {item.quantity}
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Discount / ছাড় বা অগ্রিম (৳)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">
+                              ৳
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={priceEditDiscount}
+                              onChange={(e) => setPriceEditDiscount(Number(e.target.value) || 0)}
+                              className="w-full h-9 pl-7 pr-3 rounded-lg border border-gray-300 font-bold text-sm focus:outline-none focus:border-[#d4af37] bg-white"
+                              placeholder="0"
+                            />
+                          </div>
+                          <p className="text-[11px] text-gray-500 mt-1">
+                            টোটাল অ্যামাউন্ট থেকে এই টাকা বিয়োগ হবে।
                           </p>
                         </div>
                       </div>
 
-                      <div className="text-right text-sm text-[#3d2f1f]">
-                        <p>৳ {item.price}</p>
-                        <p className="font-semibold">
-                          ৳ {(item.price || 0) * (item.quantity || 0)}
-                        </p>
-                      </div>
+                      {/* Live Calculation Summary */}
+                      {(() => {
+                        const calculatedSubtotal = priceEditItems.reduce(
+                          (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
+                          0
+                        );
+                        const calculatedTotal = Math.max(
+                          0,
+                          calculatedSubtotal + Number(priceEditShippingCost || 0) - Number(priceEditDiscount || 0)
+                        );
+                        return (
+                          <div className="pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 bg-amber-50/60 p-3 rounded-lg">
+                            <div className="text-xs space-y-0.5 text-gray-600">
+                              <p>Subtotal: <span className="font-semibold text-gray-800">৳{calculatedSubtotal}</span></p>
+                              <p>Shipping: <span className="font-semibold text-gray-800">+৳{priceEditShippingCost || 0}</span></p>
+                              {priceEditDiscount > 0 && (
+                                <p>Discount: <span className="font-semibold text-rose-600">-৳{priceEditDiscount}</span></p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs text-gray-600">New Total to Collect:</span>
+                              <p className="text-lg font-extrabold text-[#3d2f1f]">
+                                ৳ {calculatedTotal}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
-                  ))}
-                </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleCancelEditPricing}
+                        disabled={savingPrice}
+                        className="btn btn-sm bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300 font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSavePricing}
+                        disabled={savingPrice}
+                        className="btn btn-sm bg-emerald-600 text-white hover:bg-emerald-700 border-none font-medium flex items-center gap-1.5 shadow-sm"
+                      >
+                        {savingPrice ? (
+                          <span>Saving Changes...</span>
+                        ) : (
+                          <>
+                            <LuSave className="w-4 h-4" />
+                            <span>Save & Apply New Pricing</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Footer Action */}
