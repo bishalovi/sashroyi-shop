@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
-import { LuCopy, LuPhone, LuPencil, LuSave } from "react-icons/lu";
+import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -150,6 +150,204 @@ export default function OrdersPage() {
       setSavingPrice(false);
     }
   };
+
+  // Bulk Courier & Export States & Handlers
+  const [bulkCourierLoading, setBulkCourierLoading] = useState(false);
+
+  const formatPhoneForBM = (phone) => {
+    if (!phone) return "";
+    let digits = String(phone).replace(/\D/g, "");
+    if (digits.startsWith("880")) return digits;
+    if (digits.startsWith("0")) return "88" + digits;
+    if (digits.length === 10 && digits.startsWith("1")) return "880" + digits;
+    return digits;
+  };
+
+  const sanitizeCsvField = (field) => {
+    if (field === null || field === undefined) return '""';
+    const str = String(field).replace(/"/g, '""');
+    return `"${str}"`;
+  };
+
+  const handleExportOrders = (customOrders = null) => {
+    const list = customOrders || (selectedIds.size > 0 ? orders.filter((o) => selectedIds.has(o._id)) : orders);
+    if (!list || list.length === 0) {
+      toast.info("No orders found to export");
+      return;
+    }
+
+    const headers = ["phone", "fn", "ln", "ct", "country", "value", "order_id", "status", "courier_consignment"];
+    const rows = list.map((order) => {
+      const nameParts = (order.customerName || "").trim().split(/\s+/);
+      const fn = nameParts[0] || "";
+      const ln = nameParts.slice(1).join(" ") || fn;
+      const phone = formatPhoneForBM(order.phone);
+      const ct = order.shippingType === "inside" ? "Dhaka" : "Bangladesh";
+      const country = "BD";
+      const value = order.total || 0;
+      const orderId = order._id || "";
+      const status = order.status || "";
+      const courierConsignment = order.steadfast?.consignmentId || order.pathao?.consignmentId || "";
+
+      return [
+        sanitizeCsvField(phone),
+        sanitizeCsvField(fn),
+        sanitizeCsvField(ln),
+        sanitizeCsvField(ct),
+        sanitizeCsvField(country),
+        value,
+        sanitizeCsvField(orderId),
+        sanitizeCsvField(status),
+        sanitizeCsvField(courierConsignment),
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `orders_export_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`${list.length}টি অর্ডারের ডাটা সফলভাবে ডাউনলোড হয়েছে!`);
+  };
+
+  const handleBulkSendToSteadfast = async () => {
+    if (selectedIds.size === 0) return;
+    const selectedOrderList = orders.filter((o) => selectedIds.has(o._id));
+    const eligibleOrders = selectedOrderList.filter(
+      (o) => !o.steadfast?.consignmentId && o.status !== "cancelled"
+    );
+
+    if (eligibleOrders.length === 0) {
+      Swal.fire("Note", "সিলেক্টেড সবগুলো অর্ডার ইতিমধ্যে Steadfast-এ পাঠানো হয়েছে অথবা বাতিল করা।", "info");
+      return;
+    }
+
+    const { value: account } = await Swal.fire({
+      title: "Select Steadfast Account",
+      html: `<p class="text-sm mb-3"><strong>${eligibleOrders.length}টি</strong> অর্ডার Steadfast-এ পাঠানো হবে।</p>`,
+      input: "radio",
+      inputOptions: {
+        narayanganj: "Narayanganj",
+        badda: "Badda",
+        jamalpur: "Jamalpur",
+      },
+      inputValidator: (value) => {
+        if (!value) return "Please select an account!";
+      },
+      showCancelButton: true,
+      confirmButtonText: "Send All Now",
+      confirmButtonColor: "#01B795",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!account) return;
+
+    try {
+      setBulkCourierLoading(true);
+      let successCount = 0;
+      let updatedOrdersMap = {};
+
+      for (const ord of eligibleOrders) {
+        try {
+          const res = await fetch(`${baseUrl}/api/orders/${ord._id}/steadfast`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ account }),
+          });
+          const data = await res.json();
+          if (data.success && data.data) {
+            successCount++;
+            updatedOrdersMap[ord._id] = data.data;
+          }
+        } catch (err) {
+          console.error("Steadfast send failed for order", ord._id, err);
+        }
+      }
+
+      if (successCount > 0) {
+        setOrders((prev) =>
+          prev.map((o) => (updatedOrdersMap[o._id] ? { ...o, steadfast: updatedOrdersMap[o._id] } : o))
+        );
+        Swal.fire("Success!", `${successCount}টি অর্ডার সফলভাবে Steadfast (${account})-এ পাঠানো হয়েছে।`, "success");
+        setSelectedIds(new Set());
+      } else {
+        Swal.fire("Failed", "কোনো অর্ডার পাঠানো সম্ভব হয়নি। দয়া করে API সেটিংস চেক করুন।", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error dispatching bulk steadfast");
+    } finally {
+      setBulkCourierLoading(false);
+    }
+  };
+
+  const handleBulkSendToPathao = async () => {
+    if (selectedIds.size === 0) return;
+    const selectedOrderList = orders.filter((o) => selectedIds.has(o._id));
+    const eligibleOrders = selectedOrderList.filter(
+      (o) => !o.pathao?.consignmentId && o.status !== "cancelled"
+    );
+
+    if (eligibleOrders.length === 0) {
+      Swal.fire("Note", "সিলেক্টেড সবগুলো অর্ডার ইতিমধ্যে Pathao-তে পাঠানো হয়েছে অথবা বাতিল করা।", "info");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Send to Pathao?",
+      text: `আপনি কি নিশ্চিত যে ${eligibleOrders.length}টি অর্ডার Pathao কুরিয়ারে পাঠাতে চান?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Send All",
+      confirmButtonColor: "#eb7029",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setBulkCourierLoading(true);
+      let successCount = 0;
+      let updatedOrdersMap = {};
+
+      for (const ord of eligibleOrders) {
+        try {
+          const res = await fetch(`${baseUrl}/api/orders/${ord._id}/pathao`, {
+            method: "PATCH",
+          });
+          const data = await res.json();
+          if (data.success && data.data) {
+            successCount++;
+            updatedOrdersMap[ord._id] = data.data;
+          }
+        } catch (err) {
+          console.error("Pathao send failed for order", ord._id, err);
+        }
+      }
+
+      if (successCount > 0) {
+        setOrders((prev) =>
+          prev.map((o) => (updatedOrdersMap[o._id] ? { ...o, pathao: updatedOrdersMap[o._id] } : o))
+        );
+        Swal.fire("Success!", `${successCount}টি অর্ডার সফলভাবে Pathao-তে পাঠানো হয়েছে।`, "success");
+        setSelectedIds(new Set());
+      } else {
+        Swal.fire("Failed", "কোনো অর্ডার পাঠানো সম্ভব হয়নি। দয়া করে API সেটিংস চেক করুন।", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error dispatching bulk pathao");
+    } finally {
+      setBulkCourierLoading(false);
+    }
+  };
+
 
 
   const STATUS_OPTIONS = [
@@ -1290,6 +1488,15 @@ ${productNames}
             >
               Verify ({counts.verification_required || 0})
             </button>
+
+            <button
+              onClick={() => handleExportOrders()}
+              className="btn btn-sm bg-[#0f2a44] text-white hover:bg-[#1a3d60] border-none flex items-center gap-1.5 shadow-sm ml-auto"
+              title="Download orders in CSV format"
+            >
+              <LuDownload className="w-3.5 h-3.5" />
+              <span>Export Orders</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1306,8 +1513,41 @@ ${productNames}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-300 font-medium">একসাথে স্ট্যাটাস বদলান:</span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Courier Dispatch Actions */}
+            <div className="flex items-center gap-1.5 pr-2.5 border-r border-white/20">
+              <button
+                type="button"
+                disabled={bulkCourierLoading}
+                onClick={handleBulkSendToSteadfast}
+                className="btn btn-xs bg-[#01B795] hover:bg-[#00886f] text-white border-none text-xs font-bold flex items-center gap-1 shadow-sm"
+              >
+                <LuTruck className="w-3 h-3" />
+                <span>Steadfast</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={bulkCourierLoading}
+                onClick={handleBulkSendToPathao}
+                className="btn btn-xs bg-[#eb7029] hover:bg-[#a3420a] text-white border-none text-xs font-bold flex items-center gap-1 shadow-sm"
+              >
+                <LuTruck className="w-3 h-3" />
+                <span>Pathao</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleExportOrders()}
+                className="btn btn-xs bg-white/20 hover:bg-white/30 text-white border-none text-xs font-bold flex items-center gap-1 shadow-sm"
+                title="Export selected orders to CSV"
+              >
+                <LuDownload className="w-3 h-3" />
+                <span>Export Orders</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-gray-300 font-medium">একসাথে স্ট্যাটাস:</span>
             <div className="flex items-center gap-1.5 flex-wrap">
               {STATUS_OPTIONS.slice(0, 6).map((opt) => (
                 <button
@@ -1325,7 +1565,7 @@ ${productNames}
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="btn btn-xs btn-ghost text-gray-300 hover:text-white ml-2"
+              className="btn btn-xs btn-ghost text-gray-300 hover:text-white ml-1"
             >
               ✕ বাদ দিন
             </button>
