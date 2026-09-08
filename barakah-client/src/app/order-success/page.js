@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FaCircleCheck } from "react-icons/fa6";
 import { useEffect } from "react";
 import { pushToDataLayer } from "@/lib/gtm";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function OrderSuccessPage() {
   useEffect(() => {
@@ -60,43 +61,28 @@ export default function OrderSuccessPage() {
       },
     });
 
-    // 2. Facebook (Meta) Pixel Client-Side Deduplication
-    if (typeof window !== "undefined" && typeof window.fbq === "function") {
-      window.fbq(
-        "track",
-        "Purchase",
-        {
-          value: Number(order.total || 0),
-          currency: "BDT",
-          content_type: "product",
-          contents: contents.map((c) => ({
-            id: c.id,
-            quantity: c.quantity,
-            item_price: c.price,
-          })),
-          num_items: contents.reduce((acc, i) => acc + (Number(i.quantity) || 1), 0),
-        },
-        { eventID: transactionId }
-      );
-    }
-
-    // 3. TikTok Pixel Client-Side Deduplication
-    if (typeof window !== "undefined" && typeof window.ttq?.track === "function") {
-      window.ttq.track(
-        "CompletePayment",
-        {
-          value: Number(order.total || 0),
-          currency: "BDT",
-          contents: contents.map((c) => ({
-            content_id: c.id,
-            content_name: c.item_name,
-            quantity: c.quantity,
-            price: c.price,
-          })),
-        },
-        { event_id: transactionId }
-      );
-    }
+    // 2. Dual Facebook (Meta) & TikTok Pixel + Server-Side CAPI
+    trackMetaEvent(
+      "Purchase",
+      {
+        value: Number(order.total || 0),
+        currency: "BDT",
+        content_type: "product",
+        contents: contents.map((c) => ({
+          id: c.id,
+          quantity: c.quantity,
+          item_price: c.price,
+        })),
+        num_items: contents.reduce((acc, i) => acc + (Number(i.quantity) || 1), 0),
+        eventId: transactionId,
+      },
+      {
+        phone: order.phone,
+        name: order.customerName,
+        address: order.address,
+        externalId: transactionId,
+      }
+    );
 
     localStorage.removeItem("barakah_last_order");
   }, []);
