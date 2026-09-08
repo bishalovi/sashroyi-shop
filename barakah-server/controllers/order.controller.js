@@ -1653,15 +1653,20 @@ exports.updateOrderStatus = async (req, res) => {
     const ordersCollection = db.collection("orders");
 
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, updatedBy } = req.body;
+
+    const setFields = { status };
+    if (status === "delivered") {
+      setFields.deliveredAt = new Date();
+      if (updatedBy) setFields.deliveredBy = updatedBy;
+    } else if (status === "cancelled") {
+      setFields.cancelledAt = new Date();
+      if (updatedBy) setFields.cancelledBy = updatedBy;
+    }
 
     const result = await ordersCollection.updateOne(
       { _id: new ObjectId(id) },
-      {
-        $set: {
-          status,
-        },
-      },
+      { $set: setFields }
     );
 
     if (result.matchedCount === 0) {
