@@ -1632,11 +1632,31 @@ ${productNames}
                         </td>
                         <td>৳ {order.total}</td>
                         <td>
-                          <div className="space-y-1 text-sm">
+                          <div className="space-y-2 min-w-44">
                             {order.items?.map((item, i) => (
-                              <p key={i}>
-                                {item.name} × {item.quantity}
-                              </p>
+                              <div key={i} className="flex items-center gap-2">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name || "Product"}
+                                    width={40}
+                                    height={40}
+                                    className="w-10 h-10 rounded-md object-cover border border-[#e5dccf] shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-400 text-xs">
+                                    📦
+                                  </div>
+                                )}
+                                <div className="leading-tight">
+                                  <p className="font-medium text-xs text-[#3d2f1f] line-clamp-1" title={item.name}>
+                                    {item.name}
+                                  </p>
+                                  <p className="text-[11px] text-[#7a6a58] mt-0.5">
+                                    <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price}
+                                  </p>
+                                </div>
+                              </div>
                             ))}
                           </div>
                         </td>
@@ -1697,20 +1717,9 @@ ${productNames}
                           <div className="flex flex-col gap-1.5">
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="btn btn-xs sm:btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
+                              className="btn btn-xs sm:btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0] font-semibold"
                             >
                               View
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                handleStartEditPricing(order);
-                              }}
-                              className="btn btn-xs sm:btn-sm bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 flex items-center justify-center gap-1 font-semibold"
-                            >
-                              <LuPencil className="w-3 h-3" />
-                              <span>Edit Price</span>
                             </button>
 
                             {order.status === "verification_required" && (
@@ -1812,12 +1821,32 @@ ${productNames}
                   </p>
 
                   <div>
-                    <span className="font-semibold">Items:</span>
-                    <div className="mt-1 space-y-1 text-sm">
+                    <span className="font-semibold text-xs text-[#7a6a58]">Items:</span>
+                    <div className="mt-1.5 space-y-2">
                       {order.items?.map((item, i) => (
-                        <p key={i}>
-                          {item.name} × {item.quantity}
-                        </p>
+                        <div key={i} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-[#faf7f0]/60 border border-[#f1eadf]">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.name || "Product"}
+                              width={44}
+                              height={44}
+                              className="w-11 h-11 rounded-md object-cover border border-[#e5dccf] shrink-0"
+                            />
+                          ) : (
+                            <div className="w-11 h-11 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-400 text-xs">
+                              📦
+                            </div>
+                          )}
+                          <div className="leading-tight flex-1 min-w-0">
+                            <p className="font-medium text-xs text-[#3d2f1f] truncate">
+                              {item.name}
+                            </p>
+                            <p className="text-[11px] text-[#7a6a58] mt-0.5">
+                              Qty: <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price} = <span className="font-semibold text-[#3d2f1f]">৳{(item.price || 0) * (item.quantity || 0)}</span>
+                            </p>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -1845,24 +1874,12 @@ ${productNames}
                 </div>
 
                 <div className="mt-4 flex flex-col gap-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="btn btn-sm bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0]"
-                    >
-                      View Order
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        handleStartEditPricing(order);
-                      }}
-                      className="btn btn-sm bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 flex items-center justify-center gap-1 font-semibold"
-                    >
-                      <LuPencil className="w-3.5 h-3.5" />
-                      <span>Edit Price</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="btn btn-sm w-full bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0] font-semibold"
+                  >
+                    View Order
+                  </button>
 
                   {order.status === "verification_required" && (
                     <button
