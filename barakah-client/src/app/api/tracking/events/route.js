@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 const DEFAULT_PIXEL_ID = "3090216584507410";
 const DEFAULT_CAPI_TOKEN = "EAAN1ofCq9NUBSaUTZAgzfG4XJoOGP2xh2iZC3Q3Km7KyRxY24srJG6ZAb7ZAviKpQJC210vGGeZBWwCqZC0DUQfqhZBL1BzG7GSrZCHu9Xk0rRJoD1mV9eUwZAxP3tbuUOovVm2PiSCM824SVZBQGoZAlJJk6A2q3sKZBSFRsKx5viyISgFPyL0MaQNo4cTmE0ku5jyTfwZDZD";
-const DEFAULT_TEST_CODE = "TEST11443";
+const DEFAULT_TEST_CODE = "TEST35382";
 
 function hashData(value) {
   if (!value) return null;
@@ -121,8 +121,9 @@ export async function POST(req) {
     };
 
     const payload = { data: [eventData] };
-    if (DEFAULT_TEST_CODE) {
-      payload.test_event_code = DEFAULT_TEST_CODE;
+    const activeTestCode = userParams.testEventCode || DEFAULT_TEST_CODE || "TEST35382";
+    if (activeTestCode && activeTestCode.trim() !== "") {
+      payload.test_event_code = activeTestCode.trim();
     }
 
     const metaUrl = `https://graph.facebook.com/v19.0/${DEFAULT_PIXEL_ID}/events?access_token=${DEFAULT_CAPI_TOKEN}`;
