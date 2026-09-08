@@ -1,4 +1,4 @@
-﻿# 📦 Sashroyi.Shop — Official Version History & Changelog
+# 📦 Sashroyi.Shop — Official Version History & Changelog
 
 Welcome to the official version archive of **Sashroyi.Shop** e-commerce platform.
 This document contains detailed changelogs for all versions, detailing newly added features, bug fixes, performance optimizations, and setup instructions.
@@ -9,10 +9,31 @@ This document contains detailed changelogs for all versions, detailing newly add
 
 | Version | Milestone Name | Status | Archive File |
 | :--- | :--- | :--- | :--- |
-| **v2.2.0** | **Latest Production Release** | 🟢 Active / Live | `sashroyi-v2.2.0-latest-production.zip` |
+| **v2.3.0** | **Meta CAPI & GTM Tracking Hub** | 🟢 Active / Live | `sashroyi-v2.3.0-tracking-hub.zip` |
+| **v2.2.0** | **Search & Category Reorder Release** | 📦 Archived | `sashroyi-v2.2.0-latest-production.zip` |
 | **v2.1.0** | **Categories & Customizations** | 📦 Archived | `sashroyi-v2.1.0-categories-and-settings.zip` |
 | **v2.0.0** | **Admin Settings & Payment Hub** | 📦 Archived | `sashroyi-v2.0.0-admin-and-payments.zip` |
 | **v1.0.0** | **Base Architecture & Auth** | 📦 Archived | `sashroyi-v1.0.0-base-architecture.zip` |
+
+---
+
+## 🚀 Version 2.3.0 (Meta CAPI & GTM Tracking Hub)
+**Date:** September 08, 2026  
+**Commit:** `1cabc0a`  
+
+### ✨ What Was Added / Improved (নতুন কী পরিবর্তন ও ফিক্স করা হয়েছে):
+1. **Google Tag Manager (GTM) ডিকাপলিং (`src/lib/gtm.js`):**
+   - `pushToDataLayer` ফাংশন থেকে অতিরিক্ত ও অপ্রয়োজনীয় ডিরেক্ট `fbq` এবং `ttq` কল সম্পূর্ণ রিমুভ করা হয়েছে।
+   - এখন DataLayer শুধুমাত্র чисто GTM স্ট্যান্ডার্ড `dataLayer.push` হিসেবে কাজ করে।
+2. **ডুপ্লিকেট ইভেন্ট (`ob3_plugin-set_...`) সমস্যা সমাধান:**
+   - ব্রাউজারে একই সাথে `gtm.js` এবং `metaTracking.js` থেকে ডাবল ইভেন্ট ফায়ার হওয়ার সমস্যা সমাধান করা হয়েছে।
+   - Meta Events Manager-এ প্রতিটা ইভেন্ট এখন ১ বার এবং কাস্টম `eventID` সহ পরিষ্কারভাবে রেকর্ড হয়।
+3. **অর্ডার সাকসেস ও পারচেজ ট্র্যাকিং আপগ্রেড (`src/app/order-success/page.js`):**
+   - পারচেজ ইভেন্টকে সরাসরি `trackMetaEvent("Purchase")`-এর সাথে যুক্ত করা হয়েছে।
+   - কাস্টমারের ফোন নম্বর, নাম, ঠিকানা এবং অর্ডার আইডি স্বয়ংক্রিয়ভাবে হ্যাশ হয়ে ব্রাউজার পিক্সেল ও সার্ভার CAPI উভয়েই একসাথে সেন্ড হয় (৯.৫+ EMQ স্কোর নিশ্চিত করতে)।
+4. **অ্যাডমিন প্যানেল ট্র্যাকিং হাব (`/admin/tracking`):**
+   - অ্যাডমিন প্যানেল থেকে **GTM (Active Toggle & Container ID)**, **Meta Pixel & CAPI**, এবং **TikTok Pixel & Events API** সম্পূর্ণ ডায়নামিক্যালি নিয়ন্ত্রণ করার ব্যবস্থা।
+
 
 ---
 
