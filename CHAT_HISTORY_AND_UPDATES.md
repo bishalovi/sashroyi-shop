@@ -1,98 +1,131 @@
-# 💬 Sashroyi.Shop — Chat History, Requirements & Development Logs
+# 📘 Sashroyi.Shop — Official Development History & Client Chat Logs
 
-> **ডকুমেন্ট উদ্দেশ্য:** এই ফাইলে ক্লায়েন্ট ও ডেভেলপারদের মধ্যকার সব কথোপকথন, রিকোয়ারমেন্ট, প্রবলেম ফিক্স এবং প্রতিটি আপডেটের পুঙ্খানুপুঙ্খ বিবরণ টেক্সট আকারে সংরক্ষিত থাকবে।
-
----
-
-## 📌 সূচিপত্র (Table of Contents)
-1. [সেশন: ৮ সেপ্টেম্বর, ২০২৬ — Meta Pixel, CAPI & GTM Tracking Hub Fix (v2.3.0)](#-সেশন-৮-সেপ্টেম্বর-২০২৬--meta-pixel-capi--gtm-tracking-hub-fix-v230)
-2. [সেশন: ৫ সেপ্টেম্বর, ২০২৬ — Live Search Bar & Category Reordering (v2.2.0)](#-সেশন-৫-সেপ্টেম্বর-২০২৬--live-search-bar--category-reordering-v220)
-3. [সেশন: ৪ সেপ্টেম্বর, ২০২৬ — Dynamic Categories & Button Styling (v2.1.0)](#-সেশন-৪-সেপ্টেম্বর-২০২৬--dynamic-categories--button-styling-v210)
-4. [সেশন: ৪ সেপ্টেম্বর, ২০২৬ — Admin Settings & Payment Methods Hub (v2.0.0)](#-সেশন-৪-সেপ্টেম্বর-২০২৬--admin-settings--payment-methods-hub-v200)
-5. [সেশন: ৩ সেপ্টেম্বর, ২০২৬ — Base Architecture, Auth & Cart System (v1.0.0)](#-সেশন-৩-সেপ্টেম্বর-২০২৬--base-architecture-auth--cart-system-v100)
+> **Platform:** Sashroyi.Shop (Islamic Wall Clock & Canvas E-commerce)  
+> **Repository:** `bishalovi/sashroyi-shop`  
+> **Maintainer / Lead Developer:** Rayhan  
+> **Tech Stack:** Next.js (App Router), React 19, Tailwind CSS, Express.js, Node.js, MongoDB Atlas, Render, Vercel
 
 ---
 
-## 🚀 সেশন: ৮ সেপ্টেম্বর, ২০২৬ — Meta Pixel, CAPI & GTM Tracking Hub Fix (v2.3.0)
+## 📑 নির্বাহী সারসংক্ষেপ (Executive Summary & Version Index)
 
-### 👤 ইউজার রিকোয়েস্ট / সমস্যা:
-1. **মেটা ইভেন্ট ম্যানেজার টেস্ট ইভেন্ট শেয়ার:** ইউজার Meta Events Manager-এর টেস্ট ইভেন্ট লগ শেয়ার করেন যেখানে দেখা যাচ্ছিল প্রতিটা ইভেন্ট (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase) ২ বার করে ফায়ার হচ্ছিল। 
-   - একটি ইভেন্টে আসছিল কাস্টম আইডি (ddtocart_..., initiatecheckout_..., Order ID)।
-   - আরেকটি অতিরিক্ত ইভেন্টে আসছিল ob3_plugin-set_... আইডি।
-2. **প্রশ্ন:** সাইটের কোডের ভেতরে আগের কোনো অতিরিক্ত GTM বা Pixel কোড রয়ে গেছে কিনা?
-3. **রিকোয়ারমেন্ট:** Tag Manager অ্যাডমিন প্যানেল থেকে যাতে সহজে অন/অফ ও কন্টেইনার আইডি কন্ট্রোল করা যায়।
-4. **হিস্ট্রি ডক চাওয়া:** প্রতি আপডেটের পর প্রজেক্টের ভেতরে যেন একটি ডেডিকেটেড টেক্সট ডকুমেন্ট থাকে যেখানে চ্যাটের সব হিস্ট্রি, কী চেঞ্জ হয়েছে, কী হয় নাই—সব পরিষ্কার লেখা থাকবে।
-
-### 🔍 অ্যানালাইসিস ও ডায়াগনোসিস:
-- arakah-client/src/lib/gtm.js ফাইলে pushToDataLayer() ফাংশনটির ভেতরে GTM DataLayer-এ পুশ করার পাশাপাশি সরাসরি window.fbq('track', ...) কল করা ছিল কোনো eventID ছাড়া।
-- ফলে যখনই কোনো ইউজার বাটনে ক্লিক করছিল বা অর্ডার করছিল, gtm.js থেকে একটি নামহীন ইভেন্ট ফায়ার হতো (যেটাকে মেটা ob3_plugin-set_... হিসেবে নিত) এবং metaTracking.js থেকেও কাস্টম আইডি সহ ফায়ার হতো।
-- এর ফলে মেটা ডিডুপ্লিকেট করতে না পেরে ডাবল কাউন্ট করছিল।
-
-### 🛠️ সমাধান ও কোড পরিবর্তন:
-1. **src/lib/gtm.js ক্লিন:**
-   - ডিরেক্ট bq এবং 	tq কলগুলো মুছে দিয়ে ফাংশনটিকে বিশুদ্ধ DataLayer হিসেবে রূপান্তর করা হয়েছে।
-2. **src/app/order-success/page.js আপগ্রেড:**
-   - পারচেজ ট্র্যাকিংকে সরাসরি 	rackMetaEvent('Purchase', ...) এর আওতায় নিয়ে আসা হয়েছে যাতে কাস্টমার ডাটা (ফোন, নাম, ঠিকানা, ভ্যালু, অর্ডার আইডি) ব্রাউজার এবং সার্ভার CAPI উভয়েই একবার নিখুঁতভাবে সেন্ড করে।
-3. **GTM Admin Control:**
-   - /admin/tracking পেজে Google Tag Manager ট্যাবের মাধ্যমে অন/অফ এবং Container ID ডাইনামিক্যালি লোড হওয়ার ব্যবস্থা নিশ্চিত করা হয়েছে।
-4. **Git Commit & Push:**
-   - কমিট 1cabc0a এবং d1d0d6 এর মাধ্যমে গিটহাব মেইন ব্রাঞ্চে কোড ও CHANGELOG পুশ সম্পন্ন করা হয়েছে।
+| Version | Release Date | Milestone Title | Key Focus Area | Deployment Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **`v2.3.0`** | `08-Sep-2026` | **Meta CAPI & GTM Tracking Hub** | Pixel Deduplication, CAPI, GTM Decoupling | 🟢 **Production Live** |
+| **`v2.2.0`** | `05-Sep-2026` | **Live Search Bar & Category Reordering** | Autocomplete Search, Product/Category Up-Down | 📦 Archived |
+| **`v2.1.0`** | `04-Sep-2026` | **Dynamic Categories & Customizations** | Slug Routing, Google Drive Auto-Conversion | 📦 Archived |
+| **`v2.0.0`** | `04-Sep-2026` | **Admin Settings & Payment Methods Hub** | Central Admin Settings, bKash/Nagad Numbers | 📦 Archived |
+| **`v1.0.0`** | `03-Sep-2026` | **Base Architecture & Authentication** | Next.js Architecture, JWT Auth, Cart System | 📦 Archived |
 
 ---
 
-## 🚀 সেশন: ৫ সেপ্টেম্বর, ২০২৬ — Live Search Bar & Category Reordering (v2.2.0)
+## 🚀 Session Log: 08 September 2026 — Milestone v2.3.0
 
-### 👤 ইউজার রিকোয়েস্ট:
-- হেডারের নিচে আকর্ষণীয় লাইভ সার্চ বার বসাতে হবে, যাতে প্রোডাক্টের নাম লিখলেই ছবি ও দামসহ ড্রপডাউনে সাজেশন আসে।
-- হোমপেজে ক্যাটাগরির নিচে গ্যাপ ছাড়া সরাসরি সকল পণ্য গ্রিডে দেখাতে হবে।
-- অ্যাডমিন প্যানেল থেকে প্রোডাক্ট এবং ক্যাটাগরি উপরে-নিচে (Move Up / Down) নামিয়ে সাজানোর ব্যবস্থা করতে হবে।
-- কার্ট পেজে ডেলিভারি ফ্রি টেক্সট পরিবর্তন করে ট্রাস্ট ব্যাজ দিতে হবে।
-
-### 🛠️ সমাধান ও কোড পরিবর্তন:
-1. SearchBar.jsx এবং /search পেজ তৈরি করে ইনস্ট্যান্ট ড্রপডাউন সাজেশন চালু করা হয়েছে।
-2. HomeCategories.jsx নতুন প্রিমিয়াম ব্যাকড্রপ ও আইকন সহ রি-ডিজাইন করা হয়েছে।
-3. অ্যাডমিন প্রোডাক্ট টেবিলে ↑ এবং ↓ বাটন যোগ করা হয়েছে যা ডাটাবেজে ক্রমানুসার সংরক্ষণ করে।
-4. কার্ট পেজে **'★ আপনার বিশ্বাসই আমাদের অঙ্গীকার ★'** স্লোগান যুক্ত করা হয়েছে।
+### 📋 1. Context & User Requirement (ব্যবহারকারীর অনুরোধ ও সমস্যা)
+- **Problem Statement (সমস্যা):**  
+  ব্যবহারকারী Meta Events Manager-এর **Test Events** টুল থেকে অ্যাক্টিভিটি শেয়ার করেন। দেখা যায় প্রতিটি ব্রাউজার অ্যাকশনে (`PageView`, `ViewContent`, `AddToCart`, `InitiateCheckout`, `Purchase`) **২ বার করে ইভেন্ট ফায়ার হচ্ছে** (Double Counting / Duplicate Tracking)।
+  - **১ম ইভেন্ট আইডি:** কাস্টম ট্র্যাকিং আইডি (যেমন: `addtocart_1788847187438_186`, `initiatecheckout_...`, অর্ডার আইডি)।
+  - **২য় ইভেন্ট আইডি:** মেটা অটো-প্লাগইন আইডি (যেমন: `ob3_plugin-set_...`)।
+- **Key Questions & Expectations (জিজ্ঞাসা ও চাহিদা):**
+  1. কোডের মধ্যে কি কোনো পুরনো বা অতিরিক্ত GTM / Meta Pixel স্ক্রিপ্ট রয়ে গেছে?
+  2. অ্যাডমিন প্যানেল (`/admin/tracking`) থেকে কীভাবে Tag Manager অন/অফ এবং Container ID পরিবর্তন করা যাবে?
+  3. প্রজেক্টের প্রতিটি আপডেটের পর যেন একটি প্রফেশনাল টেক্সট ডকুমেন্টে সকল কথোপকথন ও কাজের হিস্ট্রি সুবিন্যস্ত থাকে।
 
 ---
 
-## 🚀 সেশন: ৪ সেপ্টেম্বর, ২০২৬ — Dynamic Categories & Button Styling (v2.1.0)
-
-### 👤 ইউজার রিকোয়েস্ট:
-- ক্যাটাগরি ও সাব-ক্যাটাগরি সম্পূর্ণ ডায়নামিক ও স্লাগ-ভিত্তিক রাউটিং হতে হবে।
-- গুগল ড্রাইভ ইমেজের লিঙ্ক বসালে তা যাতে সরাসরি ওয়েবসাইটে শো করে।
-- বাটনের কালার অদলবদল (কার্ট বাটন আউটলাইন, এখনই কিনুন বাটন সলিড ব্লু)।
-- ফুটারে মেইনটেইনার ইনফো ও সঠিক হোয়াটসঅ্যাপ নম্বর আপডেট।
-
-### 🛠️ সমাধান ও কোড পরিবর্তন:
-1. /category/[main] এবং /category/[main]/[sub] ডায়নামিক রাউট তৈরি।
-2. গুগল ড্রাইভ ভিউ লিঙ্ককে ডিরেক্ট ইমেজ লিঙ্কে কনভার্ট করার ফাংশন যোগ।
-3. বাটন স্টাইল ও ফুটার অ্যাট্রিবিউশন আপডেট।
+### 🔍 2. Technical Root Cause Analysis (প্রযুক্তিগত কারণ অনুসন্ধান)
+1. **GTM DataLayer ও Pixel কনফ্লিক্ট (`src/lib/gtm.js`):**  
+   - `gtm.js` ফাইলের `pushToDataLayer` ফাংশনে DataLayer পুশের পাশাপাশি সরাসরি `window.fbq("track", ...)` কল করা ছিল কোনো `eventID` ছাড়া।
+   - অপরদিকে কম্পোনেন্টগুলো (`ProductDetailsActions.jsx`, `CartContext.jsx`, `checkout/page.jsx`) আলাদাভাবে `trackMetaEvent()` কল করে `eventID` সহ ফায়ার করছিল।
+   - ফলে প্রতি ক্লিকে ব্রাউজার থেকে **দুটি আলাদা Meta Pixel ইভেন্ট** নির্গত হচ্ছিল।
+2. **Deduplication ব্যর্থতা:**  
+   - যেহেতু `gtm.js` এর ইভেন্টে কোনো `eventID` ছিল না, Meta Pixel স্ক্রিপ্ট তাকে নামহীন বা ওপেন-ব্রিজ ইভেন্ট হিসেবে `ob3_plugin-set_...` আইডি অ্যাসাইন করেছিল। আইডি মিল না থাকায় Meta এদের ডিডুপ্লিকেট করতে পারছিল না।
 
 ---
 
-## 🚀 সেশন: ৪ সেপ্টেম্বর, ২০২৬ — Admin Settings & Payment Methods Hub (v2.0.0)
+### 🛠️ 3. Implementation Details & Solutions (গৃহীত পদক্ষেপ ও কোড সমাধান)
 
-### 👤 ইউজার রিকোয়েস্ট:
-- অ্যাডমিন প্যানেলে সেন্ট্রাল সেটিংস পেজ তৈরি করতে হবে।
-- বিকাশ, নগদ, রকেটের নম্বর ও কিউআর কোড অ্যাডমিন থেকে পরিবর্তনের সুবিধা থাকতে হবে।
-- নতুন অ্যাডমিন/মডারেটর স্টাফ ম্যানেজমেন্ট সিস্টেম থাকতে হবে।
+#### ক. `src/lib/gtm.js` সংশোধন:
+- `pushToDataLayer` ফাংশন থেকে অপ্রয়োজনীয় ডিরেক্ট `fbq` এবং `ttq` ব্রিজ সম্পূর্ণ অপসারণ করা হয়েছে।
+- এখন DataLayer শুধুমাত্র বিশুদ্ধ GTM `window.dataLayer.push(data)` হিসেবে দায়িত্ব পালন করে।
 
-### 🛠️ সমাধান ও কোড পরিবর্তন:
-1. /admin/settings রাউটে হেডার, ফুটার, নোটিশ বার সেটিংস পেজ তৈরি।
-2. পেমেন্ট নম্বর ও নির্দেশনাবলী ডাটাবেজে ডায়নামিক করে চেকআউটে সংযুক্ত।
-3. স্টাফ ও ইউজার রোল ম্যানেজমেন্ট তৈরি।
+#### খ. `src/app/order-success/page.js` আপগ্রেড:
+- অর্ডার কমপ্লিশন স্ক্রিনে পারচেজ ইভেন্টকে `trackMetaEvent("Purchase", ...)` এর আওতায় নিয়ে আসা হয়েছে।
+- কাস্টমার ডাটা (ফোন নম্বর, নাম, ডেলিভারি ঠিকানা, মোট মূল্য, অর্ডার আইডি) স্বয়ংক্রিয়ভাবে হ্যাশ হয়ে ব্রাউজার পিক্সেল এবং সার্ভার CAPI উভয়েই একসাথে সেন্ড হয়।
+
+#### গ. অ্যাডমিন প্যানেল ট্র্যাকিং হাব (`/admin/tracking`):
+- অ্যাডমিন প্যানেলে **Google Tag Manager** ট্যাবে টগল সুইচ (Active/Inactive) এবং Container ID ইনপুট ফিল্ড যাচাই করা হয়েছে।
+- এর মাধ্যমে কোনো কোড পরিবর্তন ছাড়াই অ্যাডমিন থেকে মুহূর্তের মধ্যে GTM স্ক্রিপ্ট চালু বা বন্ধ করা যায়।
+
+#### ঘ. গিট ভার্সনিং ও ক্লাউড সিঙ্ক:
+- Commit `1cabc0a`: `fix(tracking): remove duplicate pixel bridges from gtm.js and clean purchase tracking`
+- Commit `ad1d0d6`: `docs: update CHANGELOG.md with Version 2.3.0 release notes`
+- Commit `a5592b7`: `docs: add CHAT_HISTORY_AND_UPDATES.md for complete conversation and update logs`
 
 ---
 
-## 🚀 সেশন: ৩ সেপ্টেম্বর, ২০২৬ — Base Architecture, Auth & Cart System (v1.0.0)
+## 🚀 Session Log: 05 September 2026 — Milestone v2.2.0
 
-### 👤 ইউজার রিকোয়েস্ট:
-- ফুল-স্ট্যাক ই-কমার্স ওয়েবসাইট তৈরি (Next.js + Express/Node.js + MongoDB)।
-- ইউজার রেজিস্ট্রেশন, লগইন এবং অ্যাডমিন প্রটেক্টেড রাউট।
-- প্রোডাক্ট ক্যাটালগ, কার্ট ও চেকআউট ফ্লো।
+### 📋 User Requirements:
+1. হেডারের ঠিক নিচে একটি প্রিমিয়াম লাইভ প্রোডাক্ট সার্চ বার বসানো।
+2. সার্চ বক্সে টাইপ করার সাথে সাথে লাইভ ড্রপডাউনে প্রোডাক্ট ইমেজ, ক্যাটাগরি ও প্রাইস সহ অটো-কমপ্লিট সাজেশন আসা।
+3. হোমপেজে ক্যাটাগরির নিচেই কোনো ফাঁকা জায়গা ছাড়া সরাসরি "সকল পণ্যসমূহ" গ্রিড শো করা।
+4. অ্যাডমিন প্যানেল থেকে প্রোডাক্ট এবং ক্যাটাগরি উপরে-নিচে (Move Up / Down) নামিয়ে ড্র্যাগ/অর্ডার সাজানোর সুবিধা।
+5. কার্ট পেজে ডেলিভারি ফ্রি টেক্সট পরিবর্তন করে বিশ্বস্ততার স্লোগান দেওয়া।
 
-### 🛠️ সমাধান ও কোড পরিবর্তন:
-1. Next.js App Router আর্কিটেকচার ও Tailwind CSS সেটআপ।
-2. Express + MongoDB ব্যাকএন্ড API এবং JWT অথেন্টিকেশন।
-3. CartContext ও অর্ডার প্রসেসিং ফ্লো তৈরি।
+### 🛠️ Implementation Details:
+- **কম্পোনেন্ট:** `src/components/shared/SearchBar.jsx` এবং `src/app/search/page.js` তৈরি।
+- **ডিজাইন:** `src/components/home/HomeCategories.jsx` নতুন গ্লাস-মরফিজম ও ব্যাকড্রপ দিয়ে আধুনিকায়ন।
+- **ডাটাবেজ ও অ্যাডমিন:** প্রোডাক্ট স্কিমায় `sortOrder` ফিল্ড যুক্ত করে টেবিলে `↑` ও `↓` বাটনের মাধ্যমে রিয়্যাল-টাইম সাজানোর ব্যবস্থা।
+- **কার্ট ট্রাস্ট ব্যাজ:** কার্ট পেজে *"★ আপনার বিশ্বাসই আমাদের অঙ্গীকার ★"* স্লোগান যুক্ত করা হয়েছে।
+
+---
+
+## 🚀 Session Log: 04 September 2026 — Milestone v2.1.0
+
+### 📋 User Requirements:
+1. সম্পূর্ণ ডায়নামিক ক্যাটাগরি ও সাব-ক্যাটাগরি স্লাগ রাউটিং তৈরি।
+2. গুগল ড্রাইভ থেকে কপি করা ইমেজ লিঙ্ক স্বয়ংক্রিয়ভাবে সরাসরি প্রদর্শনের উপযোগী করা।
+3. প্রোডাক্ট ডিটেইলস পেজের বাটনের কালার অদলবদল (কার্ট বাটন আউটলাইন, এখনই কিনুন বাটন সলিড ব্লু)।
+4. ফুটারে মেইনটেইনার ইনফো (`Maintained by Rayhan`) এবং অফিসিয়াল WhatsApp নম্বর আপডেট।
+
+### 🛠️ Implementation Details:
+- **রাউটিং:** `/category/[main]` এবং `/category/[main]/[sub]` ডায়নামিক এসইও ফ্রেন্ডলি রাউট তৈরি।
+- **ড্রাইভ কনভার্টার:** গুগল ড্রাইভের ভিউ লিঙ্ক থেকে সরাসরি `drive.google.com/uc?export=view&id=...` তে কনভার্ট করার ইউটিলিটি যোগ।
+- **বাটন রি-স্টাইলিং:** Tailwind CSS দিয়ে বাটনের অ্যাকসেন্ট ও হোভার কালার পারফেক্ট করা।
+
+---
+
+## 🚀 Session Log: 04 September 2026 — Milestone v2.0.0
+
+### 📋 User Requirements:
+1. অ্যাডমিন প্যানেলে সেন্ট্রাল সেটিংস হাব তৈরি করা (`/admin/settings`)।
+2. বিকাশ, নগদ, রকেট এবং ক্যাশ অন ডেলিভারি নম্বর ও কিউআর কোড অ্যাডমিন থেকে পরিবর্তনের সুবিধা।
+3. অ্যাডমিন ও মডারেটর স্টাফ ম্যানেজমেন্ট (নতুন ইউজার রোল যোগ, এডিট ও ডিলিট)।
+4. নোটিশ বার সেটিংস (হেডারের উপরে জরুরি ঘোষণার জন্য টেক্সট ও লিঙ্ক)।
+
+### 🛠️ Implementation Details:
+- **কন্ট্রোলার ও রুট:** `settings.controller.js` এবং `settings.routes.js` তৈরি।
+- **পেমেন্ট গেটওয়ে হাব:** পেমেন্ট মেথড ডায়নামিক করে চেকআউট পেজের সাথে সিঙ্ক করা।
+- **অথরাইজেশন:** রোল-বেসড অ্যাক্সেস কন্ট্রোল (RBAC) দিয়ে স্টাফ ম্যানেজমেন্ট পেজ তৈরি।
+
+---
+
+## 🚀 Session Log: 03 September 2026 — Milestone v1.0.0
+
+### 📋 User Requirements:
+1. সম্পূর্ণ নতুন ই-কমার্স প্ল্যাটফর্মের ভিত্তি তৈরি করা (Next.js App Router + Node.js/Express + MongoDB)।
+2. ইউজার রেজিস্ট্রেশন, লগইন এবং অ্যাডমিন প্রটেক্টেড রাউট।
+3. শপিং কার্ট সিস্টেম (`CartContext`), প্রোডাক্ট পেজ এবং অর্ডার প্লেসমেন্ট ফ্লো।
+
+### 🛠️ Implementation Details:
+- **ফ্রন্টএন্ড:** Next.js 15, Tailwind CSS, React Toastify, React Icons।
+- **ব্যাকএন্ড:** Express.js REST API, Mongoose ORM, JWT Token Authentication, Bcrypt Password Hashing।
+- **ডাটাবেজ:** MongoDB Atlas ক্লাউড ডাটাবেজ ইন্টিগ্রেশন।
+
+---
+
+## 📌 ডেভেলপার গাইড ও ডকুমেন্টেশন মেইনটেন্যান্স রুলস
+1. প্রতিবার ক্লায়েন্টের সাথে যেকোনো নতুন ফিচার, বাগ ফিক্স বা পরিবর্তন নিয়ে আলোচনা সম্পন্ন হলে এই ফাইলে নতুন সেশন লগ আকারে যুক্ত করতে হবে।
+2. লগে স্পষ্টভাবে **ইউজার রিকোয়েস্ট**, **সমস্যার কারণ**, **কোড পরিবর্তন** এবং **গিট কমিট রেফারেন্স** অন্তর্ভুক্ত থাকতে হবে।
+3. কোড পুশের পাশাপাশি এই ডকুমেন্টটিও গিটহাবে আপডেট করে সুরক্ষিত রাখতে হবে।
