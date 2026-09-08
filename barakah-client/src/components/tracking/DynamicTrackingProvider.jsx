@@ -40,6 +40,9 @@ export default function DynamicTrackingProvider() {
             !(function (f, b, e, v, n, t, s) {
               if (f.fbq) return;
               n = f.fbq = function () {
+                if ((arguments[0] === "track" || arguments[0] === "trackCustom") && (!arguments[3] || !arguments[3].eventID)) {
+                  return;
+                }
                 n.callMethod
                   ? n.callMethod.apply(n, arguments)
                   : n.queue.push(arguments);
