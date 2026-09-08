@@ -60,7 +60,8 @@ export default function DynamicTrackingProvider() {
               "script",
               "https://connect.facebook.net/en_US/fbevents.js"
             );
-            window.fbq("set", "autoConfig", false, targetFbPixelId);
+            window.fbq("set", "autoConfig", "false", targetFbPixelId);
+            window.fbq.disablePushState = true;
             window.fbq("init", targetFbPixelId);
           }
 
