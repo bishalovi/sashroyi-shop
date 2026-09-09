@@ -2368,8 +2368,8 @@ ${productNames}
                         </div>
                       </>
                     )}
-                  </div>
                 </div>
+
 
                 <div className="rounded-xl border border-[#e5dccf] p-4">
                   <h3 className="mb-3 font-semibold text-[#3d2f1f]">
