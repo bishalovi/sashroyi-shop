@@ -202,50 +202,61 @@ exports.createOrder = async (req, res) => {
       notes,
       shippingType,
       shippingCost,
+      discount,
       paymentMethod,
       accountLast4,
       items,
       subtotal,
       total,
       source,
+      status,
+      createdBy,
     } = req.body;
+
+    const finalShippingType = shippingType || (Number(shippingCost) === 120 ? "outside" : "inside");
+    const finalPaymentMethod = paymentMethod || "cod";
 
     if (
       !customerName ||
       !phone ||
       !address ||
-      !shippingType ||
       !items ||
-      !paymentMethod ||
       !Array.isArray(items) ||
       items.length === 0
     ) {
       return res.status(400).json({
         success: false,
-        message: "Missing required order fields",
+        message: "Missing required order fields (customerName, phone, address, items)",
       });
     }
 
+    const formattedSource =
+      typeof source === "object" && source !== null
+        ? source
+        : {
+            traffic_source: source || "direct",
+            traffic_medium: "",
+            traffic_campaign: "",
+          };
+
     const orderData = {
       sessionId: sessionId || null,
-      customerName,
-      phone,
-      address,
-      notes: notes || "",
-      shippingType,
+      customerName: String(customerName).trim(),
+      phone: String(phone).trim(),
+      address: String(address).trim(),
+      notes: notes ? String(notes).trim() : "",
+      shippingType: finalShippingType,
       shippingCost: Number(shippingCost) || 0,
+      discount: Number(discount) || 0,
       items,
       subtotal: Number(subtotal) || 0,
       total: Number(total) || 0,
-      status: "pending",
+      status: status || "confirmed",
+      createdBy: createdBy || null,
       createdAt: new Date(),
-      paymentMethod,
-      accountLast4,
-      source: source || {
-        traffic_source: "direct",
-        traffic_medium: "",
-        traffic_campaign: "",
-      },
+      paymentMethod: finalPaymentMethod,
+      accountLast4: accountLast4 || "",
+      source: formattedSource,
       fraudCheck: {
         status: "processing",
         totalWebsiteOrders: 0,
