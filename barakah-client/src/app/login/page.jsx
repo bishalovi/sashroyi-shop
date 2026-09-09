@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-toastify";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
   const baseUrl = "https://sashroyi-api.onrender.com";
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "barakahAdmin1234" || user.role === "barakahModerator0102") {
+        router.replace("/admin");
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [user, loading, router]);
 
   const [serverMessage, setServerMessage] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
