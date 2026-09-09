@@ -12,6 +12,7 @@ import Script from "next/script";
 import "react-toastify/dist/ReactToastify.css";
 import UTMTracker from "@/components/tracking/UTMTracker";
 import DynamicTrackingProvider from "@/components/tracking/DynamicTrackingProvider";
+import DeviceGuard from "@/components/security/DeviceGuard";
 
 export const metadata = {
   title: "Sashroyi | Islamic Wall Clock & Canvas",
@@ -53,6 +54,7 @@ export default function RootLayout({ children }) {
           }}
         />
 
+        <DeviceGuard />
 
         <ToastContainer
           position="top-right"

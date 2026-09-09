@@ -24,6 +24,7 @@ const trackingRoutes = require("./routes/tracking.routes");
 const shippingRoutes = require("./routes/shipping.routes");
 const settingsRoutes = require("./routes/settings.routes");
 const categoryRoutes = require("./routes/category.routes");
+const blacklistRoutes = require("./routes/blacklist.routes");
 
 app.get("/", (req, res) => {
   res.send("Barakah server running successfully");
@@ -55,6 +56,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/tracking", trackingRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/blacklist", blacklistRoutes);
 
 const PORT = process.env.PORT || 8000;
 
@@ -73,6 +75,9 @@ connectDB()
       await db.collection("categories").createIndex({ order: 1 });
       await db.collection("orders").createIndex({ createdAt: -1 });
       await db.collection("settings").createIndex({ key: 1 });
+      await db.collection("blacklist").createIndex({ deviceId: 1 });
+      await db.collection("blacklist").createIndex({ ip: 1 });
+      await db.collection("blacklist").createIndex({ phone: 1 });
       console.log("Database connected and indexes verified");
     } catch (indexErr) {
       console.log("Indexes initialized");

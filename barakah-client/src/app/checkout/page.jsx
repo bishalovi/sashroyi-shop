@@ -15,6 +15,7 @@ import { trackMetaEvent } from "@/lib/metaTracking";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
 import { FaFacebookMessenger, FaPhoneAlt, FaWhatsapp, FaCopy, FaCheck } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
+import { getOrCreateDeviceId } from "@/lib/deviceId";
 
 export default function CheckoutPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
@@ -213,6 +214,7 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           sessionId,
+          deviceId: getOrCreateDeviceId(),
 
           customerName: data.name,
           phone: data.phone,
@@ -330,6 +332,7 @@ export default function CheckoutPage() {
       })),
       subtotal: roundedSubtotal,
       total: roundedTotal,
+      deviceId: getOrCreateDeviceId(),
       source: {
         traffic_source: tracking.utm_source || "direct",
         traffic_medium: tracking.utm_medium || "",

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
-import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck, LuPlus, LuTrash2 } from "react-icons/lu";
+import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck, LuPlus, LuTrash2, LuBan, LuShieldCheck } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -325,6 +325,113 @@ export default function OrdersPage() {
       toast.error("Error updating customer info");
     } finally {
       setSavingCustomer(false);
+    }
+  };
+
+  const [blockingLoading, setBlockingLoading] = useState(false);
+
+  const handleBlockCustomer = async (order) => {
+    if (!order) return;
+
+    const result = await Swal.fire({
+      title: "কাস্টমার ও ডিভাইস ব্লক করবেন?",
+      html: `
+        <div class="text-left text-sm space-y-2 text-gray-700">
+          <p>আপনি কি নিশ্চিত যে <b>${order.customerName || "এই গ্রাহক"}</b> (${order.phone}) কে ব্লক করতে চান?</p>
+          <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs leading-relaxed">
+            ⚠️ <b>ব্লক করার পর:</b> এই গ্রাহক তার ডিভাইস বা আইপি (${order.ip || "ডিভাইস"}) দিয়ে sashroyi.shop ওয়েবসাইটে প্রবেশ করতে পারবে না এবং কোনো নতুন অর্ডার দিতে পারবে না।
+          </div>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "হ্যাঁ, ব্লক করুন",
+      cancelButtonText: "বাতিল",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setBlockingLoading(true);
+      const res = await fetch(`${baseUrl}/api/blacklist/block`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order._id,
+          ip: order.ip,
+          deviceId: order.deviceId,
+          phone: order.phone,
+          customerName: order.customerName,
+          reason: "ফেক অর্ডার বা সন্দেহভাজন আচরণ (Blocked from Order List)",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to block entity");
+
+      toast.success("ডিভাইস ও আইপি সফলভাবে ব্লক করা হয়েছে!");
+
+      // Update selectedOrder state
+      setSelectedOrder((prev) => (prev ? { ...prev, isBlocked: true } : null));
+
+      // Update orders list
+      setOrders((prev) =>
+        prev.map((o) => (o._id === order._id ? { ...o, isBlocked: true } : o))
+      );
+    } catch (err) {
+      toast.error(err.message || "ব্লক করতে সমস্যা হয়েছে");
+    } finally {
+      setBlockingLoading(false);
+    }
+  };
+
+  const handleUnblockCustomer = async (order) => {
+    if (!order) return;
+
+    const result = await Swal.fire({
+      title: "আনব্লক করতে চান?",
+      text: `${order.customerName || "এই গ্রাহক"} (${order.phone}) এর ডিভাইস ও আইপি আনব্লক করতে চান? এর ফলে গ্রাহক পুনরায় ওয়েবসাইটে ভিজিট ও অর্ডার করতে পারবে।`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#059669",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "হ্যাঁ, আনব্লক করুন",
+      cancelButtonText: "বাতিল",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setBlockingLoading(true);
+      const res = await fetch(`${baseUrl}/api/blacklist/unblock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order._id,
+          ip: order.ip,
+          deviceId: order.deviceId,
+          phone: order.phone,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to unblock entity");
+
+      toast.success("ডিভাইস ও আইপি সফলভাবে আনব্লক করা হয়েছে!");
+
+      // Update selectedOrder state
+      setSelectedOrder((prev) => (prev ? { ...prev, isBlocked: false } : null));
+
+      // Update orders list
+      setOrders((prev) =>
+        prev.map((o) => (o._id === order._id ? { ...o, isBlocked: false } : o))
+      );
+    } catch (err) {
+      toast.error(err.message || "আনব্লক করতে সমস্যা হয়েছে");
+    } finally {
+      setBlockingLoading(false);
     }
   };
 
@@ -2940,6 +3047,51 @@ ${productNames}
                           <LuCopy className="w-3.5 h-3.5" />
                           <span>Copy</span>
                         </button>
+                      </div>
+
+                      {/* Device & IP Details + Block / Unblock Button */}
+                      <div className="pt-3 mt-3 border-t border-[#f1eadf] space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-[#7a6a58]">Device IP:</span>
+                            <span className="font-mono text-[11px] bg-[#faf7f0] px-2 py-0.5 rounded border border-[#e5dccf] text-[#3d2f1f]">
+                              {selectedOrder.ip || "Not Captured"}
+                            </span>
+                            {selectedOrder.isBlocked ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                🚫 Blocked (স্থগিত)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                🟢 Allowed (অনুমোদিত)
+                              </span>
+                            )}
+                          </div>
+
+                          {selectedOrder.isBlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleUnblockCustomer(selectedOrder)}
+                              disabled={blockingLoading}
+                              className="btn btn-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none font-bold rounded-lg px-2.5 py-1 flex items-center gap-1 shadow-xs active:scale-95"
+                              title="Unblock this customer and device"
+                            >
+                              <LuShieldCheck className="w-3.5 h-3.5" />
+                              <span>{blockingLoading ? "Processing..." : "Unblock (আনব্লক)"}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleBlockCustomer(selectedOrder)}
+                              disabled={blockingLoading}
+                              className="btn btn-xs bg-rose-600 hover:bg-rose-700 text-white border-none font-bold rounded-lg px-2.5 py-1 flex items-center gap-1 shadow-xs active:scale-95"
+                              title="Block this device & IP from visiting the website"
+                            >
+                              <LuBan className="w-3.5 h-3.5" />
+                              <span>{blockingLoading ? "Processing..." : "Block Device (ব্লক করুন)"}</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (

@@ -230,6 +230,29 @@ exports.createOrder = async (req, res) => {
       });
     }
 
+    const clientIp = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.headers["x-real-ip"] || req.socket?.remoteAddress || "";
+    const cleanPhone = String(phone).trim();
+    const deviceId = req.body.deviceId ? String(req.body.deviceId).trim() : null;
+
+    // Check if device, IP, or phone is blacklisted
+    const blacklistCollection = db.collection("blacklist");
+    const blacklistConditions = [{ phone: cleanPhone }];
+    if (deviceId) blacklistConditions.push({ deviceId });
+    if (clientIp && clientIp !== "::1" && clientIp !== "127.0.0.1") blacklistConditions.push({ ip: clientIp });
+
+    const blockedEntry = await blacklistCollection.findOne({
+      $or: blacklistConditions,
+      isActive: { $ne: false },
+    });
+
+    if (blockedEntry) {
+      return res.status(403).json({
+        success: false,
+        message: "আপনার ডিভাইস বা ফোন নম্বর থেকে অর্ডার সাময়িকভাবে স্থগিত করা হয়েছে। বিস্তারিত জানতে সাপোর্টে যোগাযোগ করুন।",
+        isBlocked: true,
+      });
+    }
+
     const formattedSource =
       typeof source === "object" && source !== null
         ? source
@@ -242,7 +265,7 @@ exports.createOrder = async (req, res) => {
     const orderData = {
       sessionId: sessionId || null,
       customerName: String(customerName).trim(),
-      phone: String(phone).trim(),
+      phone: cleanPhone,
       address: String(address).trim(),
       notes: notes ? String(notes).trim() : "",
       shippingType: finalShippingType,
@@ -257,6 +280,9 @@ exports.createOrder = async (req, res) => {
       paymentMethod: finalPaymentMethod,
       accountLast4: accountLast4 || "",
       source: formattedSource,
+      ip: clientIp || null,
+      deviceId: deviceId || null,
+      isBlocked: false,
       fraudCheck: {
         status: "processing",
         totalWebsiteOrders: 0,
