@@ -25,6 +25,8 @@ const {
   bulkUpdateOrderStatus,
   updateOrderPricing,
   updateOrderDetails,
+  deleteOrder,
+  bulkDeleteOrders,
 } = require("../controllers/order.controller");
 
 router.post("/", createOrder);
@@ -40,6 +42,7 @@ router.get("/export", getOrdersForExport);
 router.get("/by-date", getOrdersByDate);
 router.get("/moderator-activity", getModeratorActivity);
 router.get("/moderator-performance", getModeratorPerformance);
+router.post("/bulk-delete", bulkDeleteOrders);
 router.patch("/bulk-status", bulkUpdateOrderStatus);
 router.patch("/:id/deliver", markOrderDelivered);
 router.patch("/:id/steadfast", sendToSteadfast);
@@ -51,6 +54,6 @@ router.patch("/:id/call", updateCallCount);
 router.patch("/:id/status", updateOrderStatus);
 router.patch("/:id/pricing", updateOrderPricing);
 router.patch("/:id/details", updateOrderDetails || updateOrderPricing);
-
+router.delete("/:id", deleteOrder);
 
 module.exports = router;

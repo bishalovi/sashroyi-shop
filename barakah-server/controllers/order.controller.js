@@ -1847,3 +1847,82 @@ exports.updateOrderDetails = async (req, res) => {
 
 exports.updateOrderPricing = exports.updateOrderDetails;
 
+// DELETE /api/orders/:id
+exports.deleteOrder = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const ordersCollection = db.collection("orders");
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID",
+      });
+    }
+
+    const result = await ordersCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Order deleted successfully",
+    });
+  } catch (error) {
+    console.error("Failed to delete order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// POST /api/orders/bulk-delete
+exports.bulkDeleteOrders = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const ordersCollection = db.collection("orders");
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No order IDs provided for deletion",
+      });
+    }
+
+    const validObjectIds = ids
+      .filter((id) => ObjectId.isValid(id))
+      .map((id) => new ObjectId(id));
+
+    if (validObjectIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid order IDs provided",
+      });
+    }
+
+    const result = await ordersCollection.deleteMany({
+      _id: { $in: validObjectIds },
+    });
+
+    res.json({
+      success: true,
+      message: `${result.deletedCount} orders deleted successfully`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Failed to bulk delete orders:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+

@@ -77,6 +77,12 @@ export default function AdminSidebar() {
           collapsed={collapsed}
         />
         <SidebarItem
+          href="/admin/orders?new=true"
+          icon={<FiPlus />}
+          label="Add Order"
+          collapsed={collapsed}
+        />
+        <SidebarItem
           href="/admin/abandoned-orders"
           icon={<MdOutlineShoppingCartCheckout />}
           label="Abandoned"

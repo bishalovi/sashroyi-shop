@@ -48,6 +48,8 @@ export default function OrdersPage() {
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [deleteLoadingId, setDeleteLoadingId] = useState(null);
 
   // Add Manual Order States
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
@@ -843,14 +845,125 @@ export default function OrdersPage() {
     }
   };
 
+  const [deleteLoadingId, setDeleteLoadingId] = useState(null);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+
+  const handleDeleteOrder = async (order) => {
+    if (!order) return;
+
+    const result = await Swal.fire({
+      title: "অর্ডার মুছে ফেলতে চান?",
+      html: `
+        <div class="text-left text-sm space-y-1 text-gray-700">
+          <p>গ্রাহক: <b>${order.customerName || "Customer"}</b></p>
+          <p>ফোন: <b>${order.phone || "N/A"}</b> | মোট: <b>৳${order.total || 0}</b></p>
+          <div class="p-2 bg-rose-50 border border-rose-200 rounded text-rose-800 text-xs mt-2">
+            ⚠️ এই অর্ডারটি চিরতরে মুছে যাবে। এটি আর ফিরিয়ে আনা যাবে না।
+          </div>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "হ্যাঁ, ডিলিট করুন",
+      cancelButtonText: "বাতিল",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setDeleteLoadingId(order._id);
+      const res = await fetch(`${baseUrl}/api/orders/${order._id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to delete order");
+
+      toast.success("অর্ডার সফলভাবে মুছে ফেলা হয়েছে!");
+
+      setOrders((prev) => prev.filter((o) => o._id !== order._id));
+      if (selectedOrder?._id === order._id) {
+        setSelectedOrder(null);
+      }
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(order._id);
+        return next;
+      });
+      fetchCounts();
+    } catch (err) {
+      toast.error(err.message || "অর্ডার ডিলিট করতে সমস্যা হয়েছে");
+    } finally {
+      setDeleteLoadingId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const result = await Swal.fire({
+      title: `${selectedIds.size}টি অর্ডার মুছে ফেলতে চান?`,
+      html: `
+        <div class="text-left text-sm space-y-2 text-gray-700">
+          <p>আপনি <b>${selectedIds.size}টি</b> অর্ডার মুছে ফেলার জন্য সিলেক্ট করেছেন।</p>
+          <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs font-medium">
+            ⚠️ সতর্কবার্তা: নির্বাচিত অর্ডারগুলো চিরতরে মুছে যাবে।
+          </div>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: `হ্যাঁ, ডিলিট করুন`,
+      cancelButtonText: "বাতিল",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setBulkDeleteLoading(true);
+      const idsArray = Array.from(selectedIds);
+      const res = await fetch(`${baseUrl}/api/orders/bulk-delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsArray }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to bulk delete orders");
+
+      toast.success(`${data.deletedCount || idsArray.length}টি অর্ডার সফলভাবে মুছে ফেলা হয়েছে!`);
+
+      setOrders((prev) => prev.filter((o) => !selectedIds.has(o._id)));
+      if (selectedOrder && selectedIds.has(selectedOrder._id)) {
+        setSelectedOrder(null);
+      }
+      setSelectedIds(new Set());
+      fetchCounts();
+    } catch (err) {
+      toast.error(err.message || "বাল্ক ডিলিট করতে সমস্যা হয়েছে");
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const page = Number(params.get("page")) || 1;
     const status = params.get("status") || "all";
+    const isNew = params.get("new");
 
     setCurrentPage(page);
     setStatusFilter(status);
     setIsReady(true);
+
+    if (isNew === "true" || isNew === "1") {
+      handleOpenAddOrder();
+    }
   }, []);
 
   useEffect(() => {
@@ -1762,155 +1875,143 @@ ${productNames}
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-[#e5dccf] p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center justify-between gap-3 w-full md:w-auto">
-            <div>
-              <h1 className="text-2xl font-bold text-[#3d2f1f]">All Orders</h1>
-              <p className="text-sm text-[#7a6a58] mt-1">
-                Manage customer orders and mark them as delivered.
-              </p>
-            </div>
-
-            {/* Mobile Add Order Button */}
-            <button
-              type="button"
-              onClick={handleOpenAddOrder}
-              className="md:hidden btn btn-sm bg-[#0f2a44] hover:bg-[#1a3f66] text-white border-none flex items-center gap-1 font-bold shadow-md rounded-xl"
-            >
-              <LuPlus className="w-4 h-4 text-[#d4af37]" />
-              <span>Add Order</span>
-            </button>
+      <div className="bg-white rounded-2xl border border-[#e5dccf] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#e5dccf]/60 pb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#3d2f1f]">All Orders (সকল অর্ডার)</h1>
+            <p className="text-sm text-[#7a6a58] mt-1">
+              Manage customer orders, view status, dispatch to couriers and create manual orders.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Desktop Add Order Button */}
-            <button
-              type="button"
-              onClick={handleOpenAddOrder}
-              className="hidden md:flex btn btn-sm bg-[#0f2a44] hover:bg-[#1a3f66] text-white border-none items-center gap-1.5 font-bold shadow-md rounded-xl px-4 mr-2"
-            >
-              <LuPlus className="w-4 h-4 text-[#d4af37]" />
-              <span>+ Add Order (নতুন অর্ডার)</span>
-            </button>
+          <button
+            type="button"
+            onClick={handleOpenAddOrder}
+            className="btn btn-sm sm:btn-md bg-[#0f2a44] hover:bg-[#1a3f66] text-white border-none flex items-center justify-center gap-2 font-bold shadow-lg rounded-xl px-5 transition-transform active:scale-95 text-xs sm:text-sm shrink-0"
+          >
+            <LuPlus className="w-4 h-4 sm:w-5 sm:h-5 text-[#d4af37]" />
+            <span>+ Add New Order (নতুন অর্ডার)</span>
+          </button>
+        </div>
 
-            <button
-              onClick={() => {
-                handleFilterChange("all");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "all"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              All ({counts.all || 0})
-            </button>
+        {/* Status Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              handleFilterChange("all");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "all"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            All ({counts.all || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("pending");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "pending"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Pending ({counts.pending || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("pending");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "pending"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            Pending ({counts.pending || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("confirmed");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "confirmed"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Confirmed ({counts.confirmed || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("confirmed");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "confirmed"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            Confirmed ({counts.confirmed || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("in_courier");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "in_courier"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              In Courier ({counts.in_courier || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("in_courier");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "in_courier"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            In Courier ({counts.in_courier || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("delivered");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "delivered"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Delivered ({counts.delivered || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("delivered");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "delivered"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            Delivered ({counts.delivered || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("cancelled");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "cancelled"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Cancelled ({counts.cancelled || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("cancelled");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "cancelled"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            Cancelled ({counts.cancelled || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("returned");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "returned"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Returned ({counts.returned || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("returned");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "returned"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            Returned ({counts.returned || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("no_response");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "no_response"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              No Response ({counts.no_response || 0})
-            </button>
+          <button
+            onClick={() => {
+              handleFilterChange("no_response");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "no_response"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            No Response ({counts.no_response || 0})
+          </button>
 
-            <button
-              onClick={() => {
-                handleFilterChange("verification_required");
-              }}
-              className={`btn btn-sm ${
-                statusFilter === "verification_required"
-                  ? "bg-[#d4af37] text-white border-[#d4af37]"
-                  : "bg-white text-[#3d2f1f] border-[#e5dccf]"
-              }`}
-            >
-              Verify ({counts.verification_required || 0})
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              handleFilterChange("verification_required");
+            }}
+            className={`btn btn-sm ${
+              statusFilter === "verification_required"
+                ? "bg-[#d4af37] text-white border-[#d4af37]"
+                : "bg-white text-[#3d2f1f] border-[#e5dccf]"
+            }`}
+          >
+            Verify ({counts.verification_required || 0})
+          </button>
         </div>
       </div>
 
@@ -1987,6 +2088,18 @@ ${productNames}
                 </button>
               ))}
             </div>
+
+            {/* Bulk Delete Button */}
+            <button
+              type="button"
+              disabled={bulkDeleteLoading}
+              onClick={handleBulkDelete}
+              className="btn btn-xs bg-rose-600 hover:bg-rose-700 text-white border-none font-bold rounded-lg px-2.5 py-1 flex items-center gap-1 shadow-sm active:scale-95 ml-1"
+              title="নির্বাচিত অর্ডারগুলো চিরতরে মুছে ফেলুন"
+            >
+              <LuTrash2 className="w-3.5 h-3.5" />
+              <span>{bulkDeleteLoading ? "মুছছে..." : "Delete Selected"}</span>
+            </button>
 
             <button
               type="button"
@@ -2192,6 +2305,16 @@ ${productNames}
                                 Verify
                               </button>
                             )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOrder(order)}
+                              disabled={deleteLoadingId === order._id}
+                              className="btn btn-xs text-rose-600 hover:text-white bg-white hover:bg-rose-600 border border-rose-200 hover:border-rose-600 font-semibold transition-colors"
+                              title="Delete Order"
+                            >
+                              {deleteLoadingId === order._id ? "Deleting..." : "Delete"}
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -2362,12 +2485,23 @@ ${productNames}
                 </div>
 
                 <div className="mt-4 flex flex-col gap-2">
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="btn btn-sm w-full bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0] font-semibold"
-                  >
-                    View Order
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="btn btn-sm flex-1 bg-white text-[#3d2f1f] border border-[#d4af37] hover:bg-[#faf7f0] font-semibold"
+                    >
+                      View Order
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteOrder(order)}
+                      disabled={deleteLoadingId === order._id}
+                      className="btn btn-sm bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white font-semibold px-3"
+                      title="Delete Order"
+                    >
+                      <LuTrash2 className="w-4 h-4" />
+                    </button>
+                  </div>
 
                   {order.status === "verification_required" && (
                     <button
@@ -4248,7 +4382,18 @@ ${productNames}
               </div>
 
               {/* Footer Action */}
-              <div className="grid md:flex grid-cols-2 gap-2 justify-center md:justify-end">
+              <div className="grid md:flex grid-cols-2 gap-2 justify-center md:justify-end items-center">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteOrder(selectedOrder)}
+                  disabled={deleteLoadingId === selectedOrder._id}
+                  className="btn btn-xs md:btn-sm bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 hover:border-rose-600 font-bold flex items-center justify-center gap-1.5 md:mr-auto"
+                  title="এই অর্ডারটি চিরতরে মুছে ফেলুন"
+                >
+                  <LuTrash2 className="w-3.5 h-3.5" />
+                  <span>{deleteLoadingId === selectedOrder._id ? "মুছছে..." : "Delete Order"}</span>
+                </button>
+
                 {selectedOrder.status !== "delivered" &&
                   selectedOrder.status !== "cancelled" && (
                     <button
