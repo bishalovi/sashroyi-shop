@@ -1688,19 +1688,36 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-exports.updateOrderPricing = async (req, res) => {
+exports.updateOrderDetails = async (req, res) => {
   try {
     const db = await connectDB();
     const ordersCollection = db.collection("orders");
 
     const { id } = req.params;
-    const { items, shippingCost, discount, subtotal, total, updatedBy } = req.body;
+    const {
+      customerName,
+      phone,
+      address,
+      notes,
+      items,
+      shippingCost,
+      shippingType,
+      discount,
+      subtotal,
+      total,
+      updatedBy,
+    } = req.body;
 
     const updateFields = {
       updatedAt: new Date(),
     };
 
     if (updatedBy) updateFields.updatedBy = updatedBy;
+    if (customerName !== undefined) updateFields.customerName = String(customerName).trim();
+    if (phone !== undefined) updateFields.phone = String(phone).trim();
+    if (address !== undefined) updateFields.address = String(address).trim();
+    if (notes !== undefined) updateFields.notes = String(notes).trim();
+    if (shippingType !== undefined) updateFields.shippingType = shippingType;
     if (Array.isArray(items)) updateFields.items = items;
     if (shippingCost !== undefined) updateFields.shippingCost = Number(shippingCost) || 0;
     if (discount !== undefined) updateFields.discount = Number(discount) || 0;
@@ -1723,15 +1740,17 @@ exports.updateOrderPricing = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Order pricing updated successfully.",
+      message: "Order details updated successfully.",
       data: updatedOrder,
     });
   } catch (error) {
-    console.error("Update Order Pricing Error:", error);
+    console.error("Update Order Details Error:", error);
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
+
+exports.updateOrderPricing = exports.updateOrderDetails;
 

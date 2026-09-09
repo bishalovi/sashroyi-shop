@@ -42,6 +42,82 @@ export default function OrdersPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkStatusLoading, setBulkStatusLoading] = useState(false);
 
+  // Customer Info Edit States
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [customerEditName, setCustomerEditName] = useState("");
+  const [customerEditPhone, setCustomerEditPhone] = useState("");
+  const [customerEditAddress, setCustomerEditAddress] = useState("");
+  const [customerEditNotes, setCustomerEditNotes] = useState("");
+  const [savingCustomer, setSavingCustomer] = useState(false);
+
+  const handleStartEditCustomer = (order) => {
+    setIsEditingCustomer(true);
+    setCustomerEditName(order.customerName || "");
+    setCustomerEditPhone(order.phone || "");
+    setCustomerEditAddress(order.address || "");
+    setCustomerEditNotes(order.notes || "");
+  };
+
+  const handleCancelEditCustomer = () => {
+    setIsEditingCustomer(false);
+  };
+
+  const handleSaveCustomer = async () => {
+    if (!selectedOrder) return;
+    if (!customerEditName.trim()) {
+      toast.error("গ্রাহকের নাম লিখুন");
+      return;
+    }
+    if (!customerEditPhone.trim()) {
+      toast.error("গ্রাহকের ফোন নম্বর লিখুন");
+      return;
+    }
+    if (!customerEditAddress.trim()) {
+      toast.error("গ্রাহকের ঠিকানা লিখুন");
+      return;
+    }
+
+    try {
+      setSavingCustomer(true);
+      const res = await fetch(`${baseUrl}/api/orders/${selectedOrder._id}/details`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: customerEditName.trim(),
+          phone: customerEditPhone.trim(),
+          address: customerEditAddress.trim(),
+          notes: customerEditNotes.trim(),
+          updatedBy: user?.userName || "admin",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const updatedOrder = data.data || {
+          ...selectedOrder,
+          customerName: customerEditName.trim(),
+          phone: customerEditPhone.trim(),
+          address: customerEditAddress.trim(),
+          notes: customerEditNotes.trim(),
+        };
+
+        setSelectedOrder(updatedOrder);
+        setOrders((prev) =>
+          prev.map((o) => (o._id === selectedOrder._id ? { ...o, ...updatedOrder } : o))
+        );
+        setIsEditingCustomer(false);
+        toast.success("গ্রাহকের নাম, ঠিকানা ও নম্বর সফলভাবে আপডেট হয়েছে!");
+      } else {
+        toast.error(data.message || "Failed to update customer info");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error updating customer info");
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
   // Order Pricing & Items Edit States
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [priceEditItems, setPriceEditItems] = useState([]);
@@ -1970,6 +2046,7 @@ ${productNames}
           onClick={() => {
             setSelectedOrder(null);
             setIsEditingPrice(false);
+            setIsEditingCustomer(false);
           }}
         >
           <div
@@ -1990,6 +2067,7 @@ ${productNames}
                 onClick={() => {
                   setSelectedOrder(null);
                   setIsEditingPrice(false);
+                  setIsEditingCustomer(false);
                 }}
                 className="text-black hover:text-red-700 transition-colors cursor-pointer text-xl"
               >
@@ -2000,60 +2078,182 @@ ${productNames}
             <div className="p-5 space-y-4">
               {/* Customer Info */}
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-[#e5dccf] p-4">
-                  <h3 className="mb-3 font-semibold text-[#3d2f1f]">
-                    Customer Info
-                  </h3>
+                <div className="rounded-xl border border-[#e5dccf] p-4 bg-white">
+                  <div className="flex items-center justify-between mb-3 border-b border-[#e5dccf]/60 pb-2">
+                    <h3 className="font-semibold text-[#3d2f1f]">
+                      Customer Info
+                    </h3>
 
-                  <div className="space-y-2 text-sm text-[#3d2f1f]">
-                    <p>
-                      <span className="font-semibold">Name:</span>{" "}
-                      {selectedOrder.customerName}
-                    </p>
-
-                    <p className="flex items-center gap-3">
-                      <span>
-                        <span className="font-semibold">Phone:</span>{" "}
-                        {selectedOrder.phone}
-                      </span>
-                    </p>
-
-                    <p>
-                      <span className="font-semibold">Address:</span>{" "}
-                      {selectedOrder.address}
-                    </p>
-
-                    {selectedOrder.notes && (
-                      <p>
-                        <span className="font-semibold">Notes:</span>{" "}
-                        {selectedOrder.notes}
-                      </p>
+                    {!isEditingCustomer ? (
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditCustomer(selectedOrder)}
+                        className="btn btn-xs bg-[#d4af37] text-white border-none hover:bg-[#b89528] flex items-center gap-1 font-medium shadow-xs"
+                      >
+                        <LuPencil className="w-3 h-3" />
+                        <span>Edit Info</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleCancelEditCustomer}
+                          disabled={savingCustomer}
+                          className="btn btn-xs bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300 font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveCustomer}
+                          disabled={savingCustomer}
+                          className="btn btn-xs bg-emerald-600 text-white hover:bg-emerald-700 border-none font-medium flex items-center gap-1 shadow-xs"
+                        >
+                          {savingCustomer ? (
+                            <span>Saving...</span>
+                          ) : (
+                            <>
+                              <LuSave className="w-3 h-3" />
+                              <span>Save</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     )}
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <button
-                        onClick={() => handleCall(selectedOrder)}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 transition-colors"
-                      >
-                        <LuPhone className="w-3 h-3" />
-                        <span>Call</span>
-                      </button>
+                  </div>
 
-                      <button
-                        onClick={() => handleWhatsAppChat(selectedOrder)}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-[#1dd460] px-3 py-1 text-xs font-semibold text-white hover:bg-[#1ebe5d] transition-colors"
-                      >
-                        <FaWhatsapp className="w-4 h-4" />
-                        <span>WhatsApp</span>
-                      </button>
+                  {!isEditingCustomer ? (
+                    <div className="space-y-2 text-sm text-[#3d2f1f]">
+                      <p>
+                        <span className="font-semibold">Name:</span>{" "}
+                        {selectedOrder.customerName}
+                      </p>
 
-                      <button
-                        onClick={() => handleCopyWhatsAppMessage(selectedOrder)}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
-                      >
-                        <LuCopy className="w-3.5 h-3.5" />
-                        <span>Copy</span>
-                      </button>
+                      <p className="flex items-center gap-3">
+                        <span>
+                          <span className="font-semibold">Phone:</span>{" "}
+                          {selectedOrder.phone}
+                        </span>
+                      </p>
+
+                      <p>
+                        <span className="font-semibold">Address:</span>{" "}
+                        {selectedOrder.address}
+                      </p>
+
+                      {selectedOrder.notes && (
+                        <p>
+                          <span className="font-semibold">Notes:</span>{" "}
+                          {selectedOrder.notes}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() => handleCall(selectedOrder)}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-green-700 px-3 py-1 text-xs font-semibold text-white hover:bg-green-800 transition-colors"
+                        >
+                          <LuPhone className="w-3 h-3" />
+                          <span>Call</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleWhatsAppChat(selectedOrder)}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-[#1dd460] px-3 py-1 text-xs font-semibold text-white hover:bg-[#1ebe5d] transition-colors"
+                        >
+                          <FaWhatsapp className="w-4 h-4" />
+                          <span>WhatsApp</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleCopyWhatsAppMessage(selectedOrder)}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-slate-600 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
+                        >
+                          <LuCopy className="w-3.5 h-3.5" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Customer Name (নাম) *
+                        </label>
+                        <input
+                          type="text"
+                          value={customerEditName}
+                          onChange={(e) => setCustomerEditName(e.target.value)}
+                          placeholder="গ্রাহকের নাম"
+                          className="input input-sm input-bordered w-full text-xs font-medium focus:outline-none focus:border-[#d4af37] bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Phone Number (ফোন নম্বর) *
+                        </label>
+                        <input
+                          type="text"
+                          value={customerEditPhone}
+                          onChange={(e) => setCustomerEditPhone(e.target.value)}
+                          placeholder="ফোন নম্বর (যেমন: 017xxxxxxxx)"
+                          className="input input-sm input-bordered w-full text-xs font-medium focus:outline-none focus:border-[#d4af37] bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Address (ডেলিভারি ঠিকানা) *
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={customerEditAddress}
+                          onChange={(e) => setCustomerEditAddress(e.target.value)}
+                          placeholder="সম্পূর্ণ ডেলিভারি ঠিকানা"
+                          className="textarea textarea-sm textarea-bordered w-full text-xs font-medium focus:outline-none focus:border-[#d4af37] bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Notes (বিশেষ নোট)
+                        </label>
+                        <input
+                          type="text"
+                          value={customerEditNotes}
+                          onChange={(e) => setCustomerEditNotes(e.target.value)}
+                          placeholder="নোট (যদি থাকে)"
+                          className="input input-sm input-bordered w-full text-xs font-medium focus:outline-none focus:border-[#d4af37] bg-white"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={handleCancelEditCustomer}
+                          disabled={savingCustomer}
+                          className="btn btn-xs bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300 font-medium"
+                        >
+                          বাতিল
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveCustomer}
+                          disabled={savingCustomer}
+                          className="btn btn-xs bg-emerald-600 text-white hover:bg-emerald-700 border-none font-medium flex items-center gap-1 shadow-xs"
+                        >
+                          {savingCustomer ? (
+                            <span>সংরক্ষণ হচ্ছে...</span>
+                          ) : (
+                            <>
+                              <LuSave className="w-3 h-3" />
+                              <span>সংরক্ষণ করুন (Save)</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                     {selectedOrder.whatsapp && (
                       <div className="border-t border-[#e5dccf] pt-3 mt-3 space-y-2">
