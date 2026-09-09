@@ -11,6 +11,13 @@ import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "@/contexts/AuthContext";
 
+const getOrdinalNumber = (n) => {
+  if (!n || n <= 0) return "1st";
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
 export default function OrdersPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
   const { user } = useAuth();
@@ -2030,9 +2037,23 @@ ${productNames}
 
                         <td>
                           <div>
-                            <p className="font-semibold text-[#3d2f1f]">
-                              {order.customerName}
-                            </p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-semibold text-[#3d2f1f]">
+                                {order.customerName}
+                              </p>
+                              {order.customerHistory?.isRepeat && (
+                                <span
+                                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold border shadow-2xs ${
+                                    (order.customerHistory?.orderCount || 2) >= 4
+                                      ? "bg-purple-100 text-purple-900 border-purple-300"
+                                      : "bg-amber-100 text-amber-900 border-amber-300"
+                                  }`}
+                                  title={`এই কাস্টমার আগে ${order.customerHistory.orderCount - 1} বার অর্ডার করেছেন (মোট ${order.customerHistory.orderCount}টি অর্ডার)`}
+                                >
+                                  ⭐ Repeat ({getOrdinalNumber(order.customerHistory.orderCount)} Order)
+                                </span>
+                              )}
+                            </div>
                             {order.notes && (
                               <p className="text-xs text-[#7a6a58]">
                                 Notes: {order.notes}
@@ -2188,9 +2209,22 @@ ${productNames}
                         onChange={() => handleToggleOrder(order._id)}
                       />
                       <div>
-                        <p className="font-bold text-[#3d2f1f]">
-                          {index + 1}. {order.customerName}
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-[#3d2f1f]">
+                            {index + 1}. {order.customerName}
+                          </p>
+                          {order.customerHistory?.isRepeat && (
+                            <span
+                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold border shadow-2xs ${
+                                (order.customerHistory?.orderCount || 2) >= 4
+                                  ? "bg-purple-100 text-purple-900 border-purple-300"
+                                  : "bg-amber-100 text-amber-900 border-amber-300"
+                              }`}
+                            >
+                              ⭐ Repeat ({getOrdinalNumber(order.customerHistory.orderCount)} Order)
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-[#7a6a58]">{order.phone}</p>
                       </div>
                     </div>
@@ -3000,10 +3034,27 @@ ${productNames}
 
                   {!isEditingCustomer ? (
                     <div className="space-y-2 text-sm text-[#3d2f1f]">
-                      <p>
-                        <span className="font-semibold">Name:</span>{" "}
-                        {selectedOrder.customerName}
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold">Name:</span>{" "}
+                          <span>{selectedOrder.customerName}</span>
+                          {selectedOrder.customerHistory?.isRepeat ? (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border shadow-xs ${
+                                (selectedOrder.customerHistory?.orderCount || 2) >= 4
+                                  ? "bg-purple-100 text-purple-900 border-purple-300"
+                                  : "bg-amber-100 text-amber-900 border-amber-300"
+                              }`}
+                            >
+                              ⭐ Repeat Customer ({getOrdinalNumber(selectedOrder.customerHistory.orderCount)} Order)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                              🌱 1st Order (নতুন কাস্টমার)
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
                       <p className="flex items-center gap-3">
                         <span>
@@ -3023,6 +3074,30 @@ ${productNames}
                           {selectedOrder.notes}
                         </p>
                       )}
+
+                      {/* Customer Order History Card */}
+                      <div className="p-2.5 rounded-xl bg-[#faf7f0] border border-[#e5dccf] space-y-1.5 mt-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-[#3d2f1f]">কাস্টমার হিস্ট্রি (এই শপে):</span>
+                          <span className="font-bold text-[#d4af37]">
+                            মোট কেনাকাটা: ৳ {selectedOrder.customerHistory?.totalSpent || selectedOrder.total || 0}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                          <div className="bg-white p-1.5 rounded-lg border border-[#e5dccf]/60">
+                            <span className="text-[10px] text-[#7a6a58] block">মোট অর্ডার</span>
+                            <span className="font-bold text-[#3d2f1f]">{selectedOrder.customerHistory?.orderCount || 1} টি</span>
+                          </div>
+                          <div className="bg-white p-1.5 rounded-lg border border-emerald-100">
+                            <span className="text-[10px] text-emerald-700 block">ডেলিভার্ড</span>
+                            <span className="font-bold text-emerald-700">{selectedOrder.customerHistory?.deliveredCount || 0} টি</span>
+                          </div>
+                          <div className="bg-white p-1.5 rounded-lg border border-rose-100">
+                            <span className="text-[10px] text-rose-700 block">ক্যান্সেলড</span>
+                            <span className="font-bold text-rose-700">{selectedOrder.customerHistory?.cancelledCount || 0} টি</span>
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         <button
                           onClick={() => handleCall(selectedOrder)}

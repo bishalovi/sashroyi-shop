@@ -405,6 +405,62 @@ exports.getOrders = async (req, res) => {
       .limit(limitNumber)
       .toArray();
 
+    // Enrich with repeat customer history stats
+    const phones = [...new Set(orders.map((o) => o.phone).filter(Boolean))];
+
+    if (phones.length > 0) {
+      try {
+        const orderCounts = await ordersCollection
+          .aggregate([
+            { $match: { phone: { $in: phones } } },
+            {
+              $group: {
+                _id: "$phone",
+                totalOrders: { $sum: 1 },
+                deliveredOrders: {
+                  $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
+                },
+                cancelledOrders: {
+                  $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
+                },
+                totalSpent: {
+                  $sum: { $cond: [{ $ne: ["$status", "cancelled"] }, "$total", 0] },
+                },
+              },
+            },
+          ])
+          .toArray();
+
+        const statsMap = new Map();
+        orderCounts.forEach((stat) => {
+          statsMap.set(stat._id, {
+            totalOrders: stat.totalOrders || 1,
+            deliveredOrders: stat.deliveredOrders || 0,
+            cancelledOrders: stat.cancelledOrders || 0,
+            totalSpent: stat.totalSpent || 0,
+          });
+        });
+
+        orders.forEach((order) => {
+          const stats = statsMap.get(order.phone) || {
+            totalOrders: 1,
+            deliveredOrders: 0,
+            cancelledOrders: 0,
+            totalSpent: order.total || 0,
+          };
+          order.customerHistory = {
+            orderCount: stats.totalOrders,
+            isRepeat: stats.totalOrders > 1,
+            deliveredCount: stats.deliveredOrders,
+            cancelledCount: stats.cancelledOrders,
+            totalSpent: stats.totalSpent,
+          };
+        });
+      } catch (aggErr) {
+        console.warn("Failed to compute customer history aggregation:", aggErr.message);
+      }
+    }
+
     res.json({
       success: true,
       data: orders,

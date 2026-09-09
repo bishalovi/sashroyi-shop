@@ -74,6 +74,7 @@ connectDB()
       await db.collection("categories").createIndex({ slug: 1 });
       await db.collection("categories").createIndex({ order: 1 });
       await db.collection("orders").createIndex({ createdAt: -1 });
+      await db.collection("orders").createIndex({ phone: 1 });
       await db.collection("settings").createIndex({ key: 1 });
       await db.collection("blacklist").createIndex({ deviceId: 1 });
       await db.collection("blacklist").createIndex({ ip: 1 });
