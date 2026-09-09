@@ -3,12 +3,19 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getOrCreateDeviceId } from "@/lib/deviceId";
+import { useSettings } from "@/contexts/SettingsContext";
 import { FiAlertOctagon, FiPhoneCall } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 
 export default function DeviceGuard() {
   const pathname = usePathname();
   const [blockedData, setBlockedData] = useState(null);
+  const { contact, cleanPhoneNumber, getWhatsAppUrl } = useSettings();
+
+  const phoneNum = cleanPhoneNumber || contact?.phone || "01910037935";
+  const waUrl = getWhatsAppUrl
+    ? getWhatsAppUrl("হ্যালো Sashroyi সাপোর্ট, আমার ডিভাইসে অ্যাক্সেস স্থগিত দেখাচ্ছে। অনুগ্রহ করে সাহায্য করবেন?")
+    : "https://wa.me/8801910037935";
 
   useEffect(() => {
     // Never block admin panel or admin login
@@ -89,7 +96,7 @@ export default function DeviceGuard() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="https://wa.me/8801996366055"
+              href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-transform active:scale-95 w-full sm:w-auto"
@@ -98,11 +105,11 @@ export default function DeviceGuard() {
               <span>WhatsApp Support</span>
             </a>
             <a
-              href="tel:01996366055"
+              href={`tel:${phoneNum}`}
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#3d2f1f] hover:bg-[#2b2115] text-white text-xs font-bold shadow-md transition-transform active:scale-95 w-full sm:w-auto"
             >
               <FiPhoneCall className="w-4 h-4" />
-              <span>Call Hotline</span>
+              <span>Call ({phoneNum})</span>
             </a>
           </div>
         </div>

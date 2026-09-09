@@ -54,8 +54,6 @@ export default function RootLayout({ children }) {
           }}
         />
 
-        <DeviceGuard />
-
         <ToastContainer
           position="top-right"
           autoClose={2000}
@@ -69,6 +67,7 @@ export default function RootLayout({ children }) {
         <UTMTracker />
         <DynamicTrackingProvider />
         <SettingsProvider>
+          <DeviceGuard />
           <CartProvider>
             <AuthProvider>
               <Navbar />
