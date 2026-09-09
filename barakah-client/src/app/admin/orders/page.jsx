@@ -1934,38 +1934,61 @@ ${productNames}
                           </div>
                         </td>
 
-                        <td>{order.phone}</td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleCall(order)}
+                            className="hover:text-emerald-700 font-medium text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Click to call customer"
+                          >
+                            <LuPhone className="w-3 h-3 text-emerald-600" />
+                            <span>{order.phone}</span>
+                          </button>
+                        </td>
                         <td className="max-w-55 whitespace-normal">
                           {order.address}
                         </td>
                         <td>৳ {order.total}</td>
                         <td>
-                          <div className="space-y-2 min-w-44">
-                            {order.items?.map((item, i) => (
-                              <div key={i} className="flex items-center gap-2">
-                                {item.image ? (
-                                  <Image
-                                    src={item.image}
-                                    alt={item.name || "Product"}
-                                    width={40}
-                                    height={40}
-                                    className="w-10 h-10 rounded-md object-cover border border-[#e5dccf] shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-400 text-xs">
-                                    📦
+                          <div className="flex items-center justify-between gap-3 min-w-52">
+                            <div className="space-y-2 flex-1 min-w-0">
+                              {order.items?.map((item, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  {item.image ? (
+                                    <Image
+                                      src={item.image}
+                                      alt={item.name || "Product"}
+                                      width={40}
+                                      height={40}
+                                      className="w-10 h-10 rounded-md object-cover border border-[#e5dccf] shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-400 text-xs">
+                                      📦
+                                    </div>
+                                  )}
+                                  <div className="leading-tight flex-1 min-w-0">
+                                    <p className="font-medium text-xs text-[#3d2f1f] truncate" title={item.name}>
+                                      {item.name}
+                                    </p>
+                                    <p className="text-[11px] text-[#7a6a58] mt-0.5">
+                                      <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price}
+                                    </p>
                                   </div>
-                                )}
-                                <div className="leading-tight">
-                                  <p className="font-medium text-xs text-[#3d2f1f] line-clamp-1" title={item.name}>
-                                    {item.name}
-                                  </p>
-                                  <p className="text-[11px] text-[#7a6a58] mt-0.5">
-                                    <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price}
-                                  </p>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
+
+                            {/* Instant Call button beside product image & item */}
+                            <button
+                              type="button"
+                              onClick={() => handleCall(order)}
+                              className="btn btn-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-lg px-2 py-1 flex items-center gap-1 shrink-0 font-bold shadow-xs transition-transform active:scale-95"
+                              title={`Call ${order.customerName} (${order.phone})`}
+                            >
+                              <LuPhone className="w-3 h-3" />
+                              <span>Call</span>
+                            </button>
                           </div>
                         </td>
 
@@ -2129,31 +2152,55 @@ ${productNames}
                   </p>
 
                   <div>
-                    <span className="font-semibold text-xs text-[#7a6a58]">Items:</span>
-                    <div className="mt-1.5 space-y-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-semibold text-xs text-[#7a6a58]">Items:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCall(order)}
+                        className="btn btn-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-lg px-2.5 py-1 flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                        title={`Call ${order.phone}`}
+                      >
+                        <LuPhone className="w-3.5 h-3.5" />
+                        <span>Call ({order.phone})</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
                       {order.items?.map((item, i) => (
-                        <div key={i} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-[#faf7f0]/60 border border-[#f1eadf]">
-                          {item.image ? (
-                            <Image
-                              src={item.image}
-                              alt={item.name || "Product"}
-                              width={44}
-                              height={44}
-                              className="w-11 h-11 rounded-md object-cover border border-[#e5dccf] shrink-0"
-                            />
-                          ) : (
-                            <div className="w-11 h-11 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-400 text-xs">
-                              📦
+                        <div key={i} className="flex items-center justify-between gap-2.5 p-1.5 rounded-lg bg-[#faf7f0]/60 border border-[#f1eadf]">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            {item.image ? (
+                              <Image
+                                src={item.image}
+                                alt={item.name || "Product"}
+                                width={44}
+                                height={44}
+                                className="w-11 h-11 rounded-md object-cover border border-[#e5dccf] shrink-0"
+                              />
+                            ) : (
+                              <div className="w-11 h-11 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-400 text-xs">
+                                📦
+                              </div>
+                            )}
+                            <div className="leading-tight flex-1 min-w-0">
+                              <p className="font-medium text-xs text-[#3d2f1f] truncate">
+                                {item.name}
+                              </p>
+                              <p className="text-[11px] text-[#7a6a58] mt-0.5">
+                                Qty: <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price} = <span className="font-semibold text-[#3d2f1f]">৳{(item.price || 0) * (item.quantity || 0)}</span>
+                              </p>
                             </div>
-                          )}
-                          <div className="leading-tight flex-1 min-w-0">
-                            <p className="font-medium text-xs text-[#3d2f1f] truncate">
-                              {item.name}
-                            </p>
-                            <p className="text-[11px] text-[#7a6a58] mt-0.5">
-                              Qty: <span className="font-bold text-[#3d2f1f]">{item.quantity}</span> × ৳{item.price} = <span className="font-semibold text-[#3d2f1f]">৳{(item.price || 0) * (item.quantity || 0)}</span>
-                            </p>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCall(order)}
+                            className="btn btn-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-lg px-2 py-1 flex items-center gap-1 shrink-0 font-bold shadow-2xs active:scale-95"
+                            title={`Call ${order.phone}`}
+                          >
+                            <LuPhone className="w-3.5 h-3.5" />
+                            <span>Call</span>
+                          </button>
                         </div>
                       ))}
                     </div>
