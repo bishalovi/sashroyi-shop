@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
-import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck, LuPlus, LuTrash2, LuBan, LuShieldCheck } from "react-icons/lu";
+import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck, LuPlus, LuTrash2, LuBan, LuShieldCheck, LuCheckSquare } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -1916,14 +1916,27 @@ ${productNames}
 
       {/* Floating / Sticky Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0f2a44] text-white p-3.5 rounded-2xl shadow-xl border border-[#d4af37]/40 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-3">
+        <div className="sticky top-4 z-30 flex flex-wrap items-center justify-between gap-3 bg-[#0f2a44] text-white p-3.5 rounded-2xl shadow-2xl border border-[#d4af37]/50 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d4af37] text-xs font-black text-[#0f2a44]">
               {selectedIds.size}
             </span>
             <span className="text-sm font-bold">
-              {selectedIds.size} টি অর্ডার সিলেক্ট করা হয়েছে
+              {selectedIds.size} টি অর্ডার সিলেক্টেড
             </span>
+
+            {/* Quick All Select Button */}
+            <button
+              type="button"
+              onClick={handleToggleSelectAll}
+              className="btn btn-xs bg-[#d4af37] hover:bg-[#b89528] text-[#0f2a44] border-none font-bold rounded-lg px-2.5 py-1 flex items-center gap-1.5 shadow-sm active:scale-95 text-xs transition-transform"
+              title={isAllSelected ? "সবগুলো সিলেকশন বাতিল করুন" : "এক ক্লিকে এই পেজের সবগুলো অর্ডার সিলেক্ট করুন"}
+            >
+              <LuCheckSquare className="w-3.5 h-3.5" />
+              <span>
+                {isAllSelected ? "Deselect All (বাদ দিন)" : `Select All (${orders.length}টি সব সিলেক্ট)`}
+              </span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
