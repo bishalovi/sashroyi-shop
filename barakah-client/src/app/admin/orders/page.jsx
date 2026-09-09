@@ -1934,17 +1934,7 @@ ${productNames}
                           </div>
                         </td>
 
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => handleCall(order)}
-                            className="hover:text-emerald-700 font-medium text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                            title="Click to call customer"
-                          >
-                            <LuPhone className="w-3 h-3 text-emerald-600" />
-                            <span>{order.phone}</span>
-                          </button>
-                        </td>
+                        <td>{order.phone}</td>
                         <td className="max-w-55 whitespace-normal">
                           {order.address}
                         </td>
@@ -2152,20 +2142,9 @@ ${productNames}
                   </p>
 
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-semibold text-xs text-[#7a6a58]">Items:</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCall(order)}
-                        className="btn btn-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-lg px-2.5 py-1 flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
-                        title={`Call ${order.phone}`}
-                      >
-                        <LuPhone className="w-3.5 h-3.5" />
-                        <span>Call ({order.phone})</span>
-                      </button>
-                    </div>
+                    <span className="font-semibold text-xs text-[#7a6a58]">Items:</span>
 
-                    <div className="space-y-2">
+                    <div className="mt-1.5 space-y-2">
                       {order.items?.map((item, i) => (
                         <div key={i} className="flex items-center justify-between gap-2.5 p-1.5 rounded-lg bg-[#faf7f0]/60 border border-[#f1eadf]">
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
