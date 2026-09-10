@@ -151,6 +151,8 @@ exports.createProduct = async (req, res) => {
         name: v.name?.trim() || `প্যাকেজ ${idx + 1}`,
         price: Number(v.price) || 0,
         oldPrice: v.oldPrice ? Number(v.oldPrice) : 0,
+        image: v.image ? String(v.image).trim() : "",
+        color: v.color ? String(v.color).trim() : "",
         inStock: typeof v.inStock === "boolean" ? v.inStock : true,
         isDefault: Boolean(v.isDefault),
       }));
@@ -252,6 +254,8 @@ exports.updateProduct = async (req, res) => {
         name: v.name?.trim() || `প্যাকেজ ${idx + 1}`,
         price: Number(v.price) || 0,
         oldPrice: v.oldPrice ? Number(v.oldPrice) : 0,
+        image: v.image ? String(v.image).trim() : "",
+        color: v.color ? String(v.color).trim() : "",
         inStock: typeof v.inStock === "boolean" ? v.inStock : true,
         isDefault: Boolean(v.isDefault),
       }));
