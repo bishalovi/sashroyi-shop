@@ -307,26 +307,30 @@ export default function ProductDetailsClient({ product }) {
           {isInStock ? "✓ In Stock (স্টকে আছে)" : "✗ Out of Stock (স্টক শেষ)"}
         </p>
 
-        {/* Variations / Color / Package Selector */}
+        {/* Variations / Color / Size Selector (Horizontal Side-by-Side) */}
         {isVariable && (
-          <div className="mb-6 rounded-2xl border border-[#d4af37]/30 bg-[#faf7f0]/70 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-bold text-[#0f2a44]">
-                কালার / প্যাকেজ / ভেরিয়েশন সিলেক্ট করুন:
+          <div className="mb-6 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-[#0f2a44] flex items-center gap-1.5">
+                <span>অপশন সিলেক্ট করুন:</span>
+                {selectedVariation?.name && (
+                  <span className="text-xs font-semibold text-[#0f2a44] bg-[#d4af37]/20 px-2.5 py-0.5 rounded-full border border-[#d4af37]/40">
+                    ✓ {selectedVariation.name}
+                  </span>
+                )}
               </label>
-              {selectedVariation?.name && (
-                <span className="text-xs font-semibold text-[#0f2a44] bg-[#d4af37]/20 px-2.5 py-0.5 rounded-full border border-[#d4af37]/40">
-                  ✓ {selectedVariation.name}
+
+              {selectedVariation?.price && (
+                <span className="text-xs font-bold text-[#0f2a44] bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-sm">
+                  ৳{selectedVariation.price}
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+            {/* Side-by-Side Flex Wrap Pills */}
+            <div className="flex flex-wrap gap-2.5 items-center">
               {product.variations.map((v) => {
                 const isSelected = selectedVariation?.id === v.id;
-                const hasDiscount = v.oldPrice && Number(v.oldPrice) > Number(v.price);
-                const saveAmount = hasDiscount ? Number(v.oldPrice) - Number(v.price) : 0;
-
                 const autoColor = getAutoColor(v.color, v.name);
 
                 return (
@@ -334,15 +338,15 @@ export default function ProductDetailsClient({ product }) {
                     key={v.id}
                     type="button"
                     onClick={() => handleSelectVariation(v)}
-                    className={`relative flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
                       isSelected
-                        ? "border-[#d4af37] bg-white ring-2 ring-[#d4af37] shadow-md scale-[1.02]"
-                        : "border-gray-200 bg-white/80 hover:border-[#d4af37]/60 hover:bg-white"
+                        ? "border-[#d4af37] bg-white ring-2 ring-[#d4af37] text-[#0f2a44] font-bold shadow-md scale-[1.02]"
+                        : "border-gray-200 bg-white/90 hover:border-[#d4af37]/60 hover:bg-white text-gray-700 hover:text-[#0f2a44] shadow-sm"
                     }`}
                   >
-                    {/* Variation Image Thumbnail or Color Swatch Circle */}
+                    {/* Mini Thumbnail or Color Swatch */}
                     {v.image ? (
-                      <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-gray-50">
+                      <div className="relative h-6 w-6 rounded-md overflow-hidden border border-gray-200 shrink-0 bg-gray-50">
                         <img
                           src={v.image}
                           alt={v.name}
@@ -350,43 +354,33 @@ export default function ProductDetailsClient({ product }) {
                         />
                       </div>
                     ) : autoColor ? (
-                      <div
-                        className="h-8 w-8 rounded-full border border-gray-300 shadow-sm shrink-0 ring-1 ring-black/10"
+                      <span
+                        className="h-4 w-4 rounded-full border border-gray-300 shadow-sm shrink-0 ring-1 ring-black/10"
                         style={{ backgroundColor: autoColor }}
                         title={v.name}
                       />
                     ) : null}
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-sm font-bold text-[#0f2a44] truncate">
-                          {v.name}
-                        </span>
-                        {isSelected && (
-                          <span className="h-4 w-4 rounded-full bg-[#d4af37] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                            ✓
-                          </span>
-                        )}
-                      </div>
+                    {/* Name */}
+                    <span className="text-sm">{v.name}</span>
 
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-sm font-bold text-[#0f2a44]">
-                          ৳{v.price}
-                        </span>
-                        {v.oldPrice && (
-                          <span className="text-[11px] text-gray-400 line-through">
-                            ৳{v.oldPrice}
-                          </span>
-                        )}
-                      </div>
+                    {/* Price Badge inside pill */}
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-md font-semibold ${
+                        isSelected
+                          ? "bg-amber-100 text-amber-900"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      ৳{v.price}
+                    </span>
 
-                      {saveAmount > 0 && (
-                        <span className="mt-1 inline-block text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                          ৳{saveAmount} সাশ্রয়
-                        </span>
-                      )}
-                    </div>
+                    {/* Selected Check indicator */}
+                    {isSelected && (
+                      <span className="text-[#d4af37] text-xs font-black">
+                        ✓
+                      </span>
+                    )}
                   </button>
                 );
               })}
