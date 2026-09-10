@@ -186,7 +186,7 @@ export default function ProductDetailsClient({ product }) {
   const handleWhatsAppOrder = () => {
     const currentUrl = typeof window !== "undefined" ? window.location.href : "";
     const variationText = selectedVariation?.name ? `\n🏷️ অপশন: ${selectedVariation.name}` : "";
-    const msg = `হ্যালো! আমি এই প্রোডাক্টটি সম্পর্কে বিস্তারিত জানতে / অর্ডার করতে চাই:\n\n📦 প্রোডাক্ট: ${product?.name || "Product"}${variationText}\n💰 মূল্য: ৳${activePrice}\n🔢 পরিমাণ: ${quantity}\n🔗 লিঙ্ক: ${currentUrl}`;
+    const msg = `হ্যালো! আমি এই প্রোডাক্টটি সম্পর্কে বিস্তারিত জানতে / অর্ডার করতে চাই:\n\n📦 প্রোডাক্ট: ${product?.name || "Product"}${variationText}\n🔢 পরিমাণ: ${quantity} টি\n💰 মোট মূল্য: ৳${activePrice * quantity}\n🔗 লিঙ্ক: ${currentUrl}`;
 
     const url = getWhatsAppUrl(msg);
     window.open(url, "_blank");
@@ -206,7 +206,7 @@ export default function ProductDetailsClient({ product }) {
 
           {activeOldPrice && activeOldPrice > activePrice && (
             <span className="absolute top-4 right-4 z-10 px-3 py-1 bg-red-600 text-white rounded-full font-bold text-xs shadow">
-              ৳{activeOldPrice - activePrice} ছাড়
+              ৳{(activeOldPrice - activePrice) * quantity} ছাড়
             </span>
           )}
 
@@ -281,18 +281,24 @@ export default function ProductDetailsClient({ product }) {
         ) : null}
 
         {/* Dynamic Price Display */}
-        <div className="flex items-center gap-3 my-4">
-          <span className="text-3xl font-bold text-[#0f2a44]">
-            ৳ {activePrice}
+        <div className="flex items-baseline gap-3 my-4 flex-wrap">
+          <span className="text-3xl sm:text-4xl font-extrabold text-[#0f2a44]">
+            ৳ {activePrice * quantity}
           </span>
+
+          {quantity > 1 && (
+            <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+              (প্রতি পিস ৳{activePrice})
+            </span>
+          )}
 
           {activeOldPrice && activeOldPrice > activePrice && (
             <>
               <span className="text-gray-400 line-through text-lg">
-                ৳ {activeOldPrice}
+                ৳ {activeOldPrice * quantity}
               </span>
-              <span className="bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                ৳{activeOldPrice - activePrice} সাশ্রয়
+              <span className="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                ৳{(activeOldPrice - activePrice) * quantity} সাশ্রয়
               </span>
             </>
           )}
