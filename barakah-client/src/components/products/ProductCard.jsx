@@ -8,6 +8,44 @@ import { useState } from "react";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 
+const COLOR_MAP = {
+  red: "#ef4444",
+  blue: "#3b82f6",
+  black: "#111827",
+  brown: "#78350f",
+  green: "#22c55e",
+  white: "#f9fafb",
+  yellow: "#eab308",
+  pink: "#ec4899",
+  purple: "#a855f7",
+  orange: "#f97316",
+  gray: "#6b7280",
+  grey: "#6b7280",
+  navy: "#1e3a8a",
+  teal: "#14b8a6",
+  maroon: "#881337",
+  "লাল": "#ef4444",
+  "নীল": "#3b82f6",
+  "কালো": "#111827",
+  "সাদা": "#ffffff",
+  "সবুজ": "#22c55e",
+  "হলুদ": "#eab308",
+  "গোলাপী": "#ec4899",
+  "বাদামী": "#78350f",
+  "কমলা": "#f97316",
+  "ধূসর": "#6b7280",
+};
+
+function getAutoColor(color, name) {
+  if (color && color.trim()) return color.trim();
+  if (!name) return null;
+  const lower = name.toLowerCase().trim();
+  for (const [key, val] of Object.entries(COLOR_MAP)) {
+    if (lower.includes(key)) return val;
+  }
+  return null;
+}
+
 export default function ProductCard({ product }) {
   const { addToCart, clearCart } = useCart();
   const router = useRouter();
@@ -18,7 +56,6 @@ export default function ProductCard({ product }) {
   );
 
   const isVariable =
-    product?.productType === "variable" &&
     Array.isArray(product?.variations) &&
     product.variations.length > 0;
   const defaultVar = isVariable
@@ -26,7 +63,32 @@ export default function ProductCard({ product }) {
     : null;
   const displayPrice = defaultVar ? Number(defaultVar.price ?? product?.price ?? 0) : Number(product?.price ?? 0);
   const displayOldPrice = defaultVar ? (defaultVar.oldPrice ? Number(defaultVar.oldPrice) : product?.oldPrice) : product?.oldPrice;
-  const packName = defaultVar?.name;
+
+  const varCount = isVariable ? product.variations.length : 0;
+  const colorSwatches = isVariable
+    ? product.variations
+        .map((v) => getAutoColor(v.color, v.name))
+        .filter(Boolean)
+    : [];
+  const isColorProduct = colorSwatches.length > 0;
+  const isSizeProduct =
+    isVariable &&
+    product.variations.some((v) =>
+      ["m", "l", "xl", "xxl", "s", "xs", "সাইজ", "size"].some((s) =>
+        v.name?.toLowerCase().includes(s)
+      )
+    );
+
+  let variationLabel = "";
+  if (isVariable) {
+    if (isColorProduct) {
+      variationLabel = `${varCount}টি রঙে পাবেন`;
+    } else if (isSizeProduct) {
+      variationLabel = `${varCount}টি সাইজে পাবেন`;
+    } else {
+      variationLabel = `${varCount}টি অপশনে পাবেন`;
+    }
+  }
 
   const getTargetProduct = () => {
     if (isVariable && defaultVar) {
@@ -115,14 +177,22 @@ export default function ProductCard({ product }) {
             ) : null}
           </div>
 
-          {isVariable && packName && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/15 text-[#966f00] text-[11px] font-bold border border-[#d4af37]/40 shadow-[0_2px_8px_rgba(212,175,55,0.12)] group-hover:scale-105 transition-transform duration-200 shrink-0">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#d4af37]"></span>
-              </span>
-              <span className="tracking-tight">{packName}</span>
-            </span>
+          {isVariable && variationLabel && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-[#0f2a44] text-[10px] font-bold border border-[#d4af37]/40 shadow-sm shrink-0">
+              {/* Mini Color Dots Preview */}
+              {isColorProduct && colorSwatches.length > 0 && (
+                <span className="flex items-center -space-x-1">
+                  {colorSwatches.slice(0, 3).map((c, i) => (
+                    <span
+                      key={i}
+                      className="inline-block h-2.5 w-2.5 rounded-full border border-white shadow-xs"
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </span>
+              )}
+              <span>{variationLabel}</span>
+            </div>
           )}
         </div>
 
