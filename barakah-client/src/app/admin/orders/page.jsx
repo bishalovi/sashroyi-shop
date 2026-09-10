@@ -845,9 +845,6 @@ export default function OrdersPage() {
     }
   };
 
-  const [deleteLoadingId, setDeleteLoadingId] = useState(null);
-  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
-
   const handleDeleteOrder = async (order) => {
     if (!order) return;
 
