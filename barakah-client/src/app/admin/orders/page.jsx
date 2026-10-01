@@ -5,9 +5,9 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
-import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck, LuPlus, LuTrash2, LuBan, LuShieldCheck, LuCheckSquare } from "react-icons/lu";
+import { LuCopy, LuPhone, LuPencil, LuSave, LuDownload, LuTruck, LuPlus, LuTrash2, LuBan, LuShieldCheck } from "react-icons/lu";
 import { RxCross1 } from "react-icons/rx";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaWhatsapp, FaCheckSquare } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -2035,7 +2035,7 @@ ${productNames}
               className="btn btn-xs bg-[#d4af37] hover:bg-[#b89528] text-[#0f2a44] border-none font-bold rounded-lg px-2.5 py-1 flex items-center gap-1.5 shadow-sm active:scale-95 text-xs transition-transform"
               title={isAllSelected ? "সবগুলো সিলেকশন বাতিল করুন" : "এক ক্লিকে এই পেজের সবগুলো অর্ডার সিলেক্ট করুন"}
             >
-              <LuCheckSquare className="w-3.5 h-3.5" />
+              <FaCheckSquare className="w-3.5 h-3.5" />
               <span>
                 {isAllSelected ? "Deselect All (বাদ দিন)" : `Select All (${orders.length}টি সব সিলেক্ট)`}
               </span>
