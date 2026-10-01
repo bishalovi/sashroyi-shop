@@ -22,7 +22,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems, totalPrice, clearCart } = useCart();
   const { contact, cleanPhoneNumber, getWhatsAppUrl, paymentMethods } = useSettings();
-  const [shipping, setShipping] = useState("inside");
+  const [shipping, setShipping] = useState("outside");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [copiedNumber, setCopiedNumber] = useState(null);
 
@@ -88,10 +88,10 @@ export default function CheckoutPage() {
           setShippingConfig(res.data);
           if (hasFreeShippingItem || res.data.freeShipping?.isEnabled) {
             setShipping("free");
-          } else if (res.data.insideDhaka?.isEnabled) {
-            setShipping("inside");
           } else if (res.data.outsideDhaka?.isEnabled) {
             setShipping("outside");
+          } else if (res.data.insideDhaka?.isEnabled) {
+            setShipping("inside");
           }
         }
       })

@@ -9,11 +9,26 @@ This document contains detailed changelogs for all versions, detailing newly add
 
 | Version | Milestone Name | Status | Archive File |
 | :--- | :--- | :--- | :--- |
-| **v2.3.0** | **Meta CAPI & GTM Tracking Hub** | 🟢 Active / Live | `sashroyi-v2.3.0-tracking-hub.zip` |
+| **v2.4.0** | **Explicit AddToCart & Direct Checkout Funnel** | 🟢 Active / Live | `sashroyi-v2.4.0-explicit-add-to-cart.zip` |
+| **v2.3.0** | **Meta CAPI & GTM Tracking Hub** | 📦 Archived | `sashroyi-v2.3.0-tracking-hub.zip` |
 | **v2.2.0** | **Search & Category Reorder Release** | 📦 Archived | `sashroyi-v2.2.0-latest-production.zip` |
 | **v2.1.0** | **Categories & Customizations** | 📦 Archived | `sashroyi-v2.1.0-categories-and-settings.zip` |
 | **v2.0.0** | **Admin Settings & Payment Hub** | 📦 Archived | `sashroyi-v2.0.0-admin-and-payments.zip` |
 | **v1.0.0** | **Base Architecture & Auth** | 📦 Archived | `sashroyi-v1.0.0-base-architecture.zip` |
+
+---
+
+## 🚀 Version 2.4.0 (Explicit AddToCart & Direct Checkout Funnel)
+**Date:** September 09, 2026  
+**Commit:** `3d94014`  
+
+### ✨ What Was Added / Improved (নতুন কী পরিবর্তন ও ফিক্স করা হয়েছে):
+1. **এক্সক্লুসিভ কার্ট ইভেন্ট ট্র্যাকিং (`CartContext.jsx`):**
+   - `addToCart(product, { silent, skipTracking })` মেথডে ফ্ল্যাগ যুক্ত করা হয়েছে।
+   - এখন কাস্টমার যখন নির্দিষ্টভাবে **"কার্টে যোগ করুন"** বাটনে ক্লিক করবেন, কেবল তখনই `AddToCart` ইভেন্ট (Meta Pixel, CAPI, GTM DataLayer) এবং "Product added to cart!" টোস্ট ফায়ার হবে।
+2. **ডিরেক্ট চেকআউট / "এখনই কিনুন" বাটন অপ্টিমাইজেশন (`BuyNowButton.jsx` & `ProductCard.jsx`):**
+   - "এখনই কিনুন" বা "অর্ডার করুন" বাটনে ক্লিক করলে অপ্রয়োজনীয় `AddToCart` ইভেন্ট ও টোস্ট স্কিপ করে প্রোডাক্টটি সরাসরি চেকআউট স্টেটে নিয়ে যাওয়া হয়।
+   - এর ফলে সরাসরি চেকআউট পেজে গিয়ে শুধুমাত্র `InitiateCheckout` ইভেন্ট ফায়ার হয়, যা ফানেল ট্র্যাকিং ডেটাকে ১০০% ক্লিন রাখে।
 
 ---
 

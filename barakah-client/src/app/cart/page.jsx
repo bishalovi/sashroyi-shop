@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { pushToDataLayer } from "@/lib/gtm";
 
 export default function CartPage() {
-  const [shipping, setShipping] = useState("inside");
+  const [shipping, setShipping] = useState("outside");
   const {
     cartItems,
     removeFromCart,
