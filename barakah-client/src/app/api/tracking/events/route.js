@@ -100,15 +100,16 @@ export async function POST(req) {
       userData.em = [hashData(userParams.email)];
     }
 
-    const cityHash = formatCity(userParams.address || userParams.city);
-    if (cityHash) {
-      userData.ct = [cityHash];
-      userData.st = [cityHash];
-    }
+    const cityHash = formatCity(userParams.address || userParams.city) || hashData("dhaka");
+    userData.ct = [cityHash];
+    userData.st = [cityHash];
     userData.zp = [formatZip(userParams.address || userParams.city)];
 
-    if (userParams.fbc) userData.fbc = userParams.fbc;
-    if (userParams.fbp) userData.fbp = userParams.fbp;
+    const resolvedFbp = userParams.fbp || req.cookies.get("_fbp")?.value;
+    const resolvedFbc = userParams.fbc || req.cookies.get("_fbc")?.value;
+
+    if (resolvedFbc) userData.fbc = resolvedFbc;
+    if (resolvedFbp) userData.fbp = resolvedFbp;
 
     const eventData = {
       event_name: eventName,
