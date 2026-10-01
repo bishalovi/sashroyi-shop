@@ -766,23 +766,28 @@ export default function OrdersPage() {
   const isAllSelected = orders.length > 0 && orders.every((o) => selectedIds.has(o._id));
 
   const handleToggleSelectAll = () => {
-    if (isAllSelected) {
-      setSelectedIds(new Set());
-    } else {
-      const nextSet = new Set(selectedIds);
-      orders.forEach((o) => nextSet.add(o._id));
-      setSelectedIds(nextSet);
-    }
+    setSelectedIds((prev) => {
+      const allCurrentSelected = orders.length > 0 && orders.every((o) => prev.has(o._id));
+      if (allCurrentSelected) {
+        return new Set();
+      } else {
+        const nextSet = new Set(prev);
+        orders.forEach((o) => nextSet.add(o._id));
+        return nextSet;
+      }
+    });
   };
 
   const handleToggleOrder = (id) => {
-    const nextSet = new Set(selectedIds);
-    if (nextSet.has(id)) {
-      nextSet.delete(id);
-    } else {
-      nextSet.add(id);
-    }
-    setSelectedIds(nextSet);
+    setSelectedIds((prev) => {
+      const nextSet = new Set(prev);
+      if (nextSet.has(id)) {
+        nextSet.delete(id);
+      } else {
+        nextSet.add(id);
+      }
+      return nextSet;
+    });
   };
 
   const handleQuickStatusChange = async (orderId, newStatus) => {
@@ -2122,13 +2127,15 @@ ${productNames}
               <table className="table">
                 <thead className="bg-[#faf7f0] text-[#3d2f1f]">
                   <tr>
-                    <th className="w-8">
-                      <input
-                        type="checkbox"
-                        className="checkbox checkbox-xs"
-                        checked={isAllSelected}
-                        onChange={handleToggleSelectAll}
-                      />
+                    <th className="w-10 text-center">
+                      <label className="flex items-center justify-center cursor-pointer p-1">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm checkbox-primary border-gray-400 cursor-pointer"
+                          checked={isAllSelected}
+                          onChange={handleToggleSelectAll}
+                        />
+                      </label>
                     </th>
                     <th>#</th>
                     <th>Customer</th>
@@ -2146,14 +2153,25 @@ ${productNames}
                   {orders.map((order, index) => {
                     const isSelected = selectedIds.has(order._id);
                     return (
-                      <tr key={order._id} className={isSelected ? "bg-amber-50/40" : ""}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            className="checkbox checkbox-xs"
-                            checked={isSelected}
-                            onChange={() => handleToggleOrder(order._id)}
-                          />
+                      <tr
+                        key={order._id}
+                        onClick={(e) => {
+                          if (e.target.closest("button, select, input, a, label")) return;
+                          handleToggleOrder(order._id);
+                        }}
+                        className={`transition-colors ${
+                          isSelected ? "bg-amber-50/60" : "hover:bg-gray-50/70"
+                        }`}
+                      >
+                        <td className="text-center" onClick={(e) => e.stopPropagation()}>
+                          <label className="flex items-center justify-center cursor-pointer p-1">
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-sm checkbox-primary border-gray-400 cursor-pointer"
+                              checked={isSelected}
+                              onChange={() => handleToggleOrder(order._id)}
+                            />
+                          </label>
                         </td>
 
                         <td>{index + 1}</td>
@@ -2334,21 +2352,21 @@ ${productNames}
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2.5">
+                    <label className="flex items-start gap-2.5 cursor-pointer flex-1 select-none">
                       <input
                         type="checkbox"
-                        className="checkbox checkbox-sm mt-0.5"
+                        className="checkbox checkbox-sm checkbox-primary border-gray-400 mt-0.5 cursor-pointer shrink-0"
                         checked={isSelected}
                         onChange={() => handleToggleOrder(order._id)}
                       />
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-bold text-[#3d2f1f]">
                             {index + 1}. {order.customerName}
                           </p>
                           {order.customerHistory?.isRepeat && (
                             <span
-                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold border shadow-2xs ${
+                              className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border shadow-2xs ${
                                 (order.customerHistory?.orderCount || 2) >= 4
                                   ? "bg-purple-100 text-purple-900 border-purple-300"
                                   : "bg-amber-100 text-amber-900 border-amber-300"
@@ -2360,7 +2378,7 @@ ${productNames}
                         </div>
                         <p className="text-sm text-[#7a6a58]">{order.phone}</p>
                       </div>
-                    </div>
+                    </label>
 
                     <select
                       value={order.status || "pending"}
