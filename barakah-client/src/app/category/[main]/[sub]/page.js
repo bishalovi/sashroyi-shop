@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ProductSearch from "@/components/products/ProductSearch";
+import ProductCard from "@/components/products/ProductCard";
 import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 import CategoryViewTracker from "@/components/tracking/CategoryViewTracker";
@@ -103,7 +103,18 @@ export default async function CategoryPage({ params }) {
           </div>
         )}
 
-        <ProductSearch products={filteredProducts} />
+        {/* Products Grid */}
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredProducts.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-center mt-10 text-gray-500">
+            No products found.
+          </p>
+        )}
       </div>
       <Reviews />
     </main>
