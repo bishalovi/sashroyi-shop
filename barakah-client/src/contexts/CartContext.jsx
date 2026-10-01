@@ -34,7 +34,8 @@ export function CartProvider({ children }) {
     return `${item._id || item.id}_${item.selectedVariationId || "single"}`;
   };
 
-  const addToCart = (product) => {
+  const addToCart = (product, options = {}) => {
+    const { silent = false, skipTracking = false } = options;
     const selectedQuantity = Number(product.quantity) > 0 ? Number(product.quantity) : 1;
     const cartKey = getItemKey(product);
     const itemName = product.variationTitle
@@ -45,41 +46,45 @@ export function CartProvider({ children }) {
       : String(product._id || product.id || "");
     const itemPrice = Number(product.price || 0);
 
-    toast.success("Product added to cart!", {
-      position: "top-right",
-    });
+    if (!silent) {
+      toast.success("Product added to cart!", {
+        position: "top-right",
+      });
+    }
 
-    pushToDataLayer({
-      event: "add_to_cart",
-      ecommerce: {
-        currency: "BDT",
+    if (!skipTracking) {
+      pushToDataLayer({
+        event: "add_to_cart",
+        ecommerce: {
+          currency: "BDT",
+          value: itemPrice * selectedQuantity,
+          items: [
+            {
+              item_id: itemId,
+              item_name: itemName,
+              item_variant: product.variationTitle || "Default",
+              price: itemPrice,
+              quantity: Number(selectedQuantity),
+            },
+          ],
+        },
+      });
+
+      trackMetaEvent("AddToCart", {
+        content_name: itemName,
+        content_ids: [itemId],
+        content_type: "product",
         value: itemPrice * selectedQuantity,
-        items: [
+        currency: "BDT",
+        contents: [
           {
-            item_id: itemId,
-            item_name: itemName,
-            item_variant: product.variationTitle || "Default",
-            price: itemPrice,
-            quantity: Number(selectedQuantity),
+            id: itemId,
+            quantity: selectedQuantity,
+            item_price: itemPrice,
           },
         ],
-      },
-    });
-
-    trackMetaEvent("AddToCart", {
-      content_name: itemName,
-      content_ids: [itemId],
-      content_type: "product",
-      value: itemPrice * selectedQuantity,
-      currency: "BDT",
-      contents: [
-        {
-          id: itemId,
-          quantity: selectedQuantity,
-          item_price: itemPrice,
-        },
-      ],
-    });
+      });
+    }
 
     setCartItems((prev) => {
       const existingItem = prev.find((item) => getItemKey(item) === cartKey);

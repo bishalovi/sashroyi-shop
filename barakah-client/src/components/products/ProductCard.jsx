@@ -114,7 +114,7 @@ export default function ProductCard({ product }) {
     e.stopPropagation();
 
     clearCart();
-    addToCart({ ...getTargetProduct(), quantity: 1 });
+    addToCart({ ...getTargetProduct(), quantity: 1 }, { silent: true, skipTracking: true });
     router.push("/checkout");
   };
 
