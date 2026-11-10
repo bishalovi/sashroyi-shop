@@ -143,6 +143,7 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
         currency: "BDT",
         value: Number(order.total || 0),
         content_type: "product",
+        content_ids: contents.map((c) => c.id),
         contents: contents,
         order_id: eventId,
         num_items: (order.items || []).reduce((acc, i) => acc + (Number(i.quantity) || 1), 0),
