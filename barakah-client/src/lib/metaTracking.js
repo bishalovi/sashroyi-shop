@@ -275,7 +275,7 @@ function dispatchToBrowserPixel(eventName, customData, eventId, userParams) {
   }
 }
 
-export async function trackMetaEvent(eventName, customData = {}, userParams = {}) {
+export async function trackMetaEvent(eventName, customData = {}, userParams = {}, options = {}) {
   if (typeof window === "undefined") return;
 
   if (userParams.phone || userParams.name || userParams.email || userParams.address) {
@@ -328,19 +328,23 @@ export async function trackMetaEvent(eventName, customData = {}, userParams = {}
   }
 
   // 3. Server-Side CAPI Relay Dispatch (Next.js Serverless Route)
-  try {
-    fetch("/api/tracking/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventName,
-        eventId,
-        eventSourceUrl: window.location.href,
-        customData,
-        userParams: finalUserParams,
-      }),
-    }).catch(() => {});
-  } catch {
-    // Non-blocking
+  // When an event (like Purchase) is already sent directly by the backend database controller,
+  // skip the redundant Next.js CAPI relay to prevent duplicate server events.
+  if (!options.skipCapiRelay) {
+    try {
+      fetch("/api/tracking/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventName,
+          eventId,
+          eventSourceUrl: window.location.href,
+          customData,
+          userParams: finalUserParams,
+        }),
+      }).catch(() => {});
+    } catch {
+      // Non-blocking
+    }
   }
 }

@@ -83,7 +83,8 @@ export default function OrderSuccessPage() {
         name: order.customerName,
         address: order.address,
         externalId: transactionId,
-      }
+      },
+      { skipCapiRelay: true }
     );
 
     localStorage.removeItem("barakah_last_order");
