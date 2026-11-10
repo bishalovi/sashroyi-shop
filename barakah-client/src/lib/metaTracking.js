@@ -198,6 +198,7 @@ export function getTrackingContext() {
     fbc: getResolvedFbc(),
     fbclid: tracking.fbclid || "",
     visitorId: getOrCreateVisitorId(),
+    testEventCode: getActiveTestEventCode(),
   };
 }
 
@@ -232,17 +233,15 @@ function buildBrowserAdvancedMatching(userParams) {
   return am;
 }
 
-function getActiveTestEventCode(userParams) {
-  if (userParams.testEventCode) return String(userParams.testEventCode).trim();
+function getActiveTestEventCode(userParams = {}) {
+  if (userParams?.testEventCode) return String(userParams.testEventCode).trim();
   if (typeof window === "undefined") return "";
   try {
-    return (
-      window.__metaTestEventCode ||
-      sessionStorage.getItem("meta_test_event_code") ||
-      ""
-    ).trim();
+    const sessionCode = sessionStorage.getItem("meta_test_event_code");
+    if (sessionCode && sessionCode.trim()) return sessionCode.trim();
+    return (window.__metaTestEventCode || "").trim();
   } catch {
-    return window.__metaTestEventCode || "";
+    return (window.__metaTestEventCode || "").trim();
   }
 }
 

@@ -151,8 +151,9 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
     };
 
     const payload = { data: [eventData] };
-    if (testEventCode && testEventCode.trim() !== "") {
-      payload.test_event_code = testEventCode.trim();
+    const activeTestCode = (order.testEventCode || testEventCode || "").trim();
+    if (activeTestCode !== "") {
+      payload.test_event_code = activeTestCode;
     }
 
     const url = `https://graph.facebook.com/v19.0/${pixelId.trim()}/events?access_token=${capiAccessToken.trim()}`;
@@ -221,8 +222,9 @@ async function sendMetaCapiGenericEvent({ eventName, eventId, eventSourceUrl, cu
     };
 
     const payload = { data: [eventData] };
-    if (testEventCode && testEventCode.trim() !== "") {
-      payload.test_event_code = testEventCode.trim();
+    const activeTestCode = (userParams.testEventCode || testEventCode || "").trim();
+    if (activeTestCode !== "") {
+      payload.test_event_code = activeTestCode;
     }
 
     const url = `https://graph.facebook.com/v19.0/${pixelId.trim()}/events?access_token=${capiAccessToken.trim()}`;

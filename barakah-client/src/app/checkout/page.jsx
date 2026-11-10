@@ -352,6 +352,7 @@ export default function CheckoutPage() {
       fbp: trackingContext.fbp || "",
       fbc: trackingContext.fbc || "",
       fbclid: trackingContext.fbclid || "",
+      testEventCode: trackingContext.testEventCode || "",
       eventSourceUrl: typeof window !== "undefined" ? window.location.href : "",
       items: cartItems.map((item) => ({
         productId: item._id,
