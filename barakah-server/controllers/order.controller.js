@@ -345,8 +345,9 @@ exports.createOrder = async (req, res) => {
         const trackingCollection = db.collection("tracking_settings");
         const trackingConfig = await trackingCollection.findOne({ key: "main_tracking_config" });
         if (trackingConfig) {
-          const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-          const userAgent = req.headers["user-agent"];
+          const rawIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+          const clientIp = String(rawIp).split(",")[0].trim();
+          const userAgent = req.headers["user-agent"] || "Mozilla/5.0";
           const fullOrder = { _id: result.insertedId, ...orderData, ...req.body };
 
           if (trackingConfig.facebook?.isEnabled && trackingConfig.facebook?.isCapiEnabled) {

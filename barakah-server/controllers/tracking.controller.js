@@ -72,6 +72,7 @@ exports.getPublicTrackingSettings = async (req, res) => {
         facebook: {
           pixelId: config.facebook?.pixelId || "",
           isEnabled: Boolean(config.facebook?.isEnabled),
+          testEventCode: config.facebook?.testEventCode || "",
         },
         tiktok: {
           pixelId: config.tiktok?.pixelId || "",

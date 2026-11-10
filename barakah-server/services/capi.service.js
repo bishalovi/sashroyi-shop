@@ -18,55 +18,63 @@
 
 const crypto = require("crypto");
 
+const BD_LOCATIONS = [
+  { keywords: ["chittagong", "chattogram", "চট্টগ্রাম"], city: "chattogram", zip: "4000" },
+  { keywords: ["sylhet", "সিলেট"], city: "sylhet", zip: "3100" },
+  { keywords: ["rajshahi", "রাজশাহী"], city: "rajshahi", zip: "6000" },
+  { keywords: ["khulna", "খুলনা"], city: "khulna", zip: "9000" },
+  { keywords: ["barisal", "barishal", "বরিশাল"], city: "barisal", zip: "8200" },
+  { keywords: ["rangpur", "রংপুর"], city: "rangpur", zip: "5400" },
+  { keywords: ["mymensingh", "ময়মনসিংহ", "ময়মনসিংহ"], city: "mymensingh", zip: "2200" },
+  { keywords: ["gazipur", "গাজীপুর", "tongi", "টঙ্গী"], city: "gazipur", zip: "1700" },
+  { keywords: ["narayanganj", "নারায়ণগঞ্জ", "নারায়ণগঞ্জ"], city: "narayanganj", zip: "1400" },
+  { keywords: ["cumilla", "comilla", "কুমিল্লা"], city: "cumilla", zip: "3500" },
+  { keywords: ["bogura", "bogra", "বগুড়া", "বগুড়া"], city: "bogura", zip: "5800" },
+  { keywords: ["jessore", "jashore", "যশোর"], city: "jessore", zip: "7400" },
+  { keywords: ["cox", "কক্সবাজার"], city: "coxs bazar", zip: "4700" },
+  { keywords: ["savar", "সাভার", "ashulia", "আশুলিয়া", "আশুলিয়া"], city: "savar", zip: "1340" },
+  { keywords: ["tangail", "টাঙ্গাইল"], city: "tangail", zip: "1900" },
+  { keywords: ["narsingdi", "নরসিংদী"], city: "narsingdi", zip: "1600" },
+  { keywords: ["brahmanbaria", "ব্রাহ্মণবাড়িয়া", "ব্রাহ্মণবাড়িয়া"], city: "brahmanbaria", zip: "3400" },
+  { keywords: ["feni", "ফেনী"], city: "feni", zip: "3900" },
+  { keywords: ["noakhali", "নোয়াখালী", "নোয়াখালী"], city: "noakhali", zip: "3800" },
+  { keywords: ["pabna", "পাবনা"], city: "pabna", zip: "6600" },
+  { keywords: ["dinajpur", "দিনাজপুর"], city: "dinajpur", zip: "5200" },
+  { keywords: ["kushtia", "কুষ্টিয়া", "কুষ্টিয়া"], city: "kushtia", zip: "7000" },
+  { keywords: ["faridpur", "ফরিদপুর"], city: "faridpur", zip: "7800" },
+  { keywords: ["sirajganj", "সিরাজগঞ্জ"], city: "sirajganj", zip: "6700" },
+  { keywords: ["chandpur", "চাঁদপুর"], city: "chandpur", zip: "3600" },
+  { keywords: ["jamalpur", "জামালপুর"], city: "jamalpur", zip: "2000" },
+  { keywords: ["dhaka", "ঢাকা", "mirpur", "মিরপুর", "uttara", "উত্তরা", "dhanmondi", "ধানমন্ডি", "gulshan", "গুলশান", "banani", "বনানী", "mohammadpur", "মোহাম্মদপুর", "badda", "বাড্ডা", "motijheel", "মতিঝিল"], city: "dhaka", zip: "1200" },
+];
+
 function hashData(value) {
   if (!value) return null;
   const cleaned = String(value).trim().toLowerCase();
   return crypto.createHash("sha256").update(cleaned).digest("hex");
 }
 
-function formatPhone(phone) {
-  if (!phone) return null;
+function normalizePhoneDigits(phone) {
+  if (!phone) return "";
   let digits = String(phone).replace(/\D/g, "");
   if (digits.startsWith("01") && digits.length === 11) {
     digits = "88" + digits;
   }
-  return hashData(digits);
+  return digits;
 }
 
-function formatCity(address) {
-  if (!address) return null;
+function resolveLocation(address) {
+  if (!address) return { city: "dhaka", zip: "1200" };
   const lower = String(address).toLowerCase();
-  if (lower.includes("dhaka") || lower.includes("ঢাকা")) return hashData("dhaka");
-  if (lower.includes("chittagong") || lower.includes("chattogram") || lower.includes("চট্টগ্রাম")) return hashData("chattogram");
-  if (lower.includes("sylhet") || lower.includes("সিলেট")) return hashData("sylhet");
-  if (lower.includes("rajshahi") || lower.includes("রাজশাহী")) return hashData("rajshahi");
-  if (lower.includes("khulna") || lower.includes("খুলনা")) return hashData("khulna");
-  if (lower.includes("barisal") || lower.includes("বরিশাল")) return hashData("barisal");
-  if (lower.includes("rangpur") || lower.includes("রংপুর")) return hashData("rangpur");
-  if (lower.includes("mymensingh") || lower.includes("ময়মনসিংহ")) return hashData("mymensingh");
-  if (lower.includes("narayanganj") || lower.includes("নারায়ণগঞ্জ")) return hashData("narayanganj");
-  if (lower.includes("gazipur") || lower.includes("গাজীপুর")) return hashData("gazipur");
-  if (lower.includes("cumilla") || lower.includes("কুমিল্লা")) return hashData("cumilla");
-  return null;
+  const matched = BD_LOCATIONS.find((loc) =>
+    loc.keywords.some((kw) => lower.includes(kw))
+  );
+  return matched ? { city: matched.city, zip: matched.zip } : { city: "dhaka", zip: "1200" };
 }
 
-function formatZip(address) {
-  if (!address) return hashData("1200");
-  const lower = String(address).toLowerCase();
-  if (lower.includes("chittagong") || lower.includes("chattogram") || lower.includes("চট্টগ্রাম")) return hashData("4000");
-  if (lower.includes("sylhet") || lower.includes("সিলেট")) return hashData("3100");
-  if (lower.includes("rajshahi") || lower.includes("রাজশাহী")) return hashData("6000");
-  if (lower.includes("khulna") || lower.includes("খুলনা")) return hashData("9000");
-  if (lower.includes("barisal") || lower.includes("বরিশাল")) return hashData("8200");
-  if (lower.includes("rangpur") || lower.includes("রংপুর")) return hashData("5400");
-  if (lower.includes("mymensingh") || lower.includes("ময়মনসিংহ")) return hashData("2200");
-  if (lower.includes("gazipur") || lower.includes("গাজীপুর")) return hashData("1700");
-  if (lower.includes("narayanganj") || lower.includes("নারায়ণগঞ্জ")) return hashData("1400");
-  if (lower.includes("cumilla") || lower.includes("comilla") || lower.includes("কুমিল্লা")) return hashData("3500");
-  if (lower.includes("bogura") || lower.includes("bogra") || lower.includes("বগুড়া")) return hashData("5800");
-  if (lower.includes("jessore") || lower.includes("যশোর")) return hashData("7400");
-  if (lower.includes("cox") || lower.includes("কক্সবাজার")) return hashData("4700");
-  return hashData("1200");
+function resolveClientIp(rawIp) {
+  if (!rawIp) return "127.0.0.1";
+  return String(rawIp).split(",")[0].trim() || "127.0.0.1";
 }
 
 async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) {
@@ -88,31 +96,30 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    const externalId = order.phone ? hashData(String(order.phone).replace(/\D/g, "")) : null;
+    const normalizedPhone = normalizePhoneDigits(order.phone);
+    const externalId = normalizedPhone ? hashData(normalizedPhone) : null;
 
     const userData = {
-      client_ip_address: clientIp || "127.0.0.1",
+      client_ip_address: resolveClientIp(clientIp),
       client_user_agent: userAgent || "Mozilla/5.0",
       country: [hashData("bd")],
     };
 
     if (externalId) userData.external_id = [externalId];
-    if (order.phone) userData.ph = [formatPhone(order.phone)];
-    if (order.email) {
-      userData.em = [hashData(order.email)];
-    } else if (order.phone) {
-      userData.em = [hashData(String(order.phone).replace(/\D/g, "") + "@sashroyi.shop")];
-    }
+    if (normalizedPhone) userData.ph = [hashData(normalizedPhone)];
+    if (order.email) userData.em = [hashData(order.email)];
     if (firstName) userData.fn = [hashData(firstName)];
     if (lastName) userData.ln = [hashData(lastName)];
-    const cityHash = formatCity(order.address);
-    if (cityHash) {
-      userData.ct = [cityHash];
-      userData.st = [cityHash];
-    }
-    userData.zp = [formatZip(order.address)];
-    if (order.fbclid) userData.fbc = `fb.1.${Date.now()}.${order.fbclid}`;
-    if (order.fbp) userData.fbp = order.fbp;
+
+    const { city, zip } = resolveLocation(order.address);
+    const cityHash = hashData(city);
+    userData.ct = [cityHash];
+    userData.st = [cityHash];
+    userData.zp = [hashData(zip)];
+
+    const resolvedFbc = order.fbc || (order.fbclid ? `fb.1.${Date.now()}.${order.fbclid}` : "");
+    if (resolvedFbc && String(resolvedFbc).startsWith("fb.")) userData.fbc = String(resolvedFbc);
+    if (order.fbp && String(order.fbp).startsWith("fb.")) userData.fbp = String(order.fbp);
 
     const contents = (order.items || []).map((item) => ({
       id: String(
@@ -179,21 +186,28 @@ async function sendMetaCapiGenericEvent({ eventName, eventId, eventSourceUrl, cu
     const eventTime = Math.floor(Date.now() / 1000);
 
     const userData = {
-      client_ip_address: clientIp || "127.0.0.1",
+      client_ip_address: resolveClientIp(clientIp),
       client_user_agent: userAgent || "Mozilla/5.0",
       country: [hashData("bd")],
     };
 
-    if (userParams.phone) {
-      userData.ph = [formatPhone(userParams.phone)];
-      userData.external_id = [hashData(String(userParams.phone).replace(/\D/g, ""))];
+    const normalizedPhone = normalizePhoneDigits(userParams.phone);
+    if (normalizedPhone) {
+      userData.ph = [hashData(normalizedPhone)];
+      userData.external_id = [hashData(normalizedPhone)];
     } else if (userParams.externalId) {
       userData.external_id = [hashData(String(userParams.externalId))];
     }
 
     if (userParams.email) userData.em = [hashData(userParams.email)];
-    if (userParams.fbc) userData.fbc = userParams.fbc;
-    if (userParams.fbp) userData.fbp = userParams.fbp;
+    const { city, zip } = resolveLocation(userParams.address || userParams.city);
+    const cityHash = hashData(city);
+    userData.ct = [cityHash];
+    userData.st = [cityHash];
+    userData.zp = [hashData(zip)];
+
+    if (userParams.fbc && String(userParams.fbc).startsWith("fb.")) userData.fbc = String(userParams.fbc);
+    if (userParams.fbp && String(userParams.fbp).startsWith("fb.")) userData.fbp = String(userParams.fbp);
 
     const eventData = {
       event_name: eventName,

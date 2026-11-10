@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { pushToDataLayer } from "@/lib/gtm";
-import { trackMetaEvent } from "@/lib/metaTracking";
+import { trackMetaEvent, saveCustomerProfile, getTrackingContext } from "@/lib/metaTracking";
 import LoadingAnimation from "@/components/shared/LoadingAnimation";
 import { FaFacebookMessenger, FaPhoneAlt, FaWhatsapp, FaCopy, FaCheck } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
@@ -120,24 +120,32 @@ export default function CheckoutPage() {
       item_price: Number(item.price || 0),
     }));
 
-    trackMetaEvent("AddPaymentInfo", {
-      content_ids: items.map((i) => i.id),
-      content_type: "product",
-      value: Number(finalTotal || 0),
-      currency: "BDT",
-      payment_type:
-        method === "cod"
-          ? "Cash on Delivery"
-          : method === "bkash"
-          ? "bKash"
-          : method === "nagad"
-          ? "Nagad"
-          : method === "rocket"
-          ? "Rocket"
-          : method,
-      contents: items,
-      num_items: items.reduce((acc, i) => acc + i.quantity, 0),
-    });
+    trackMetaEvent(
+      "AddPaymentInfo",
+      {
+        content_ids: items.map((i) => i.id),
+        content_type: "product",
+        value: Number(finalTotal || 0),
+        currency: "BDT",
+        payment_type:
+          method === "cod"
+            ? "Cash on Delivery"
+            : method === "bkash"
+            ? "bKash"
+            : method === "nagad"
+            ? "Nagad"
+            : method === "rocket"
+            ? "Rocket"
+            : method,
+        contents: items,
+        num_items: items.reduce((acc, i) => acc + i.quantity, 0),
+      },
+      {
+        name: formValues?.name || "",
+        phone: formValues?.phone || "",
+        address: formValues?.address || "",
+      },
+    );
   };
 
   const handleCopyNumber = (num, e) => {
@@ -250,6 +258,11 @@ export default function CheckoutPage() {
         formValues.address &&
         cartItems.length > 0
       ) {
+        saveCustomerProfile({
+          name: formValues.name,
+          phone: formValues.phone,
+          address: formValues.address,
+        });
         saveAbandonedOrder(formValues);
       }
     }, 8000);
@@ -309,6 +322,13 @@ export default function CheckoutPage() {
     const tracking = JSON.parse(
       localStorage.getItem("barakah_tracking") || "{}",
     );
+    const trackingContext = getTrackingContext();
+
+    saveCustomerProfile({
+      name: data.name,
+      phone: data.phone,
+      address: data.address,
+    });
 
     const orderData = {
       sessionId: getCheckoutSessionId(),
@@ -320,6 +340,10 @@ export default function CheckoutPage() {
       shippingCost: roundedShippingCost,
       paymentMethod,
       accountLast4: isDigitalPayment ? data.accountLast4 : "",
+      fbp: trackingContext.fbp || "",
+      fbc: trackingContext.fbc || "",
+      fbclid: trackingContext.fbclid || "",
+      eventSourceUrl: typeof window !== "undefined" ? window.location.href : "",
       items: cartItems.map((item) => ({
         productId: item._id,
         name: item.variationTitle ? `${item.name} (${item.variationTitle})` : item.name,

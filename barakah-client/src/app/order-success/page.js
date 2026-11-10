@@ -78,6 +78,7 @@ export default function OrderSuccessPage() {
       },
       {
         phone: order.phone,
+        email: order.email || "",
         name: order.customerName,
         address: order.address,
         externalId: transactionId,

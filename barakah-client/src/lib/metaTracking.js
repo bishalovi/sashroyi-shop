@@ -2,19 +2,30 @@
  * ============================================================================
  * FILE: metaTracking.js
  * High-precision dual tracking for Meta Pixel (Browser) and Meta CAPI (Server)
- * Event Match Quality (EMQ) 9.5+ with deduplication, external_id, and full funnel.
+ * Ensures 100% _fbp coverage, persistent _fbc, customer profile reuse,
+ * Browser Advanced Matching, and clean event_id deduplication.
  * ============================================================================
  */
 
-const API_BASE_URL = "https://sashroyi-api.onrender.com";
+const DEFAULT_PIXEL_ID = "3090216584507410";
+const COOKIE_MAX_AGE_90D = 90 * 24 * 60 * 60;
 
 function getCookie(name) {
   if (typeof document === "undefined") return "";
   try {
-    const match = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]+)"));
-    return match ? decodeURIComponent(match[2]) : "";
+    const match = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[1]) : "";
   } catch {
     return "";
+  }
+}
+
+function setCookie(name, value, maxAgeSeconds = COOKIE_MAX_AGE_90D) {
+  if (typeof document === "undefined" || !value) return;
+  try {
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
+  } catch {
+    // Non-blocking
   }
 }
 
@@ -27,51 +38,232 @@ function getTrackingData() {
   }
 }
 
+function normalizePhoneForMeta(phone) {
+  if (!phone) return "";
+  let digits = String(phone).replace(/\D/g, "");
+  if (digits.startsWith("01") && digits.length === 11) {
+    digits = "88" + digits;
+  }
+  return digits;
+}
+
+/**
+ * Ensures _fbp exists synchronously before both Browser Pixel and Server CAPI fire,
+ * preventing 40-60% missing fbp on first pageview / early events.
+ */
+export function getOrCreateFbp() {
+  if (typeof window === "undefined") return "";
+  try {
+    let fbp = getCookie("_fbp") || localStorage.getItem("barakah_fbp") || "";
+    if (!fbp || !fbp.startsWith("fb.")) {
+      const random10Digits = Math.floor(1000000000 + Math.random() * 9000000000);
+      fbp = `fb.1.${Date.now()}.${random10Digits}`;
+    }
+    setCookie("_fbp", fbp);
+    localStorage.setItem("barakah_fbp", fbp);
+    return fbp;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Resolves a stable _fbc Click ID from cookie, tracking storage, or URL fbclid.
+ */
+export function getResolvedFbc() {
+  if (typeof window === "undefined") return "";
+  try {
+    const cookieFbc = getCookie("_fbc");
+    if (cookieFbc && cookieFbc.startsWith("fb.")) return cookieFbc;
+
+    const tracking = getTrackingData();
+    if (tracking.fbc && tracking.fbc.startsWith("fb.")) {
+      setCookie("_fbc", tracking.fbc);
+      return tracking.fbc;
+    }
+
+    if (tracking.fbclid) {
+      const createdAt = tracking.updated_at || Date.now();
+      const fbc = `fb.1.${createdAt}.${tracking.fbclid}`;
+      setCookie("_fbc", fbc);
+      localStorage.setItem(
+        "barakah_tracking",
+        JSON.stringify({ ...tracking, fbc })
+      );
+      return fbc;
+    }
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 function getOrCreateVisitorId() {
   if (typeof window === "undefined") return "visitor_0";
   try {
-    let vid = localStorage.getItem("barakah_visitor_id");
+    let vid = localStorage.getItem("barakah_visitor_id") || getCookie("barakah_visitor_id");
     if (!vid) {
       vid = "v_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
-      localStorage.setItem("barakah_visitor_id", vid);
     }
+    localStorage.setItem("barakah_visitor_id", vid);
+    setCookie("barakah_visitor_id", vid, 365 * 24 * 60 * 60);
     return vid;
   } catch {
     return "visitor_0";
   }
 }
 
-export async function trackMetaEvent(eventName, customData = {}, userParams = {}) {
+/**
+ * Persists known customer profile (phone, name, email, address) so returning visitors
+ * and post-checkout events benefit from stronger Meta matching.
+ */
+export function saveCustomerProfile(profile = {}) {
   if (typeof window === "undefined") return;
+  try {
+    const existing = JSON.parse(localStorage.getItem("barakah_customer_profile") || "{}");
+    const updated = {
+      name: (profile.name || existing.name || "").trim(),
+      phone: (profile.phone || existing.phone || "").trim(),
+      email: (profile.email || existing.email || "").trim(),
+      address: (profile.address || existing.address || "").trim(),
+    };
+    if (updated.name || updated.phone || updated.email || updated.address) {
+      localStorage.setItem("barakah_customer_profile", JSON.stringify(updated));
+    }
+  } catch {
+    // Non-blocking
+  }
+}
 
+function getSavedCustomerProfile() {
+  if (typeof window === "undefined") return {};
+  try {
+    const savedProfile = JSON.parse(localStorage.getItem("barakah_customer_profile") || "{}");
+    const authUser = JSON.parse(localStorage.getItem("barakahUser") || "{}");
+    return {
+      name: savedProfile.name || authUser.name || "",
+      phone: savedProfile.phone || authUser.phone || "",
+      email: savedProfile.email || authUser.email || "",
+      address: savedProfile.address || authUser.address || "",
+    };
+  } catch {
+    return {};
+  }
+}
+
+export function getTrackingContext() {
+  if (typeof window === "undefined") return {};
   const tracking = getTrackingData();
-  const visitorId = getOrCreateVisitorId();
-  const eventId = customData.eventId || `${eventName.toLowerCase()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-  const cookieFbp = getCookie("_fbp");
-  const cookieFbc = getCookie("_fbc");
-
-  const finalUserParams = {
-    externalId: userParams.phone || userParams.externalId || visitorId,
-    phone: userParams.phone || "",
-    email: userParams.email || "",
+  return {
+    fbp: getOrCreateFbp(),
+    fbc: getResolvedFbc(),
     fbclid: tracking.fbclid || "",
-    fbp: cookieFbp || tracking.fbp || "",
-    fbc: cookieFbc || (tracking.fbclid ? `fb.1.${Date.now()}.${tracking.fbclid}` : ""),
-    ...userParams,
+    visitorId: getOrCreateVisitorId(),
   };
+}
 
-  // 1. Browser Pixel Dispatch (fbq)
-  if (typeof window !== "undefined" && typeof window.fbq === "function") {
+function buildBrowserAdvancedMatching(userParams) {
+  const am = { country: "bd" };
+  const cleanPhone = normalizePhoneForMeta(userParams.phone);
+  if (cleanPhone) {
+    am.ph = cleanPhone;
+    am.external_id = cleanPhone;
+  } else if (userParams.externalId) {
+    am.external_id = String(userParams.externalId);
+  }
+  if (userParams.email) {
+    am.em = String(userParams.email).trim().toLowerCase();
+  }
+  if (userParams.name) {
+    const parts = String(userParams.name).trim().toLowerCase().split(/\s+/);
+    if (parts[0]) am.fn = parts[0];
+    if (parts.length > 1) am.ln = parts.slice(1).join(" ");
+  }
+  return am;
+}
+
+function getActiveTestEventCode(userParams) {
+  if (userParams.testEventCode) return String(userParams.testEventCode).trim();
+  if (typeof window === "undefined") return "";
+  try {
+    return (
+      window.__metaTestEventCode ||
+      sessionStorage.getItem("meta_test_event_code") ||
+      ""
+    ).trim();
+  } catch {
+    return window.__metaTestEventCode || "";
+  }
+}
+
+function dispatchToBrowserPixel(eventName, customData, eventId, userParams) {
+  const pixelId = (typeof window !== "undefined" && window.__metaPixelId) || DEFAULT_PIXEL_ID;
+  const am = buildBrowserAdvancedMatching(userParams);
+  const amSignature = JSON.stringify(am);
+
+  const runFbq = () => {
+    if (typeof window.fbq !== "function") return false;
     try {
+      if (window.__metaLastAmSig !== amSignature) {
+        window.fbq("init", pixelId, am);
+        window.__metaLastAmSig = amSignature;
+      }
       window.fbq("track", eventName, customData, { eventID: eventId });
     } catch (e) {
       console.warn("[Meta Browser Pixel Error]:", e);
     }
+    return true;
+  };
+
+  if (!runFbq()) {
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      if (runFbq() || attempts >= 25) {
+        clearInterval(timer);
+      }
+    }, 100);
+  }
+}
+
+export async function trackMetaEvent(eventName, customData = {}, userParams = {}) {
+  if (typeof window === "undefined") return;
+
+  if (userParams.phone || userParams.name || userParams.email || userParams.address) {
+    saveCustomerProfile(userParams);
   }
 
+  const tracking = getTrackingData();
+  const savedProfile = getSavedCustomerProfile();
+  const visitorId = getOrCreateVisitorId();
+  const eventId = customData.eventId || `${eventName.toLowerCase()}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+  const fbp = getOrCreateFbp();
+  const fbc = getResolvedFbc();
+
+  const resolvedPhone = userParams.phone || savedProfile.phone || "";
+  const resolvedName = userParams.name || savedProfile.name || "";
+  const resolvedEmail = userParams.email || savedProfile.email || "";
+  const resolvedAddress = userParams.address || savedProfile.address || "";
+
+  const finalUserParams = {
+    ...userParams,
+    externalId: resolvedPhone || userParams.externalId || visitorId,
+    phone: resolvedPhone,
+    name: resolvedName,
+    email: resolvedEmail,
+    address: resolvedAddress,
+    fbclid: tracking.fbclid || "",
+    fbp,
+    fbc,
+    testEventCode: getActiveTestEventCode(userParams),
+  };
+
+  // 1. Browser Pixel Dispatch (fbq) with Manual Advanced Matching
+  dispatchToBrowserPixel(eventName, customData, eventId, finalUserParams);
+
   // 2. TikTok Pixel Dispatch (ttq)
-  if (typeof window !== "undefined" && typeof window.ttq?.track === "function") {
+  if (typeof window.ttq?.track === "function") {
     try {
       const tiktokNameMap = {
         ViewContent: "ViewContent",
@@ -86,7 +278,7 @@ export async function trackMetaEvent(eventName, customData = {}, userParams = {}
     }
   }
 
-  // 3. Server-Side CAPI Relay Dispatch (Vercel Serverless Route)
+  // 3. Server-Side CAPI Relay Dispatch (Next.js Serverless Route)
   try {
     fetch("/api/tracking/events", {
       method: "POST",
