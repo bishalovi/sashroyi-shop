@@ -343,6 +343,15 @@ export default function CheckoutPage() {
       sessionId: getCheckoutSessionId(),
       customerName: data.name,
       phone: data.phone,
+      email: (function() {
+        try {
+          const authUser = JSON.parse(localStorage.getItem("barakahUser") || "{}");
+          const profile = JSON.parse(localStorage.getItem("barakah_customer_profile") || "{}");
+          return authUser.email || profile.email || "";
+        } catch {
+          return "";
+        }
+      })(),
       address: data.address,
       notes: data.notes,
       shippingType: shipping,
