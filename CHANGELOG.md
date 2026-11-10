@@ -9,12 +9,35 @@ This document contains detailed changelogs for all versions, detailing newly add
 
 | Version | Milestone Name | Status | Archive File |
 | :--- | :--- | :--- | :--- |
-| **v2.4.0** | **Explicit AddToCart & Direct Checkout Funnel** | 🟢 Active / Live | `sashroyi-v2.4.0-explicit-add-to-cart.zip` |
+| **v2.5.0** | **Full Funnel EMQ Maximizer & A-Z Tracking Audit** | 🟢 Active / Live | `sashroyi-v2.5.0-emq-maximizer.zip` |
+| **v2.4.0** | **Explicit AddToCart & Direct Checkout Funnel** | 📦 Archived | `sashroyi-v2.4.0-explicit-add-to-cart.zip` |
 | **v2.3.0** | **Meta CAPI & GTM Tracking Hub** | 📦 Archived | `sashroyi-v2.3.0-tracking-hub.zip` |
 | **v2.2.0** | **Search & Category Reorder Release** | 📦 Archived | `sashroyi-v2.2.0-latest-production.zip` |
 | **v2.1.0** | **Categories & Customizations** | 📦 Archived | `sashroyi-v2.1.0-categories-and-settings.zip` |
 | **v2.0.0** | **Admin Settings & Payment Hub** | 📦 Archived | `sashroyi-v2.0.0-admin-and-payments.zip` |
 | **v1.0.0** | **Base Architecture & Auth** | 📦 Archived | `sashroyi-v1.0.0-base-architecture.zip` |
+
+---
+
+## 🚀 Version 2.5.0 (Full Funnel EMQ Maximizer & A-Z Tracking Audit)
+**Date:** November 10, 2026  
+**Status:** 🟢 Deployed & Verified
+
+### ✨ What Was Added / Improved (নতুন কী পরিবর্তন ও ফিক্স করা হয়েছে):
+1. **ব্রাউজার অ্যাডভান্সড ম্যাচিং-এ City, State ও ZIP অন্তর্ভুক্তি (`metaTracking.js`):**
+   - ব্রাউজার সাইড পিক্সেল ইনিশিয়ালাইজেশনে (`fbq('init', pixelId, am)`) আগে শুধুমাত্র দেশ ও ফোন/নাম যাচ্ছিল, যার ফলে Meta Events Manager-এ City ও State কভারেজ মাত্র ৫০% দেখাচ্ছিল (কারণ শুধু সার্ভার CAPI পাঠাচ্ছিল, ব্রাউজার পাঠাচ্ছিল না)।
+   - এখন `BD_LOCATIONS` টেবিল ও `resolveLocation` এর মাধ্যমে ব্রাউজার পিক্সেল থেকেও ১০০% ক্ষেত্রে `ct` (City), `st` (State), এবং `zp` (ZIP code) স্বয়ংক্রিয়ভাবে পাঠানো হচ্ছে। ফলে City & State ম্যাচিং রেট ৫০% থেকে ১০০%-এ উন্নীত হয়েছে।
+2. **`ViewItemTracker.jsx`-এ `contents` অ্যারে সংযোজন:**
+   - প্রোডাক্ট পেজে `ViewContent` ইভেন্টে আগে শুধু `content_ids` ছিল, `contents: [{ id, quantity, item_price }]` ছিল না।
+   - এখন মেটা ক্যাটালগ ও ডাইনামিক রিটার্গেটিং স্ট্যান্ডার্ড অনুযায়ী পূর্ণাঙ্গ `contents` অ্যারে পাঠানো হচ্ছে।
+3. **`order-success/page.js`-এ `content_ids` পূর্ণাঙ্গ সংযোজন:**
+   - পারচেজ ইভেন্টে `contents` অ্যারের সাথে মেটা রিকমেন্ডেড `content_ids` অ্যারে যুক্ত করা হয়েছে।
+4. **চেকআউট পেজে রেস কন্ডিশন ও ডুপ্লিকেট `begin_checkout` ফিক্স (`checkout/page.jsx`):**
+   - কার্ট ডেটা লোড হওয়ার আগেই খালি অ্যারে থাকার কারণে `InitiateCheckout` মিস হওয়ার ঝুঁকি ছিল। এখন কার্ট আইটেম লোড হওয়া মাত্রই `useRef` ও `sessionStorage` গার্ডের মাধ্যমে ঠিক একবার নিখুঁতভাবে ফায়ার হয়।
+   - পৃষ্ঠাটির নিচে থাকা পুরনো ডুপ্লিকেট `begin_checkout` ডাটালেয়ার পুশ রিমুভ করা হয়েছে।
+   - পেমেন্ট মেথড বাছাইয়ের সময় GA4 এর স্ট্যান্ডার্ড `add_payment_info` ইভেন্ট DataLayer-এ পুশ করা হয়েছে।
+5. **ক্যাটাগরি পেজে ViewContent ভ্যালু ফিক্স (`CategoryViewTracker.jsx`):**
+   - মেটা ইভেন্টস ম্যানেজারে কারেন্সি পাঠানো কিন্তু ভ্যালু না থাকার ডায়াগনস্টিক ওয়ার্নিং দূর করতে সঠিক `value` প্যারামিটার যুক্ত করা হয়েছে।
 
 ---
 

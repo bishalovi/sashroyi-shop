@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
@@ -37,9 +37,16 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // Track InitiateCheckout
+  // Track InitiateCheckout (Meta) & begin_checkout (DataLayer) exactly once per checkout visit
+  const hasTrackedCheckoutRef = useRef(false);
   useEffect(() => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || hasTrackedCheckoutRef.current) return;
+
+    const sessionKey = "barakah_checkout_tracked";
+    if (sessionStorage.getItem(sessionKey)) {
+      hasTrackedCheckoutRef.current = true;
+      return;
+    }
 
     const items = cartItems.map((item) => ({
       item_id: item.selectedVariationId
@@ -55,6 +62,9 @@ export default function CheckoutPage() {
       price: Number(item.price || 0),
       quantity: Number(item.quantity || 1),
     }));
+
+    hasTrackedCheckoutRef.current = true;
+    sessionStorage.setItem(sessionKey, "true");
 
     pushToDataLayer({
       event: "begin_checkout",
@@ -77,7 +87,7 @@ export default function CheckoutPage() {
         item_price: i.price,
       })),
     });
-  }, []);
+  }, [cartItems.length, totalPrice]);
 
   useEffect(() => {
     if (!baseUrl) return;
@@ -119,6 +129,32 @@ export default function CheckoutPage() {
       quantity: Number(item.quantity || 1),
       item_price: Number(item.price || 0),
     }));
+
+    pushToDataLayer({
+      event: "add_payment_info",
+      ecommerce: {
+        currency: "BDT",
+        value: Number(finalTotal || 0),
+        payment_type:
+          method === "cod"
+            ? "Cash on Delivery"
+            : method === "bkash"
+            ? "bKash"
+            : method === "nagad"
+            ? "Nagad"
+            : method === "rocket"
+            ? "Rocket"
+            : method,
+        items: cartItems.map((item) => ({
+          item_id: item.selectedVariationId
+            ? `${item._id || item.id}_${item.selectedVariationId}`
+            : String(item._id || item.id || ""),
+          item_name: item.name || "",
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1),
+        })),
+      },
+    });
 
     trackMetaEvent(
       "AddPaymentInfo",
@@ -270,34 +306,7 @@ export default function CheckoutPage() {
     return () => clearTimeout(timer);
   }, [formValues.name, formValues.phone, formValues.address, cartItems]);
 
-  useEffect(() => {
-    if (cartItems.length === 0) return;
 
-    const alreadyTracked = sessionStorage.getItem("barakah_begin_checkout");
-    if (alreadyTracked) return;
-
-    //pushing to data layer for GTM
-    pushToDataLayer({
-      event: "begin_checkout",
-      ecommerce: {
-        currency: "BDT",
-        value: Number(finalTotal.toFixed(2)),
-        items: cartItems.map((item) => ({
-          item_id: item.selectedVariationId
-            ? `${item._id || item.productId}_${item.selectedVariationId}`
-            : (item._id || item.productId || ""),
-          item_name: item.variationTitle
-            ? `${item.name} (${item.variationTitle})`
-            : (item.name || ""),
-          item_variant: item.variationTitle || "Default",
-          price: Number(item.price || 0),
-          quantity: Number(item.quantity || 1),
-        })),
-      },
-    });
-
-    sessionStorage.setItem("barakah_begin_checkout", "true");
-  }, []);
 
   const onSubmit = async (data) => {
     if (cartItems.length === 0) {
@@ -389,6 +398,7 @@ export default function CheckoutPage() {
 
       clearCart();
       reset();
+      sessionStorage.removeItem("barakah_checkout_tracked");
 
       router.push("/order-success");
     } catch (error) {

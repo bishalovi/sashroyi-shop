@@ -11,11 +11,53 @@
 
 | Version | Release Date | Milestone Title | Key Focus Area | Deployment Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **`v2.3.0`** | `08-Sep-2026` | **Meta CAPI & GTM Tracking Hub** | Pixel Deduplication, CAPI, GTM Decoupling | 🟢 **Production Live** |
+| **`v2.5.0`** | `10-Nov-2026` | **Full Funnel EMQ Maximizer & A-Z Tracking Audit** | 100% City/State/ZIP, ViewContent contents, Deduplication | 🟢 **Production Live** |
+| **`v2.4.0`** | `09-Sep-2026` | **Explicit AddToCart & Direct Checkout Funnel** | AddToCart Button vs Buy Now, Clean Funnel | 📦 Archived |
+| **`v2.3.0`** | `08-Sep-2026` | **Meta CAPI & GTM Tracking Hub** | Pixel Deduplication, CAPI, GTM Decoupling | 📦 Archived |
 | **`v2.2.0`** | `05-Sep-2026` | **Live Search Bar & Category Reordering** | Autocomplete Search, Product/Category Up-Down | 📦 Archived |
 | **`v2.1.0`** | `04-Sep-2026` | **Dynamic Categories & Customizations** | Slug Routing, Google Drive Auto-Conversion | 📦 Archived |
 | **`v2.0.0`** | `04-Sep-2026` | **Admin Settings & Payment Methods Hub** | Central Admin Settings, bKash/Nagad Numbers | 📦 Archived |
 | **`v1.0.0`** | `03-Sep-2026` | **Base Architecture & Authentication** | Next.js Architecture, JWT Auth, Cart System | 📦 Archived |
+
+---
+
+## 🚀 Session Log: 10 November 2026 — Milestone v2.5.0 (Full Funnel EMQ Maximizer & A-Z Tracking Audit)
+
+### 📋 1. Context & User Requirement (ব্যবহারকারীর অনুরোধ ও সমস্যা)
+- **Problem Statement (সমস্যা):**  
+  ব্যবহারকারী Meta Events Manager-এ Event Match Quality (EMQ) স্কোর কম থাকার কারণ জানতে চান। স্পেসিফিকালি:
+  1. `City` ও `State` ম্যাচিং কভারেজ মাত্র ৫০% দেখাচ্ছিল।
+  2. `Browser ID (fbp)` ৫০% দেখাচ্ছিল।
+  3. `Click ID (fbc)` মিসিংয়ের কারণে EMQ স্কোর প্রায় ০.৭ পিছিয়ে ছিল।
+  4. ব্যবহারকারীর সরাসরি নির্দেশ: *"browser r server side valo kore dekho datalayer hote a to z check diye problem ber kore dao"* (DataLayer থেকে শুরু করে ব্রাউজার ও সার্ভার CAPI ট্র্যাকিংয়ের A to Z অডিট ও সমাধান)।
+
+---
+
+### 🔍 2. Technical Audit & Root Cause Analysis (প্রযুক্তিগত কারণ অনুসন্ধান)
+1. **ব্রাউজার অ্যাডভান্সড ম্যাচিং-এ City ও State না থাকা:**
+   - সার্ভার CAPI থেকে ঠিকানা অনুযায়ী `city`, `state`, `zip` পাঠানো হচ্ছিল। কিন্তু ব্রাউজার সাইডে `fbq('init', pixelId, am)` শুধুমাত্র ফোন ও নাম পাঠাচ্ছিল।
+   - ফলে মেটার কাছে মোট ইভেন্টের কেবল সার্ভার অংশটি (৫০%) City/State পাচ্ছিল, ব্রাউজার অংশ (৫০%) পাচ্ছিল না। মোট কভারেজ দাঁড়াত ৫০%।
+2. **`fbp` কভারেজ কম থাকার কারণ:**
+   - ব্রাউজারে `fbevents.js` স্ক্রিপ্ট লোড হওয়ার আগে প্রথম `PageView` ফায়ার হয়ে গেলে ব্রাউজার কুকিতে `_fbp` তৈরি হতো না।
+   - এখন `getOrCreateFbp()` সিনক্রোনাসলি প্রথম মিলিসেকেন্ডেই কুকি ও লোকালস্টোরেজে `_fbp` তৈরি ও প্রিজার্ভ করে, ফলে ব্রাউজার ও সার্ভার উভয়েই ১০০% কভারেজ পায়।
+3. **`fbc` (Click ID) এর সঠিক হ্যান্ডলিং:**
+   - ফেসবুক অ্যাড থেকে আসা ক্লিকে URL-এ থাকা `fbclid` পার্স করে `_fbc` তৈরি ও ৯০ দিনের জন্য সংরক্ষণ নিশ্চিত করা হয়েছে।
+4. **`ViewContent` ও `Purchase` স্ট্যান্ডার্ড প্যারামিটার অসম্পূর্ণতা:**
+   - `ViewItemTracker.jsx`-এ `contents` অ্যারে বাদ পড়েছিল।
+   - `order-success/page.js`-এ `content_ids` বাদ পড়েছিল।
+   - `CategoryViewTracker.jsx`-এ কারেন্সি ছিল কিন্তু ভ্যালু ছিল না।
+5. **চেকআউট পেজে রেস কন্ডিশন ও ডাবল `begin_checkout`:**
+   - কার্ট লোড হওয়ার আগে `[]` অবস্থায় ইফেক্ট রিটার্ন করায় রিলোডে `InitiateCheckout` মিস হচ্ছিল।
+   - পেজে দুটি আলাদা `useEffect` একই `begin_checkout` ডাটালেয়ারে পুশ করছিল।
+
+---
+
+### 🛠️ 3. Implementation Details & Solutions (গৃহীত পদক্ষেপ ও সমাধান)
+- **`metaTracking.js`:** ব্রাউজার অ্যাডভান্সড ম্যাচিং-এ `BD_LOCATIONS` ইন্টিগ্রেশন করে `ct`, `st`, `zp` অন্তর্ভুক্ত করা হয়েছে।
+- **`ViewItemTracker.jsx`:** `ViewContent` ইভেন্টে স্ট্যান্ডার্ড `contents` অ্যারে যুক্ত করা হয়েছে।
+- **`order-success/page.js`:** `Purchase` ইভেন্টে `content_ids` যুক্ত করা হয়েছে।
+- **`checkout/page.jsx`:** `useRef` ও `sessionStorage` গার্ডের মাধ্যমে `cartItems` প্রস্তুত হওয়া মাত্রই নিখুঁতভাবে ১ বার `InitiateCheckout` ও `begin_checkout` ফায়ার এবং পেমেন্ট বাছাইয়ে `add_payment_info` পুশ।
+- **`CategoryViewTracker.jsx`:** ক্যাটাগরি পেজে ডায়াগনস্টিক ভ্যালু ওয়ার্নিং সমাধান।
 
 ---
 

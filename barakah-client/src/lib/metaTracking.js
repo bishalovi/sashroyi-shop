@@ -10,6 +10,45 @@
 const DEFAULT_PIXEL_ID = "3090216584507410";
 const COOKIE_MAX_AGE_90D = 90 * 24 * 60 * 60;
 
+const BD_LOCATIONS = [
+  { keywords: ["chittagong", "chattogram", "চট্টগ্রাম"], city: "chattogram", zip: "4000" },
+  { keywords: ["sylhet", "সিলেট"], city: "sylhet", zip: "3100" },
+  { keywords: ["rajshahi", "রাজশাহী"], city: "rajshahi", zip: "6000" },
+  { keywords: ["khulna", "খুলনা"], city: "khulna", zip: "9000" },
+  { keywords: ["barisal", "barishal", "বরিশাল"], city: "barisal", zip: "8200" },
+  { keywords: ["rangpur", "রংপুর"], city: "rangpur", zip: "5400" },
+  { keywords: ["mymensingh", "ময়মনসিংহ", "ময়মনসিংহ"], city: "mymensingh", zip: "2200" },
+  { keywords: ["gazipur", "গাজীপুর", "tongi", "টঙ্গী"], city: "gazipur", zip: "1700" },
+  { keywords: ["narayanganj", "নারায়ণগঞ্জ", "নারায়ণগঞ্জ"], city: "narayanganj", zip: "1400" },
+  { keywords: ["cumilla", "comilla", "কুমিল্লা"], city: "cumilla", zip: "3500" },
+  { keywords: ["bogura", "bogra", "বগুড়া", "বগুড়া"], city: "bogura", zip: "5800" },
+  { keywords: ["jessore", "jashore", "যশোর"], city: "jessore", zip: "7400" },
+  { keywords: ["cox", "কক্সবাজার"], city: "coxs bazar", zip: "4700" },
+  { keywords: ["savar", "সাভার", "ashulia", "আশুলিয়া", "আশুলিয়া"], city: "savar", zip: "1340" },
+  { keywords: ["tangail", "টাঙ্গাইল"], city: "tangail", zip: "1900" },
+  { keywords: ["narsingdi", "নরসিংদী"], city: "narsingdi", zip: "1600" },
+  { keywords: ["brahmanbaria", "ব্রাহ্মণবাড়িয়া", "ব্রাহ্মণবাড়িয়া"], city: "brahmanbaria", zip: "3400" },
+  { keywords: ["feni", "ফেনী"], city: "feni", zip: "3900" },
+  { keywords: ["noakhali", "নোয়াখালী", "নোয়াখালী"], city: "noakhali", zip: "3800" },
+  { keywords: ["pabna", "পাবনা"], city: "pabna", zip: "6600" },
+  { keywords: ["dinajpur", "দিনাজপুর"], city: "dinajpur", zip: "5200" },
+  { keywords: ["kushtia", "কুষ্টিয়া", "কুষ্টিয়া"], city: "kushtia", zip: "7000" },
+  { keywords: ["faridpur", "ফরিদপুর"], city: "faridpur", zip: "7800" },
+  { keywords: ["sirajganj", "সিরাজগঞ্জ"], city: "sirajganj", zip: "6700" },
+  { keywords: ["chandpur", "চাঁদপুর"], city: "chandpur", zip: "3600" },
+  { keywords: ["jamalpur", "জামালপুর"], city: "jamalpur", zip: "2000" },
+  { keywords: ["dhaka", "ঢাকা", "mirpur", "মিরপুর", "uttara", "উত্তরা", "dhanmondi", "ধানমন্ডি", "gulshan", "গুলশান", "banani", "বনানী", "mohammadpur", "মোহাম্মদপুর", "badda", "বাড্ডা", "motijheel", "মতিঝিল"], city: "dhaka", zip: "1200" },
+];
+
+function resolveLocation(address) {
+  if (!address) return { city: "dhaka", zip: "1200" };
+  const lower = String(address).toLowerCase();
+  const matched = BD_LOCATIONS.find((loc) =>
+    loc.keywords.some((kw) => lower.includes(kw))
+  );
+  return matched ? { city: matched.city, zip: matched.zip } : { city: "dhaka", zip: "1200" };
+}
+
 function getCookie(name) {
   if (typeof document === "undefined") return "";
   try {
@@ -179,6 +218,17 @@ function buildBrowserAdvancedMatching(userParams) {
     if (parts[0]) am.fn = parts[0];
     if (parts.length > 1) am.ln = parts.slice(1).join(" ");
   }
+
+  // City, State, and ZIP for 100% Browser Match Quality
+  const loc = resolveLocation(userParams.address || userParams.city);
+  if (loc.city) {
+    am.ct = loc.city.replace(/[^a-z]/g, "");
+    am.st = loc.city.replace(/[^a-z]/g, "");
+  }
+  if (loc.zip) {
+    am.zp = String(loc.zip).trim();
+  }
+
   return am;
 }
 

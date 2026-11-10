@@ -40,6 +40,7 @@ export default function CategoryViewTracker({ categoryName, categorySlug, subcat
         item_price: Number(p.price || 0),
       })),
       num_items: products.length,
+      value: products.length > 0 ? Number(products[0]?.price || 0) : 0,
       currency: "BDT",
     });
 

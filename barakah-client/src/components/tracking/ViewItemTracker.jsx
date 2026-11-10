@@ -39,6 +39,13 @@ export default function ViewItemTracker({ product }) {
       content_type: "product",
       value: initialPrice,
       currency: "BDT",
+      contents: [
+        {
+          id: initialItemId,
+          quantity: 1,
+          item_price: initialPrice,
+        },
+      ],
     });
   }, [product?._id]);
 

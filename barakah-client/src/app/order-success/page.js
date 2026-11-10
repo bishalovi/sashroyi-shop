@@ -68,6 +68,7 @@ export default function OrderSuccessPage() {
         value: Number(order.total || 0),
         currency: "BDT",
         content_type: "product",
+        content_ids: contents.map((c) => c.id),
         contents: contents.map((c) => ({
           id: c.id,
           quantity: c.quantity,
