@@ -7,8 +7,29 @@ import Reviews from "@/components/home/Reviews";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
 
 export const revalidate = 10;
+
+async function getProductReviewStats() {
+  try {
+    const res = await fetch(`${API_URL}/api/reviews`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const list = Array.isArray(json?.data) ? json.data : [];
+    const rated = list.filter((r) => Number(r?.rating) > 0);
+    if (rated.length === 0) return null;
+    const sum = rated.reduce((acc, r) => acc + Number(r.rating), 0);
+    return {
+      ratingValue: Number((sum / rated.length).toFixed(1)),
+      reviewCount: rated.length,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function stripHtmlAndTruncate(text, maxLength = 155) {
   const clean = String(text || "")
@@ -123,7 +144,10 @@ export default async function ProductDetails({ params }) {
     );
   }
 
-  const relatedProducts = await getRelatedProducts(product.category, product._id);
+  const [relatedProducts, reviewStats] = await Promise.all([
+    getRelatedProducts(product.category, product._id),
+    getProductReviewStats(),
+  ]);
 
   const productSlugOrId = product.slug || product._id;
   const productUrl = `${SITE_URL}/products/${productSlugOrId}`;
@@ -152,6 +176,41 @@ export default async function ProductDetails({ params }) {
           : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
     },
+    ...(reviewStats
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: reviewStats.ratingValue,
+            reviewCount: reviewStats.reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      ...(product.category
+        ? [
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: product.category,
+              item: `${SITE_URL}/category/${encodeURIComponent(product.category)}`,
+            },
+          ]
+        : []),
+      {
+        "@type": "ListItem",
+        position: product.category ? 3 : 2,
+        name: product.name,
+        item: productUrl,
+      },
+    ],
   };
 
   return (
@@ -159,6 +218,10 @@ export default async function ProductDetails({ params }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <OfferCountdown product={product} />
       <ViewItemTracker product={product} />

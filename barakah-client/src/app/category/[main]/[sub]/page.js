@@ -4,12 +4,14 @@ import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 import CategoryViewTracker from "@/components/tracking/CategoryViewTracker";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+
 export const revalidate = 10;
 
 async function getCategoryData(main) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
   try {
-    const res = await fetch(`${baseUrl}/api/categories/${main}`, {
+    const res = await fetch(`${API_URL}/api/categories/${main}`, {
       next: { revalidate: 10 },
     });
     if (!res.ok) return null;
@@ -21,13 +23,11 @@ async function getCategoryData(main) {
 }
 
 async function getProducts(main, sub) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
-
   try {
     const url =
       sub && sub !== "all"
-        ? `${baseUrl}/api/products?category=${main}&subcategory=${sub}`
-        : `${baseUrl}/api/products?category=${main}`;
+        ? `${API_URL}/api/products?category=${main}&subcategory=${sub}`
+        : `${API_URL}/api/products?category=${main}`;
 
     const res = await fetch(url, {
       next: { revalidate: 10 },
@@ -45,6 +45,49 @@ async function getProducts(main, sub) {
   }
 }
 
+export async function generateMetadata({ params }) {
+  const { main, sub } = await params;
+  const categoryData = await getCategoryData(main);
+  const categoryName = categoryData?.name || main?.replace(/-/g, " ") || "Category";
+  const subName = sub && sub !== "all" ? sub.replace(/-/g, " ") : "";
+
+  const displayTitle = subName
+    ? `${subName} - ${categoryName} | Sashroyi Shop`
+    : `${categoryName} | Sashroyi Shop`;
+
+  const description = subName
+    ? `${categoryName} এর সেরা ${subName} কালেকশন কিনুন Sashroyi Shop থেকে সাশ্রয়ী মূল্যে ও দ্রুত হোম ডেলিভারিতে।`
+    : `${categoryName} ক্যাটাগরির সেরা মানের পণ্য কিনুন Sashroyi Shop থেকে সাশ্রয়ী মূল্যে ও দ্রুত হোম ডেলিভারিতে।`;
+
+  const canonicalPath =
+    sub && sub !== "all" ? `/category/${main}/${sub}` : `/category/${main}`;
+  const canonicalUrl = `${SITE_URL}${canonicalPath}`;
+
+  return {
+    title: displayTitle,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: "website",
+      url: canonicalUrl,
+      title: displayTitle,
+      description,
+      siteName: "Sashroyi Shop",
+      ...(categoryData?.image
+        ? { images: [{ url: categoryData.image, alt: categoryName }] }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: displayTitle,
+      description,
+      ...(categoryData?.image ? { images: [categoryData.image] } : {}),
+    },
+  };
+}
+
 export default async function CategoryPage({ params }) {
   const { main, sub } = await params;
   const [categoryData, filteredProducts] = await Promise.all([
@@ -55,8 +98,35 @@ export default async function CategoryPage({ params }) {
   const categoryTitle = categoryData?.name || main?.replace(/-/g, " ");
   const subcategories = categoryData?.subcategories || [];
 
+  const breadcrumbItems = [
+    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: categoryTitle,
+      item: `${SITE_URL}/category/${main}`,
+    },
+  ];
+  if (sub && sub !== "all") {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      position: 3,
+      name: sub.replace(/-/g, " "),
+      item: `${SITE_URL}/category/${main}/${sub}`,
+    });
+  }
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems,
+  };
+
   return (
     <main className="bg-[#faf7f0] min-h-screen pb-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <CategoryViewTracker
         categoryName={categoryTitle}
         categorySlug={main}

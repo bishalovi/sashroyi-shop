@@ -2,9 +2,23 @@ import HomeCategories from "@/components/home/HomeCategories";
 import ProductSection from "@/components/home/ProductSection";
 import Reviews from "@/components/home/Reviews";
 
-const baseUrl = "https://sashroyi-api.onrender.com";
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
 
 export const revalidate = 10;
+
+async function getPublicSettings() {
+  try {
+    const res = await fetch(`${baseUrl}/api/settings/public`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data || null;
+  } catch {
+    return null;
+  }
+}
 
 async function getCategories() {
   try {
@@ -52,10 +66,42 @@ async function getAllProducts() {
 }
 
 export default async function HomePage() {
-  const [categories, allProducts] = await Promise.all([
+  const [categories, allProducts, publicSettings] = await Promise.all([
     getCategories(),
     getAllProducts(),
+    getPublicSettings(),
   ]);
+
+  const shopName = publicSettings?.general?.shopName || "Sashroyi Shop";
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: shopName,
+    url: SITE_URL,
+    ...(publicSettings?.general?.logoUrl ? { logo: publicSettings.general.logoUrl } : {}),
+    ...(publicSettings?.contact?.phone
+      ? {
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: publicSettings.contact.phone,
+            contactType: "customer service",
+            areaServed: "BD",
+          },
+        }
+      : {}),
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: shopName,
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${SITE_URL}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
 
   // Fetch products for all active categories in parallel for maximum speed
   const categorySections = await Promise.all(
@@ -75,6 +121,14 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#faf7f0] text-[#3d2f1f]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
       <HomeCategories categories={categories} />
 
       {allProducts.length > 0 && (

@@ -1,6 +1,29 @@
 const connectDB = require("../config/db");
 const { ObjectId } = require("mongodb");
 
+function notifyIndexNow(slug) {
+  const indexNowKey = process.env.INDEXNOW_KEY;
+  if (!indexNowKey || !slug || typeof fetch !== "function") return;
+  const siteUrl = (process.env.SITE_URL || "https://www.sashroyi.shop").replace(/\/+$/, "");
+  let host = "www.sashroyi.shop";
+  try {
+    host = new URL(siteUrl).host;
+  } catch {
+    return;
+  }
+  const urlList = [`${siteUrl}/products/${slug}`, `${siteUrl}/sitemap.xml`];
+  fetch("https://api.indexnow.org/indexnow", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      host,
+      key: indexNowKey,
+      keyLocation: `${siteUrl}/${indexNowKey}.txt`,
+      urlList,
+    }),
+  }).catch(() => {});
+}
+
 function generateSlug(text) {
   if (!text) return "";
   return text
@@ -274,6 +297,7 @@ exports.createProduct = async (req, res) => {
     };
 
     const result = await productsCollection.insertOne(newProduct);
+    notifyIndexNow(finalSlug);
 
     res.status(201).json({
       success: true,
@@ -412,6 +436,7 @@ exports.updateProduct = async (req, res) => {
       { _id: new ObjectId(id) },
       { $set: updatedDoc },
     );
+    notifyIndexNow(finalSlug);
 
     res.json({
       success: true,
