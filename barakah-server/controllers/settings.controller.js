@@ -173,7 +173,13 @@ exports.getAdminSettings = async (req, res) => {
     const config = await getSettingsFromDB();
     res.json({
       success: true,
-      data: config,
+      data: {
+        ...config,
+        seo: {
+          ...DEFAULT_WEBSITE_SETTINGS.seo,
+          ...(config.seo || {}),
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -26,24 +26,30 @@ export default function AdminSeoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${baseUrl}/api/settings/admin`, {
-          cache: "no-store",
-        });
-        const json = await res.json();
-        if (json.success && json.data?.seo) {
-          setSeo({ ...DEFAULT_SEO, ...json.data.seo });
-        }
-      } catch (err) {
-        console.error("Failed to fetch SEO settings:", err);
-        toast.error("SEO সেটিংস লোড করতে সমস্যা হয়েছে");
-      } finally {
-        setLoading(false);
+  const fetchSettings = async (retryCount = 0) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${baseUrl}/api/settings/admin`);
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
       }
-    };
+      const json = await res.json();
+      if (json.success && json.data?.seo) {
+        setSeo({ ...DEFAULT_SEO, ...json.data.seo });
+      }
+    } catch (err) {
+      if (retryCount < 1) {
+        setTimeout(() => fetchSettings(retryCount + 1), 2000);
+        return;
+      }
+      console.error("Failed to fetch SEO settings:", err);
+      toast.error("SEO সেটিংস লোড করতে সমস্যা হয়েছে (সার্ভার রেসপন্স করেনি, আবার চেষ্টা করুন)");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSettings();
   }, [baseUrl]);
 
