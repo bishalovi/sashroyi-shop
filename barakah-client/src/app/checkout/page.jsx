@@ -75,18 +75,38 @@ export default function CheckoutPage() {
       },
     });
 
-    trackMetaEvent("InitiateCheckout", {
-      content_ids: items.map((i) => i.id),
-      content_type: "product",
-      value: Number(totalPrice || 0),
-      currency: "BDT",
-      num_items: items.reduce((acc, i) => acc + i.quantity, 0),
-      contents: items.map((i) => ({
-        id: i.id,
-        quantity: i.quantity,
-        item_price: i.price,
-      })),
-    });
+    const trackingContext = getTrackingContext();
+    const savedCustomer = (() => {
+      try {
+        const p = JSON.parse(localStorage.getItem("barakah_customer_profile") || "{}");
+        const u = JSON.parse(localStorage.getItem("barakahUser") || "{}");
+        return {
+          name: p.name || u.name || "",
+          phone: p.phone || u.phone || "",
+          email: p.email || u.email || "",
+          address: p.address || u.address || "",
+        };
+      } catch {
+        return {};
+      }
+    })();
+
+    trackMetaEvent(
+      "InitiateCheckout",
+      {
+        content_ids: items.map((i) => i.id),
+        content_type: "product",
+        value: Number(totalPrice || 0),
+        currency: "BDT",
+        num_items: items.reduce((acc, i) => acc + i.quantity, 0),
+        contents: items.map((i) => ({
+          id: i.id,
+          quantity: i.quantity,
+          item_price: i.price,
+        })),
+      },
+      savedCustomer
+    );
   }, [cartItems.length, totalPrice]);
 
   useEffect(() => {
