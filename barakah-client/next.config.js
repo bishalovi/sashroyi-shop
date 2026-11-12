@@ -1,9 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,
   },
   images: {
+    formats: ["image/webp"],
+    qualities: [65, 75],
+    minimumCacheTTL: 2592000,
     remotePatterns: [
       {
         protocol: "https",
@@ -19,7 +24,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**", 
+        hostname: "**",
       },
     ],
   },

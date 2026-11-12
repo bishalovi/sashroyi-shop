@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FaStar } from "react-icons/fa";
+import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
@@ -33,10 +33,13 @@ export default function ReviewsCarousel({ reviews }) {
           <div className="mx-auto rounded-2xl bg-white  p-6 shadow-md transition hover:shadow-xl">
             <div className="flex justify-center pb-2">
               <Image
-                src={review.image}
-                alt={review.name}
+                src={getOptimizedImageUrl(review.image, 400)}
+                alt={review.name || "Customer review"}
                 width={300}
                 height={200}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                loading="lazy"
+                unoptimized
                 className="w-full rounded-xl border-2 border-[#d4af37] object-cover"
               />
             </div>

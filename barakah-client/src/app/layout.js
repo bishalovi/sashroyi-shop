@@ -2,14 +2,11 @@
 import "./globals.css";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
-import WhatsAppFloatButton from "@/components/shared/WhatsAppFloatButton";
+import { DeferredToast, DeferredWhatsApp } from "@/components/shared/DeferredWidgets";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
-import { Hind_Siliguri } from "next/font/google";
-import { ToastContainer } from "react-toastify";
-import Script from "next/script";
-import "react-toastify/dist/ReactToastify.css";
+import { Hind_Siliguri, Inter, Playfair_Display } from "next/font/google";
 import UTMTracker from "@/components/tracking/UTMTracker";
 import DynamicTrackingProvider from "@/components/tracking/DynamicTrackingProvider";
 import DeviceGuard from "@/components/security/DeviceGuard";
@@ -91,45 +88,39 @@ export async function generateMetadata() {
 
 const banglaFont = Hind_Siliguri({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  variable: "--font-bangla",
+});
+
+const interFont = Inter({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-inter",
+});
+
+const playfairFont = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-playfair",
 });
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-theme="light">
+    <html
+      lang="en"
+      data-theme="light"
+      className={`${banglaFont.variable} ${interFont.variable} ${playfairFont.variable}`}
+    >
+      <head>
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+      </head>
       <body className={`${banglaFont.className} flex min-h-screen flex-col`}>
-        {/* Meta Pixel Script inside BODY as required by Next.js App Router */}
-        <Script
-          id="meta-pixel-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){
-                if((arguments[0]==='track'||arguments[0]==='trackCustom')&&(!arguments[3]||!arguments[3].eventID)){
-                  return;
-                }
-                n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)
-              };
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq.disablePushState = true;
-            `,
-          }}
-        />
-
-        <ToastContainer
-          position="top-right"
-          autoClose={2000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          pauseOnHover
-          theme="light"
-        />
+        <DeferredToast />
 
         <UTMTracker />
         <DynamicTrackingProvider />
@@ -140,7 +131,7 @@ export default function RootLayout({ children }) {
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
-              <WhatsAppFloatButton />
+              <DeferredWhatsApp />
             </AuthProvider>
           </CartProvider>
         </SettingsProvider>

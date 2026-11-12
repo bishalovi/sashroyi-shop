@@ -124,7 +124,7 @@ export default async function CategoryPage({ params }) {
   };
 
   return (
-    <main className="bg-[#faf7f0] min-h-screen pb-10">
+    <div className="bg-[#faf7f0] min-h-screen pb-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -189,6 +189,6 @@ export default async function CategoryPage({ params }) {
         )}
       </div>
       <Reviews />
-    </main>
+    </div>
   );
 }

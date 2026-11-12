@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
 
 const SettingsContext = createContext();
 
@@ -168,14 +169,17 @@ export function SettingsProvider({ children }) {
   }, [baseUrl]);
 
   useEffect(() => {
-    fetchSettings();
+    const timer = setTimeout(() => {
+      fetchSettings();
+    }, 800);
+    return () => clearTimeout(timer);
   }, [fetchSettings]);
 
   // Dynamic favicon injection
   useEffect(() => {
     const rawFavicon = settings.header?.faviconUrl || settings.general?.faviconUrl;
     if (rawFavicon && typeof document !== "undefined") {
-      const fav = formatImageUrl(rawFavicon);
+      const fav = getOptimizedImageUrl(formatImageUrl(rawFavicon), 64);
       let link = document.querySelector("link[rel~='icon']");
       if (!link) {
         link = document.createElement("link");

@@ -8,6 +8,7 @@ const ProductSection = ({
   link,
   products,
   bgClass = "bg-[#faf7f0]",
+  isFirst = false,
 }) => {
   return (
     <section className={`${bgClass} py-4 lg:py-6`}>
@@ -21,12 +22,17 @@ const ProductSection = ({
 
         {products.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+            {products.map((product, idx) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                priority={isFirst && idx === 0}
+                eager={isFirst && idx < 2}
+              />
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl p-8 text-center text-[#0f2a44]/60">
+          <div className="rounded-2xl p-8 text-center text-[#0f2a44]/80">
             No items found.
           </div>
         )}

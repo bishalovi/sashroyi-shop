@@ -51,7 +51,8 @@ export default function DeviceGuard() {
       }
     };
 
-    checkDeviceBlock();
+    const timer = setTimeout(checkDeviceBlock, 1500);
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   // If in admin or not blocked, render nothing

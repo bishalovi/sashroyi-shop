@@ -1,4 +1,4 @@
-import ReviewsCarousel from "./ReviewsCarousel";
+import ReviewsCarouselLazy from "./ReviewsCarouselLazy";
 import Container from "../shared/Container";
 
 async function getReviews() {
@@ -36,9 +36,9 @@ export default async function Reviews() {
           <h2 className="mb-2 text-3xl font-bold text-[#3d2f1f] md:text-4xl">
             What Our Customers Say
           </h2>
-          <p className="text-gray-500 mb-10">Swipe to view all reviews</p>
+          <p className="text-gray-600 mb-10">Swipe to view all reviews</p>
 
-          <ReviewsCarousel reviews={reviews} />
+          <ReviewsCarouselLazy reviews={reviews} />
         </div>
       </Container>
     </section>

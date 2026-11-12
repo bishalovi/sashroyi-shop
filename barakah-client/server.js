@@ -3,7 +3,7 @@ const { parse } = require("url");
 const next = require("next");
 const dev = process.env.NODE_ENV !== "production";
 
-const port = !dev ? process.env.PORT : 3000;
+const port = process.env.PORT || 3000;
 
 // Create the Express-Next App
 const app = next({ dev });
@@ -14,9 +14,7 @@ app
   .then(() => {
     createServer((req, res) => {
       const parsedUrl = parse(req.url, true);
-      const { pathname, query } = parsedUrl;
       handle(req, res, parsedUrl);
-      console.log("pathname", pathname);
     }).listen(port, (err) => {
       if (err) throw err;
       console.log(`> Ready on http://localhost:${port}`);

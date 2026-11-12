@@ -1,144 +1,170 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function DynamicTrackingProvider() {
   const pathname = usePathname();
   const baseUrl = "https://sashroyi-api.onrender.com";
-  const [configLoaded, setConfigLoaded] = useState(false);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Fetch tracking config from API
-    fetch(`${baseUrl}/api/tracking/public`)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data) {
-          const { gtm, facebook, tiktok } = res.data;
+    let loaded = false;
+    const loadThirdPartyPixels = () => {
+      if (loaded) return;
+      loaded = true;
+      ["pointerdown", "keydown", "scroll", "touchstart", "mousemove", "click"].forEach((evt) => {
+        window.removeEventListener(evt, loadThirdPartyPixels);
+      });
 
-          // 1. Google Tag Manager (GTM)
-          if (gtm?.isEnabled && gtm?.containerId && !window._gtm_loaded) {
-            window._gtm_loaded = true;
-            (function (w, d, s, l, i) {
-              w[l] = w[l] || [];
-              w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-              var f = d.getElementsByTagName(s)[0],
-                j = d.createElement(s),
-                dl = l != "dataLayer" ? "&l=" + l : "";
-              j.async = true;
-              j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-              f.parentNode.insertBefore(j, f);
-            })(window, document, "script", "dataLayer", gtm.containerId);
-          }
+      // Fetch tracking config from API
+      fetch(`${baseUrl}/api/tracking/public`)
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.success && res.data) {
+            const { gtm, facebook, tiktok } = res.data;
 
-          // 2. Facebook Pixel (Meta)
-          const targetFbPixelId = (facebook?.isEnabled && facebook?.pixelId) ? facebook.pixelId : "3090216584507410";
-          window.__metaPixelId = targetFbPixelId;
-          window.__metaTestEventCode = facebook?.testEventCode || "";
-          window.__metaPixelDisabled = facebook?.isEnabled === false;
-          if (!window.fbq) {
-            !(function (f, b, e, v, n, t, s) {
-              if (f.fbq) return;
-              n = f.fbq = function () {
-                if ((arguments[0] === "track" || arguments[0] === "trackCustom") && (!arguments[3] || !arguments[3].eventID)) {
-                  return;
-                }
-                n.callMethod
-                  ? n.callMethod.apply(n, arguments)
-                  : n.queue.push(arguments);
-              };
-              if (!f._fbq) f._fbq = n;
-              n.push = n;
-              n.loaded = !0;
-              n.version = "2.0";
-              n.queue = [];
-              t = b.createElement(e);
-              t.async = !0;
-              t.src = v;
-              s = b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t, s);
-            })(
-              window,
-              document,
-              "script",
-              "https://connect.facebook.net/en_US/fbevents.js"
-            );
-          }
-          if (!window.__metaPixelDisabled && typeof window.fbq === "function") {
-            window.fbq("set", "autoConfig", "false", targetFbPixelId);
-            window.fbq.disablePushState = true;
-          }
+            // 1. Google Tag Manager (GTM)
+            if (gtm?.isEnabled && gtm?.containerId && !window._gtm_loaded) {
+              window._gtm_loaded = true;
+              (function (w, d, s, l, i) {
+                w[l] = w[l] || [];
+                w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+                var f = d.getElementsByTagName(s)[0],
+                  j = d.createElement(s),
+                  dl = l != "dataLayer" ? "&l=" + l : "";
+                j.async = true;
+                j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+                f.parentNode.insertBefore(j, f);
+              })(window, document, "script", "dataLayer", gtm.containerId);
+            }
 
-          // 3. TikTok Pixel
-          if (tiktok?.isEnabled && tiktok?.pixelId && !window.ttq) {
-            !(function (w, d, t) {
-              w.TiktokAnalyticsObject = t;
-              var ttq = (w[t] = w[t] || []);
-              (ttq.methods = [
-                "page",
-                "track",
-                "identify",
-                "instances",
-                "debug",
-                "on",
-                "off",
-                "once",
-                "ready",
-                "alias",
-                "group",
-                "enableCookie",
-                "disableCookie",
-              ]),
-                (ttq.setAndDefer = function (t, e) {
-                  t[e] = function () {
-                    t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
-                  };
+            // 2. Facebook Pixel (Meta)
+            const targetFbPixelId = (facebook?.isEnabled && facebook?.pixelId) ? facebook.pixelId : "3090216584507410";
+            window.__metaPixelId = targetFbPixelId;
+            window.__metaTestEventCode = facebook?.testEventCode || "";
+            if (!window.fbq) {
+              !(function (f, b, e, v, n, t, s) {
+                if (f.fbq) return;
+                n = f.fbq = function () {
+                  if ((arguments[0] === "track" || arguments[0] === "trackCustom") && (!arguments[3] || !arguments[3].eventID)) {
+                    return;
+                  }
+                  n.callMethod
+                    ? n.callMethod.apply(n, arguments)
+                    : n.queue.push(arguments);
+                };
+                if (!f._fbq) f._fbq = n;
+                n.push = n;
+                n.loaded = !0;
+                n.version = "2.0";
+                n.queue = [];
+                t = b.createElement(e);
+                t.async = !0;
+                t.src = v;
+                s = b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t, s);
+              })(
+                window,
+                document,
+                "script",
+                "https://connect.facebook.net/en_US/fbevents.js"
+              );
+              window.fbq("set", "autoConfig", "false", targetFbPixelId);
+              window.fbq.disablePushState = true;
+              window.fbq("init", targetFbPixelId);
+              if (!initializedRef.current) {
+                initializedRef.current = true;
+                trackMetaEvent("PageView", {
+                  page_path: pathname,
+                  page_title: typeof document !== "undefined" ? document.title : "",
                 });
-              for (var i = 0; i < ttq.methods.length; i++)
-                ttq.setAndDefer(ttq, ttq.methods[i]);
-              (ttq.instance = function (t) {
-                for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++)
-                  ttq.setAndDefer(e, ttq.methods[n]);
-                return e;
-              }),
-                (ttq.load = function (e, n) {
-                  var i = "https://analytics.tiktok.com/i18n/pixel/events.js";
-                  (ttq._i = ttq._i || {}),
-                    (ttq._i[e] = []),
-                    (ttq._i[e]._u = i),
-                    (ttq._t = ttq._t || {}),
-                    (ttq._t[e] = +new Date()),
-                    (ttq._o = ttq._o || {}),
-                    (ttq._o[e] = n || {});
-                  var o = document.createElement("script");
-                  (o.type = "text/javascript"),
-                    (o.async = !0),
-                    (o.src = i + "?sdkid=" + e + "&lib=" + t);
-                  var a = document.getElementsByTagName("script")[0];
-                  a.parentNode.insertBefore(o, a);
-                });
-              ttq.load(tiktok.pixelId);
-              ttq.page();
-            })(window, document, "ttq");
+              }
+            }
+
+            // 3. TikTok Pixel
+            if (tiktok?.isEnabled && tiktok?.pixelId && !window.ttq) {
+              !(function (w, d, t) {
+                w.TiktokAnalyticsObject = t;
+                var ttq = (w[t] = w[t] || []);
+                (ttq.methods = [
+                  "page",
+                  "track",
+                  "identify",
+                  "instances",
+                  "debug",
+                  "on",
+                  "off",
+                  "once",
+                  "ready",
+                  "alias",
+                  "group",
+                  "enableCookie",
+                  "disableCookie",
+                ]),
+                  (ttq.setAndDefer = function (t, e) {
+                    t[e] = function () {
+                      t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
+                    };
+                  });
+                for (var i = 0; i < ttq.methods.length; i++)
+                  ttq.setAndDefer(ttq, ttq.methods[i]);
+                (ttq.instance = function (t) {
+                  for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++)
+                    ttq.setAndDefer(e, ttq.methods[n]);
+                  return e;
+                }),
+                  (ttq.load = function (e, n) {
+                    var i = "https://analytics.tiktok.com/i18n/pixel/events.js";
+                    (ttq._i = ttq._i || {}),
+                      (ttq._i[e] = []),
+                      (ttq._i[e]._u = i),
+                      (ttq._t = ttq._t || {}),
+                      (ttq._t[e] = +new Date()),
+                      (ttq._o = ttq._o || {}),
+                      (ttq._o[e] = n || {});
+                    var o = document.createElement("script");
+                    (o.type = "text/javascript"),
+                      (o.async = !0),
+                      (o.src = i + "?sdkid=" + e + "&lib=" + t);
+                    var a = document.getElementsByTagName("script")[0];
+                    a.parentNode.insertBefore(o, a);
+                  });
+                ttq.load(tiktok.pixelId);
+                ttq.page();
+              })(window, document, "ttq");
+            }
           }
-        }
-      })
-      .catch((err) => console.log("Tracking config fetch error:", err))
-      .finally(() => setConfigLoaded(true));
-  }, [baseUrl]);
+        })
+        .catch((err) => console.log("Tracking config fetch error:", err));
+    };
+
+    ["pointerdown", "keydown", "scroll", "touchstart", "mousemove", "click"].forEach((evt) => {
+      window.addEventListener(evt, loadThirdPartyPixels, { once: true, passive: true });
+    });
+
+    return () => {
+      ["pointerdown", "keydown", "scroll", "touchstart", "mousemove", "click"].forEach((evt) => {
+        window.removeEventListener(evt, loadThirdPartyPixels);
+      });
+    };
+  }, [baseUrl, pathname]);
 
   // Track PageView on route navigation (Browser + Server CAPI)
   useEffect(() => {
-    if (typeof window !== "undefined" && configLoaded) {
-      trackMetaEvent("PageView", {
-        page_path: pathname,
-        page_title: typeof document !== "undefined" ? document.title : "",
-      });
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        trackMetaEvent("PageView", {
+          page_path: pathname,
+          page_title: typeof document !== "undefined" ? document.title : "",
+        });
+      }, 1500);
+      return () => clearTimeout(timer);
     }
-  }, [pathname, configLoaded]);
+  }, [pathname]);
 
   return null;
 }

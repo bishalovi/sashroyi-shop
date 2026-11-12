@@ -67,12 +67,26 @@ async function getAllProducts() {
   }
 }
 
+const slimProduct = (p) => ({
+  _id: p._id,
+  name: p.name,
+  slug: p.slug,
+  image: p.image,
+  category: p.category,
+  price: p.price,
+  oldPrice: p.oldPrice,
+  badge: p.badge,
+  variations: p.variations,
+});
+
 export default async function HomePage() {
-  const [categories, allProducts, publicSettings] = await Promise.all([
+  const [categories, allProductsRaw, publicSettings] = await Promise.all([
     getCategories(),
     getAllProducts(),
     getPublicSettings(),
   ]);
+
+  const allProducts = allProductsRaw.map(slimProduct);
 
   const shopName = publicSettings?.general?.shopName || "Sashroyi Shop";
   const orgJsonLd = {
@@ -108,7 +122,7 @@ export default async function HomePage() {
   // Fetch products for all active categories in parallel for maximum speed
   const categorySections = await Promise.all(
     categories.map(async (cat) => {
-      const products = await getProductsByCategory(cat.slug);
+      const products = (await getProductsByCategory(cat.slug)).map(slimProduct);
       return {
         ...cat,
         products,
@@ -122,7 +136,7 @@ export default async function HomePage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#faf7f0] text-[#3d2f1f]">
+    <div className="min-h-screen bg-[#faf7f0] text-[#3d2f1f]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
@@ -138,6 +152,7 @@ export default async function HomePage() {
           title="সকল পণ্যসমূহ"
           products={allProducts}
           bgClass="bg-[#faf7f0]"
+          isFirst={true}
         />
       )}
 
@@ -154,13 +169,13 @@ export default async function HomePage() {
 
       {allProducts.length === 0 && activeSections.length === 0 && (
         <section className="bg-[#faf7f0] py-10">
-          <div className="mx-auto max-w-7xl px-4 text-center text-gray-500">
+          <div className="mx-auto max-w-7xl px-4 text-center text-gray-600">
             নতুন প্রোডাক্ট শীঘ্রই আসছে...
           </div>
         </section>
       )}
 
       <Reviews />
-    </main>
+    </div>
   );
 }

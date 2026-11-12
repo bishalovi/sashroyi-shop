@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
+import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
 
 export default function SearchBar() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,19 +75,21 @@ export default function SearchBar() {
               if (results.length > 0) setIsOpen(true);
             }}
             placeholder="পছন্দের পণ্য খুঁজুন... (যেমন: Coocker, Blender, Watch)"
-            className="w-full pl-11 pr-24 py-3 md:py-3.5 bg-white border-2 border-[#0f2a44]/20 rounded-full text-sm md:text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#d4af37] focus:ring-3 focus:ring-[#d4af37]/20 shadow-sm transition-all duration-200"
+            aria-label="পছন্দের পণ্য খুঁজুন"
+            className="w-full pl-11 pr-24 py-3 md:py-3.5 bg-white border-2 border-[#0f2a44]/20 rounded-full text-sm md:text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:border-[#d4af37] focus:ring-3 focus:ring-[#d4af37]/20 shadow-sm transition-all duration-200"
           />
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg md:text-xl" />
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg md:text-xl" />
           
           {searchTerm && (
             <button
               type="button"
+              aria-label="Clear search"
               onClick={() => {
                 setSearchTerm("");
                 setResults([]);
                 setIsOpen(false);
               }}
-              className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+              className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
             >
               <IoClose className="text-lg" />
             </button>
@@ -117,11 +120,12 @@ export default function SearchBar() {
                 >
                   <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                     <Image
-                      src={product.image || "/placeholder.png"}
+                      src={getOptimizedImageUrl(product.image || "/placeholder.png", 96)}
                       alt={product.name}
                       fill
-                      className="object-cover"
+                      sizes="48px"
                       unoptimized
+                      className="object-cover"
                     />
                   </div>
                   <div className="flex-1 min-w-0">

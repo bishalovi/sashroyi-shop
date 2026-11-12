@@ -1,12 +1,10 @@
-"use client";
-
-import { useCart } from "@/contexts/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import ProductCardActions from "./ProductCardActions";
+import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
 
-const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
+const DEFAULT_PLACEHOLDER =
+  "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=480&auto=format&fit=crop";
 
 const COLOR_MAP = {
   red: "#ef4444",
@@ -46,23 +44,31 @@ function getAutoColor(color, name) {
   return null;
 }
 
-export default function ProductCard({ product }) {
-  const { addToCart, clearCart } = useCart();
-  const router = useRouter();
-  const [imgSrc, setImgSrc] = useState(
+export default function ProductCard({ product, priority = false, eager = false }) {
+  const rawImg =
     product?.image && (product.image.startsWith("http") || product.image.startsWith("/"))
       ? product.image
-      : DEFAULT_PLACEHOLDER
-  );
+      : DEFAULT_PLACEHOLDER;
+
+  const imgSrc = getOptimizedImageUrl(rawImg, 480);
+  const isCdnOptimized =
+    imgSrc.includes("res.cloudinary.com") ||
+    imgSrc.includes("lh3.googleusercontent.com") ||
+    imgSrc.includes("images.unsplash.com");
 
   const isVariable =
-    Array.isArray(product?.variations) &&
-    product.variations.length > 0;
+    Array.isArray(product?.variations) && product.variations.length > 0;
   const defaultVar = isVariable
     ? product.variations.find((v) => v.isDefault) || product.variations[0]
     : null;
-  const displayPrice = defaultVar ? Number(defaultVar.price ?? product?.price ?? 0) : Number(product?.price ?? 0);
-  const displayOldPrice = defaultVar ? (defaultVar.oldPrice ? Number(defaultVar.oldPrice) : product?.oldPrice) : product?.oldPrice;
+  const displayPrice = defaultVar
+    ? Number(defaultVar.price ?? product?.price ?? 0)
+    : Number(product?.price ?? 0);
+  const displayOldPrice = defaultVar
+    ? defaultVar.oldPrice
+      ? Number(defaultVar.oldPrice)
+      : product?.oldPrice
+    : product?.oldPrice;
 
   const varCount = isVariable ? product.variations.length : 0;
   const colorSwatches = isVariable
@@ -90,50 +96,46 @@ export default function ProductCard({ product }) {
     }
   }
 
-  const getTargetProduct = () => {
-    if (isVariable && defaultVar) {
-      return {
-        ...product,
-        price: displayPrice,
-        oldPrice: displayOldPrice,
-        selectedVariationId: defaultVar.id,
-        variationTitle: defaultVar.name,
-      };
-    }
-    return product;
-  };
+  const targetProduct =
+    isVariable && defaultVar
+      ? {
+          _id: product._id,
+          name: product.name,
+          slug: product.slug,
+          image: product.image,
+          category: product.category,
+          price: displayPrice,
+          oldPrice: displayOldPrice,
+          selectedVariationId: defaultVar.id,
+          variationTitle: defaultVar.name,
+        }
+      : {
+          _id: product._id,
+          name: product.name,
+          slug: product.slug,
+          image: product.image,
+          category: product.category,
+          price: product.price,
+          oldPrice: product.oldPrice,
+        };
 
-  const handleAddToCart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addToCart(getTargetProduct());
-  };
-
-  const handleBuyNow = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    clearCart();
-    addToCart({ ...getTargetProduct(), quantity: 1 }, { silent: true, skipTracking: true });
-    router.push("/checkout");
-  };
+  const productUrl = `/products/${product.slug || product._id}`;
 
   return (
-    <Link
-      href={`/products/${product.slug || product._id}`}
-      className="group block overflow-hidden rounded-2xl bg-white border border-[#0f2a44]/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-    >
+    <div className="group block overflow-hidden rounded-2xl bg-white border border-[#0f2a44]/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/* Image */}
-      <div className="relative bg-[#faf7f0] aspect-square overflow-hidden">
+      <Link href={productUrl} prefetch={false} className="block relative bg-[#faf7f0] aspect-square overflow-hidden">
         <Image
           width={300}
           height={300}
           src={imgSrc}
           alt={product?.name || "Product"}
+          sizes="(max-width: 640px) 360px, (max-width: 1024px) 280px, 300px"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          onError={() => setImgSrc(DEFAULT_PLACEHOLDER)}
-          unoptimized={imgSrc.startsWith("http")}
+          priority={priority}
+          fetchPriority={priority ? "high" : undefined}
+          loading={priority || eager ? "eager" : "lazy"}
+          unoptimized={isCdnOptimized}
         />
 
         {/* Badge */}
@@ -141,77 +143,66 @@ export default function ProductCard({ product }) {
           <span
             className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-semibold ${
               product.badge === "Sale"
-                ? "bg-red-500 text-white"
+                ? "bg-red-600 text-white"
                 : product.badge === "New"
-                  ? "bg-[#d4af37] text-white"
-                  : "bg-red-500 text-white"
+                  ? "bg-[#d4af37] text-[#0f2a44]"
+                  : "bg-red-600 text-white"
             }`}
           >
             {product.badge}
           </span>
         )}
-      </div>
+      </Link>
 
       {/* Content */}
       <div className="p-4">
-        {/* Category */}
-        <p className="mb-1 text-xs capitalize text-[#0f2a44]/60">
-          {product?.category || "General"}
-        </p>
+        <Link href={productUrl} prefetch={false} className="block">
+          {/* Category */}
+          <p className="mb-1 text-xs capitalize text-[#0f2a44]/80">
+            {product?.category || "General"}
+          </p>
 
-        {/* Name */}
-        <p className="mb-1.5 line-clamp-1 text-sm font-semibold text-[#0f2a44]">
-          {product?.name || "Untitled Product"}
-        </p>
+          {/* Name */}
+          <p className="mb-1.5 line-clamp-1 text-sm font-semibold text-[#0f2a44]">
+            {product?.name || "Untitled Product"}
+          </p>
 
-        {/* Price & Variation Pack Badge */}
-        <div className="flex items-center justify-between gap-1.5 my-1 min-h-[30px]">
-          <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-base font-extrabold text-[#0f2a44]">
-              ৳ {displayPrice}
-            </span>
-            {displayOldPrice && displayOldPrice > displayPrice ? (
-              <span className="text-xs text-gray-400 line-through">
-                ৳ {displayOldPrice}
+          {/* Price & Variation Pack Badge */}
+          <div className="flex items-center justify-between gap-1.5 my-1 min-h-[30px]">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base font-extrabold text-[#0f2a44]">
+                ৳ {displayPrice}
               </span>
-            ) : null}
-          </div>
-
-          {isVariable && variationLabel && (
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-[#0f2a44] text-[10px] font-bold border border-[#d4af37]/40 shadow-sm shrink-0">
-              {/* Mini Color Dots Preview */}
-              {isColorProduct && colorSwatches.length > 0 && (
-                <span className="flex items-center -space-x-1">
-                  {colorSwatches.slice(0, 3).map((c, i) => (
-                    <span
-                      key={i}
-                      className="inline-block h-2.5 w-2.5 rounded-full border border-white shadow-xs"
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
+              {displayOldPrice && displayOldPrice > displayPrice ? (
+                <span className="text-xs text-gray-600 line-through">
+                  ৳ {displayOldPrice}
                 </span>
-              )}
-              <span>{variationLabel}</span>
+              ) : null}
             </div>
-          )}
-        </div>
+
+            {isVariable && variationLabel && (
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-[#0f2a44] text-[10px] font-bold border border-[#d4af37]/40 shadow-sm shrink-0">
+                {/* Mini Color Dots Preview */}
+                {isColorProduct && colorSwatches.length > 0 && (
+                  <span className="flex items-center -space-x-1">
+                    {colorSwatches.slice(0, 3).map((c, i) => (
+                      <span
+                        key={i}
+                        className="inline-block h-2.5 w-2.5 rounded-full border border-white shadow-xs"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </span>
+                )}
+                <span>{variationLabel}</span>
+              </div>
+            )}
+          </div>
+        </Link>
 
         {/* add to cart + buy now */}
-        <div className="flex justify-between py-2 gap-3">
-          <button
-            onClick={handleAddToCart}
-            className="py-2 w-[50%] rounded-md text-[#0f2a44] border border-[#0f2a44] text-xs font-medium hover:bg-[#d4af37] hover:border-[#d4af37] hover:text-white transition-all duration-200"
-          >
-            কার্টে যোগ করুন
-          </button>
-          <button
-            onClick={handleBuyNow}
-            className="w-[50%] py-2 rounded-md bg-[#0f2a44] text-white text-xs font-medium hover:bg-[#d4af37] transition-all duration-200"
-          >
-            এখনই কিনুন
-          </button>
-        </div>
+        <ProductCardActions targetProduct={targetProduct} />
       </div>
-    </Link>
+    </div>
   );
 }

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import SearchBar from "./SearchBar";
 import { BiCategory } from "react-icons/bi";
@@ -97,7 +95,7 @@ export default function HomeCategories({ categories = [] }) {
                   </h2>
                 </div>
               </div>
-              <span className="text-xs text-gray-500 hidden sm:inline-block">
+              <span className="text-xs text-gray-600 hidden sm:inline-block">
                 প্রয়োজনীয় ক্যাটাগরি বেছে নিন
               </span>
             </div>
@@ -126,11 +124,11 @@ export default function HomeCategories({ categories = [] }) {
 
                     {/* Subcategories count badge */}
                     {cat.subcategories && cat.subcategories.length > 0 ? (
-                      <span className="mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-[10px] text-gray-500 font-medium group-hover:bg-[#0f2a44]/5">
+                      <span className="mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-[10px] text-gray-700 font-medium group-hover:bg-[#0f2a44]/5">
                         {cat.subcategories.length} টি ধরন
                       </span>
                     ) : (
-                      <span className="mt-1 text-[10px] text-gray-400">সকল পণ্য</span>
+                      <span className="mt-1 text-[10px] text-gray-600">সকল পণ্য</span>
                     )}
                   </Link>
                 );

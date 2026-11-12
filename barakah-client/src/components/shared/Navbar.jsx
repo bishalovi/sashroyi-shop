@@ -11,6 +11,7 @@ import { IoClose } from "react-icons/io5";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings, formatImageUrl } from "@/contexts/SettingsContext";
+import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -20,7 +21,8 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const shopName = header?.shopName || general?.shopName || "Sashroyi";
-  const logoUrl = formatImageUrl(header?.logoUrl || general?.logoUrl || "");
+  const rawLogoUrl = formatImageUrl(header?.logoUrl || general?.logoUrl || "");
+  const logoUrl = rawLogoUrl ? getOptimizedImageUrl(rawLogoUrl, 96) : "";
 
   const defaultNavLinks = [
     { label: "Home", url: "/" },
@@ -44,12 +46,12 @@ export default function Navbar() {
 
   const navLinkClass = (active) =>
     `text-sm font-medium transition-colors ${
-      active ? "text-[#d4af37]" : "text-[#0c2a45af] hover:text-[#d4af37]"
+      active ? "text-[#7a5e0b] font-semibold" : "text-[#0c2a45]/90 hover:text-[#7a5e0b]"
     }`;
 
   const mobileLinkClass = (active) =>
     `py-2 text-sm font-medium transition-colors ${
-      active ? "text-[#d4af37]" : "text-[#0c2a45af] hover:text-[#d4af37]"
+      active ? "text-[#7a5e0b] font-semibold" : "text-[#0c2a45]/90 hover:text-[#7a5e0b]"
     }`;
 
   const closeMobileMenu = () => setMobileOpen(false);
@@ -88,12 +90,15 @@ export default function Navbar() {
                   src={logoUrl}
                   alt={shopName}
                   fill
+                  sizes="32px"
                   className="object-contain"
                   unoptimized
                 />
               </div>
             ) : (
-              <Image src="/logo.svg" alt="Logo" width={25} height={25} />
+              <div className="flex h-8 w-8 items-center justify-center rounded bg-[#0f2a44] text-sm font-bold text-[#d4af37]" aria-hidden="true">
+                {shopName.charAt(0)}
+              </div>
             )}
             <h1 className="bg-linear-to-r from-[#937923] via-[#ac9542] to-[#9c7e23] bg-clip-text text-xl font-bold text-transparent lg:text-2xl">
               {shopName}
@@ -116,19 +121,24 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <Link
               href="/search"
-              className="p-2 text-[#0c2a45af] transition-colors hover:text-[#d4af37]"
+              prefetch={false}
+              className="p-2 text-[#0c2a45]/90 transition-colors hover:text-[#d4af37]"
               title="Search products"
+              aria-label="Search products"
             >
               <FiSearch size={20} />
             </Link>
 
             <Link
               href="/cart"
-              className="relative p-2 text-[#0c2a45af] transition-colors hover:text-[#d4af37]"
+              prefetch={false}
+              className="relative p-2 text-[#0c2a45]/90 transition-colors hover:text-[#d4af37]"
+              aria-label="Shopping Cart"
+              title="Shopping Cart"
             >
               <FiShoppingCart size={20} />
               {totalItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-bold text-white">
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-bold text-[#0f2a44]">
                   {totalItems}
                 </span>
               )}
@@ -181,6 +191,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/login"
+                  prefetch={false}
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-[#0c2a45af] transition-colors hover:border-[#d4af37] hover:text-[#d4af37]"
                   aria-label="Login"
                 >

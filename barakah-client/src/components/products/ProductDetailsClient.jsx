@@ -8,6 +8,7 @@ import { FaWhatsapp, FaTruck, FaShieldAlt, FaUndo } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
 import { pushToDataLayer } from "@/lib/gtm";
 import { trackMetaEvent } from "@/lib/metaTracking";
+import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 
@@ -212,11 +213,13 @@ export default function ProductDetailsClient({ product }) {
 
           <Image
             key={activeImage}
-            src={activeImage}
+            src={getOptimizedImageUrl(activeImage, 800)}
             alt={product?.name || "Product Image"}
             fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover transition-opacity duration-300 ease-in-out"
             priority
+            fetchPriority="high"
             unoptimized={activeImage.startsWith("http")}
           />
         </div>
@@ -239,8 +242,9 @@ export default function ProductDetailsClient({ product }) {
                   title={item.name}
                 >
                   <img
-                    src={item.image}
+                    src={getOptimizedImageUrl(item.image, 160)}
                     alt={item.name}
+                    loading="lazy"
                     className="h-full w-full object-cover"
                   />
                   {item.name && (

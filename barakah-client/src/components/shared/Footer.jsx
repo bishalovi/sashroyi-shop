@@ -11,10 +11,24 @@ export default function Footer() {
   const phone = contact?.phone || "01910037935";
   const whatsapp = contact?.whatsapp || "01910037935";
   const email = contact?.email || "sashroyi@gmail.com";
-  const address = (contact?.address || "Dhaka, Bangladesh").replace(/Bangladeshh+/gi, "Bangladesh");
-  const fbPage = contact?.facebookPage || "https://www.facebook.com/";
-  const fbGroup = contact?.facebookGroup || "https://facebook.com/groups/";
-  const insta = contact?.instagram || "https://instagram.com/";
+  const address = contact?.address || "Dhaka, Bangladesh";
+  const sanitizeUrl = (url, fallback) => {
+    if (!url || typeof url !== "string") return fallback;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed === "https:/" || trimmed === "http:/" || trimmed === "https://" || trimmed === "http://") {
+      return fallback;
+    }
+    try {
+      const parsed = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+      return parsed.hostname ? parsed.toString() : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const fbPage = sanitizeUrl(contact?.facebookPage, "https://www.facebook.com/");
+  const fbGroup = sanitizeUrl(contact?.facebookGroup, "https://facebook.com/groups/");
+  const insta = sanitizeUrl(contact?.instagram, "https://instagram.com/");
 
   const aboutText =
     footer?.aboutText ||
@@ -91,11 +105,9 @@ export default function Footer() {
               Quick Links
             </h4>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               {quickLinks.map((link, idx) => {
-                const rawUrl = link.url || link.href || "#";
-                const targetUrl =
-                  rawUrl === "/wsashroyi.shop" || rawUrl === "wsashroyi.shop" ? "/" : rawUrl;
+                const targetUrl = link.url || link.href || "#";
                 const isExternal = targetUrl.startsWith("http://") || targetUrl.startsWith("https://");
                 
                 return isExternal ? (
@@ -104,7 +116,7 @@ export default function Footer() {
                     href={targetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs md:text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                    className="inline-flex min-h-[26px] items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#d4af37]"
                   >
                     {link.label}
                   </a>
@@ -112,7 +124,7 @@ export default function Footer() {
                   <Link
                     key={idx}
                     href={targetUrl}
-                    className="text-xs md:text-sm text-white/60 transition-colors hover:text-[#d4af37]"
+                    className="inline-flex min-h-[26px] items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#d4af37]"
                   >
                     {link.label}
                   </Link>
@@ -150,12 +162,12 @@ export default function Footer() {
                   WhatsApp: {whatsapp}
                 </a>
               </p>
-              <p className="text-white/60 text-xs mt-0.5">{address}</p>
+              <p className="text-white/80 text-xs mt-0.5">{address}</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 border-t border-white/10 pt-4 text-center flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/50">
+        <div className="mt-6 border-t border-white/10 pt-4 text-center flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/80">
           <p>
             {copyrightText}
           </p>
