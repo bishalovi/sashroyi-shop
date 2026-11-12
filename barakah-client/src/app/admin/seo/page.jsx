@@ -18,8 +18,21 @@ const DEFAULT_SEO = {
   sitemapEnabled: true,
 };
 
+function getApiBaseUrl() {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (
+    envUrl &&
+    (typeof window === "undefined" ||
+      window.location.hostname === "localhost" ||
+      (!envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")))
+  ) {
+    return envUrl;
+  }
+  return "https://sashroyi-api.onrender.com";
+}
+
 export default function AdminSeoPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+  const baseUrl = getApiBaseUrl();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sashroyi.shop";
 
   const [seo, setSeo] = useState(DEFAULT_SEO);
