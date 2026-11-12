@@ -12,6 +12,74 @@ function generateSlug(text) {
     .replace(/^-+|-+$/g, "");
 }
 
+async function ensureUniqueSlug(productsCollection, rawSlug, excludeId = null) {
+  const baseSlug = generateSlug(rawSlug) || `product-${Date.now().toString(36)}`;
+  let candidate = baseSlug;
+  let counter = 2;
+
+  while (true) {
+    const query = excludeId
+      ? { slug: candidate, _id: { $ne: new ObjectId(excludeId) } }
+      : { slug: candidate };
+    const existing = await productsCollection.findOne(query, { projection: { _id: 1 } });
+    if (!existing) return candidate;
+    candidate = `${baseSlug}-${counter}`;
+    counter += 1;
+  }
+}
+
+function buildAutoSeo({
+  name = "",
+  category = "",
+  subcategory = "",
+  description = "",
+  price = 0,
+  badge = "",
+  metaTitle = "",
+  metaDescription = "",
+  metaKeywords = "",
+}) {
+  const cleanName = String(name || "").trim();
+  const cleanDesc = String(description || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const finalMetaTitle =
+    String(metaTitle || "").trim() ||
+    (cleanName ? `${cleanName} | Sashroyi Shop` : "Sashroyi Shop");
+
+  let finalMetaDescription = String(metaDescription || "").trim();
+  if (!finalMetaDescription) {
+    if (cleanDesc) {
+      finalMetaDescription =
+        cleanDesc.length > 155 ? `${cleanDesc.slice(0, 152).trim()}...` : cleanDesc;
+    } else {
+      const priceText = Number(price) > 0 ? ` মাত্র ৳${Number(price)} টাকায়` : "";
+      finalMetaDescription = `${cleanName} কিনুন Sashroyi Shop থেকে${priceText}। সেরা মানের পণ্য ও দ্রুত হোম ডেলিভারি।`;
+    }
+  }
+
+  let finalMetaKeywords = String(metaKeywords || "").trim();
+  if (!finalMetaKeywords) {
+    const keywordParts = [
+      cleanName,
+      category ? String(category).trim() : "",
+      subcategory ? String(subcategory).trim() : "",
+      badge ? String(badge).trim() : "",
+      "Sashroyi Shop",
+      "online shopping Bangladesh",
+    ].filter(Boolean);
+    finalMetaKeywords = [...new Set(keywordParts)].join(", ");
+  }
+
+  return {
+    metaTitle: finalMetaTitle,
+    metaDescription: finalMetaDescription,
+    metaKeywords: finalMetaKeywords,
+  };
+}
+
 exports.getAllProducts = async (req, res) => {
   try {
     const db = await connectDB();
@@ -139,9 +207,12 @@ exports.createProduct = async (req, res) => {
       isFreeShipping,
       productType,
       variations,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
     } = req.body;
 
-    const finalSlug = (slug || generateSlug(name) || `product-${Date.now()}`).trim();
+    const finalSlug = await ensureUniqueSlug(productsCollection, slug || name);
 
     // Sanitize variations if provided
     let cleanVariations = [];
@@ -169,6 +240,18 @@ exports.createProduct = async (req, res) => {
     const finalPrice = isVariable && defaultVar ? Number(defaultVar.price) : Number(price) || 0;
     const finalOldPrice = isVariable && defaultVar ? (defaultVar.oldPrice ? Number(defaultVar.oldPrice) : 0) : Number(oldPrice) || 0;
 
+    const seoFields = buildAutoSeo({
+      name,
+      category,
+      subcategory,
+      description,
+      price: finalPrice,
+      badge,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
+    });
+
     const newProduct = {
       name: name?.trim() || "",
       slug: finalSlug,
@@ -184,6 +267,9 @@ exports.createProduct = async (req, res) => {
       productCode: productCode?.trim() || "",
       inStock: typeof inStock === "boolean" ? inStock : true,
       isFreeShipping: Boolean(isFreeShipping),
+      metaTitle: seoFields.metaTitle,
+      metaDescription: seoFields.metaDescription,
+      metaKeywords: seoFields.metaKeywords,
       createdAt: new Date(),
     };
 
@@ -229,6 +315,9 @@ exports.updateProduct = async (req, res) => {
       isFreeShipping,
       productType,
       variations,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
     } = req.body;
 
     const existingProduct = await productsCollection.findOne({
@@ -242,9 +331,10 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    const finalSlug = slug !== undefined && slug.trim()
+    const rawSlug = slug !== undefined && slug.trim()
       ? slug.trim()
-      : existingProduct.slug || generateSlug(name || existingProduct.name);
+      : existingProduct.slug || name || existingProduct.name;
+    const finalSlug = await ensureUniqueSlug(productsCollection, rawSlug, id);
 
     // Sanitize variations
     let cleanVariations = [];
@@ -279,21 +369,42 @@ exports.updateProduct = async (req, res) => {
       finalOldPrice = defaultVar.oldPrice ? Number(defaultVar.oldPrice) : 0;
     }
 
+    const nextName = name?.trim() || existingProduct.name;
+    const nextCategory = category?.trim() || existingProduct.category;
+    const nextSubcategory = subcategory?.trim() || existingProduct.subcategory || "";
+    const nextDescription = description !== undefined ? description.trim() : existingProduct.description || "";
+    const nextBadge = badge !== undefined ? badge.trim() : existingProduct.badge || "";
+
+    const seoFields = buildAutoSeo({
+      name: nextName,
+      category: nextCategory,
+      subcategory: nextSubcategory,
+      description: nextDescription,
+      price: finalPrice,
+      badge: nextBadge,
+      metaTitle: metaTitle !== undefined ? metaTitle : existingProduct.metaTitle,
+      metaDescription: metaDescription !== undefined ? metaDescription : existingProduct.metaDescription,
+      metaKeywords: metaKeywords !== undefined ? metaKeywords : existingProduct.metaKeywords,
+    });
+
     const updatedDoc = {
-      name: name?.trim() || existingProduct.name,
+      name: nextName,
       slug: finalSlug,
-      category: category?.trim() || existingProduct.category,
-      description: description?.trim() || existingProduct.description || "",
-      subcategory: subcategory?.trim() || existingProduct.subcategory || "",
+      category: nextCategory,
+      description: nextDescription,
+      subcategory: nextSubcategory,
       productType: isVariable ? "variable" : "single",
       variations: cleanVariations,
       price: finalPrice,
       oldPrice: finalOldPrice,
       image: image?.trim() || existingProduct.image,
-      badge: badge !== undefined ? badge.trim() : existingProduct.badge || "",
+      badge: nextBadge,
       productCode: productCode !== undefined ? productCode.trim() : existingProduct.productCode || "",
       inStock: typeof inStock === "boolean" ? inStock : existingProduct.inStock,
       isFreeShipping: typeof isFreeShipping === "boolean" ? isFreeShipping : Boolean(isFreeShipping ?? existingProduct.isFreeShipping ?? false),
+      metaTitle: seoFields.metaTitle,
+      metaDescription: seoFields.metaDescription,
+      metaKeywords: seoFields.metaKeywords,
       updatedAt: new Date(),
     };
 

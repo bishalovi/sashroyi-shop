@@ -63,6 +63,9 @@ export default function AddProductPage() {
       inStock: true,
       isFreeShipping: false,
       imageUrl: "",
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
     },
   });
 
@@ -290,6 +293,9 @@ export default function AddProductPage() {
         inStock: Boolean(data.inStock),
         isFreeShipping: Boolean(data.isFreeShipping),
         image: finalImageUrl,
+        metaTitle: data.metaTitle?.trim() || "",
+        metaDescription: data.metaDescription?.trim() || "",
+        metaKeywords: data.metaKeywords?.trim() || "",
       };
 
       const res = await fetch(`${baseUrl}/api/products`, {
@@ -833,6 +839,53 @@ export default function AddProductPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Auto SEO Settings (Optional) */}
+        <div className="rounded-xl border border-[#e5dccf] bg-[#faf7f0]/60 p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[#3d2f1f]">
+              SEO সেটিংস (ঐচ্ছিক — খালি রাখলে অটোমেটিক তৈরি হবে)
+            </h3>
+            <p className="text-xs text-[#3d2f1f]/60">
+              কিছু না লিখলেও প্রোডাক্টের নাম, ক্যাটাগরি ও বিবরণ থেকে SEO অটো সেট হয়ে যাবে।
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-[#3d2f1f] mb-1">
+                Meta Title
+              </label>
+              <input
+                type="text"
+                {...register("metaTitle")}
+                placeholder="Auto: Product Name | Sashroyi Shop"
+                className="w-full rounded-lg border border-[#e5dccf] bg-white px-3 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#3d2f1f] mb-1">
+                Meta Keywords (কমা দিয়ে)
+              </label>
+              <input
+                type="text"
+                {...register("metaKeywords")}
+                placeholder="Auto: product name, category, Sashroyi Shop"
+                className="w-full rounded-lg border border-[#e5dccf] bg-white px-3 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#3d2f1f] mb-1">
+              Meta Description
+            </label>
+            <textarea
+              rows={2}
+              {...register("metaDescription")}
+              placeholder="Auto: প্রোডাক্টের বিবরণ থেকে প্রথম ১৫৫ অক্ষর অটো নেওয়া হবে..."
+              className="w-full rounded-lg border border-[#e5dccf] bg-white px-3 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

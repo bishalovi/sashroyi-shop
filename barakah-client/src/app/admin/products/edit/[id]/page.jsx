@@ -41,6 +41,9 @@ export default function EditProductPage() {
     inStock: true,
     isFreeShipping: false,
     productType: "single",
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
   });
 
   const [variations, setVariations] = useState([]);
@@ -205,6 +208,9 @@ export default function EditProductPage() {
             inStock: product.inStock ?? true,
             isFreeShipping: product.isFreeShipping ?? false,
             productType: product.productType || (product.variations && product.variations.length > 0 ? "variable" : "single"),
+            metaTitle: product.metaTitle || "",
+            metaDescription: product.metaDescription || "",
+            metaKeywords: product.metaKeywords || "",
           });
 
           if (product.variations && product.variations.length > 0) {
@@ -870,6 +876,59 @@ export default function EditProductPage() {
               onChange={handleChange}
               placeholder="CWC-121"
               className="w-full rounded-xl border border-[#e5dccf] px-4 py-3 outline-none focus:border-[#d4af37]"
+            />
+          </div>
+        </div>
+
+        {/* Auto SEO Settings (Optional) */}
+        <div className="rounded-xl border border-[#e5dccf] bg-[#faf7f0]/60 p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[#3d2f1f]">
+              SEO সেটিংস (ঐচ্ছিক — খালি রাখলে অটোমেটিক তৈরি হবে)
+            </h3>
+            <p className="text-xs text-[#3d2f1f]/60">
+              কিছু না লিখলেও প্রোডাক্টের নাম, ক্যাটাগরি ও বিবরণ থেকে SEO অটো সেট হয়ে যাবে।
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-[#3d2f1f] mb-1">
+                Meta Title
+              </label>
+              <input
+                type="text"
+                name="metaTitle"
+                value={formData.metaTitle}
+                onChange={handleChange}
+                placeholder="Auto: Product Name | Sashroyi Shop"
+                className="w-full rounded-lg border border-[#e5dccf] bg-white px-3 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#3d2f1f] mb-1">
+                Meta Keywords (কমা দিয়ে)
+              </label>
+              <input
+                type="text"
+                name="metaKeywords"
+                value={formData.metaKeywords}
+                onChange={handleChange}
+                placeholder="Auto: product name, category, Sashroyi Shop"
+                className="w-full rounded-lg border border-[#e5dccf] bg-white px-3 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#3d2f1f] mb-1">
+              Meta Description
+            </label>
+            <textarea
+              rows={2}
+              name="metaDescription"
+              value={formData.metaDescription}
+              onChange={handleChange}
+              placeholder="Auto: প্রোডাক্টের বিবরণ থেকে প্রথম ১৫৫ অক্ষর অটো নেওয়া হবে..."
+              className="w-full rounded-lg border border-[#e5dccf] bg-white px-3 py-2 text-sm focus:outline-none focus:border-[#d4af37]"
             />
           </div>
         </div>

@@ -14,10 +14,25 @@ import UTMTracker from "@/components/tracking/UTMTracker";
 import DynamicTrackingProvider from "@/components/tracking/DynamicTrackingProvider";
 import DeviceGuard from "@/components/security/DeviceGuard";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
+
 export const metadata = {
-  title: "Sashroyi | Islamic Wall Clock & Canvas",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Sashroyi | Kitchen, Home & Living & Household Essentials",
+    template: "%s",
+  },
   description:
-    "Shop premium Islamic wall clocks and canvas art. Elegant designs for your home. Maintained by Rayhan.",
+    "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living, Baby Care এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।",
+  openGraph: {
+    type: "website",
+    locale: "bn_BD",
+    siteName: "Sashroyi Shop",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const banglaFont = Hind_Siliguri({
@@ -47,9 +62,7 @@ export default function RootLayout({ children }) {
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('set', 'autoConfig', 'false', '3090216584507410');
               fbq.disablePushState = true;
-              fbq('init', '3090216584507410');
             `,
           }}
         />
