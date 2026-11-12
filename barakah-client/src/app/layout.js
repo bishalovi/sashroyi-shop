@@ -14,8 +14,10 @@ import UTMTracker from "@/components/tracking/UTMTracker";
 import DynamicTrackingProvider from "@/components/tracking/DynamicTrackingProvider";
 import DeviceGuard from "@/components/security/DeviceGuard";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+
+const SITE_URL = getSiteUrl();
+const API_URL = getApiUrl();
 
 export async function generateMetadata() {
   let seo = {};

@@ -5,9 +5,11 @@ import ViewItemTracker from "@/components/tracking/ViewItemTracker";
 import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 
+import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+const SITE_URL = getSiteUrl();
+const API_URL = getApiUrl();
 
 export const revalidate = 10;
 

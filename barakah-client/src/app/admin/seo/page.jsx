@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { FiCheckCircle, FiCopy, FiExternalLink, FiGlobe, FiSave, FiSearch } from "react-icons/fi";
 
+import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+
 const DEFAULT_SEO = {
   siteTitle: "Sashroyi | Kitchen, Home & Living & Household Essentials",
   siteDescription:
@@ -18,22 +20,9 @@ const DEFAULT_SEO = {
   sitemapEnabled: true,
 };
 
-function getApiBaseUrl() {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (
-    envUrl &&
-    (typeof window === "undefined" ||
-      window.location.hostname === "localhost" ||
-      (!envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")))
-  ) {
-    return envUrl;
-  }
-  return "https://sashroyi-api.onrender.com";
-}
-
 export default function AdminSeoPage() {
-  const baseUrl = getApiBaseUrl();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sashroyi.shop";
+  const baseUrl = getApiUrl();
+  const siteUrl = getSiteUrl();
 
   const [seo, setSeo] = useState(DEFAULT_SEO);
   const [loading, setLoading] = useState(true);

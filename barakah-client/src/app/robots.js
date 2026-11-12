@@ -1,4 +1,6 @@
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
+import { getSiteUrl } from "@/lib/seoConfig";
+
+const SITE_URL = getSiteUrl();
 
 export default function robots() {
   return {

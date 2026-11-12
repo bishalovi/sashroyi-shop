@@ -2,8 +2,10 @@ import HomeCategories from "@/components/home/HomeCategories";
 import ProductSection from "@/components/home/ProductSection";
 import Reviews from "@/components/home/Reviews";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
+import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+
+const baseUrl = getApiUrl();
+const SITE_URL = getSiteUrl();
 
 export const revalidate = 10;
 

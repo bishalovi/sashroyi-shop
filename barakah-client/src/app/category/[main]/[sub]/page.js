@@ -4,8 +4,10 @@ import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 import CategoryViewTracker from "@/components/tracking/CategoryViewTracker";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sashroyi.shop";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com";
+import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+
+const SITE_URL = getSiteUrl();
+const API_URL = getApiUrl();
 
 export const revalidate = 10;
 
