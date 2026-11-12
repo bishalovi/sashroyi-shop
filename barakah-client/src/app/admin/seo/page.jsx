@@ -28,14 +28,27 @@ export default function AdminSeoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const FALLBACK_API = "https://sashroyi-api.onrender.com";
+
+  const fetchWithFallback = async (path, options = {}) => {
+    try {
+      const res = await fetch(`${baseUrl}${path}`, options);
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      return await res.json();
+    } catch (firstErr) {
+      if (baseUrl !== FALLBACK_API) {
+        const res2 = await fetch(`${FALLBACK_API}${path}`, options);
+        if (!res2.ok) throw new Error(`Server returned ${res2.status}`);
+        return await res2.json();
+      }
+      throw firstErr;
+    }
+  };
+
   const fetchSettings = async (retryCount = 0) => {
     try {
       setLoading(true);
-      const res = await fetch(`${baseUrl}/api/settings/admin`);
-      if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
-      }
-      const json = await res.json();
+      const json = await fetchWithFallback("/api/settings/admin");
       if (json.success && json.data?.seo) {
         setSeo({ ...DEFAULT_SEO, ...json.data.seo });
       }
@@ -45,7 +58,7 @@ export default function AdminSeoPage() {
         return;
       }
       console.error("Failed to fetch SEO settings:", err);
-      toast.error("SEO সেটিংস লোড করতে সমস্যা হয়েছে (সার্ভার রেসপন্স করেনি, আবার চেষ্টা করুন)");
+      toast.error(`SEO সেটিংস লোড করতে সমস্যা হয়েছে: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -67,13 +80,12 @@ export default function AdminSeoPage() {
     e.preventDefault();
     try {
       setSaving(true);
-      const res = await fetch(`${baseUrl}/api/settings/admin`, {
+      const json = await fetchWithFallback("/api/settings/admin", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seo }),
       });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
+      if (!json.success) {
         throw new Error(json.message || "সেভ করা যায়নি");
       }
       toast.success("SEO ও Webmaster সেটিংস সফলভাবে সেভ হয়েছে!");
