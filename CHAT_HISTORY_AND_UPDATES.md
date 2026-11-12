@@ -58,6 +58,7 @@
 - **`order-success/page.js`:** `Purchase` ইভেন্টে `content_ids` যুক্ত করা হয়েছে।
 - **`checkout/page.jsx`:** `useRef` ও `sessionStorage` গার্ডের মাধ্যমে `cartItems` প্রস্তুত হওয়া মাত্রই নিখুঁতভাবে ১ বার `InitiateCheckout` ও `begin_checkout` ফায়ার এবং পেমেন্ট বাছাইয়ে `add_payment_info` পুশ।
 - **`CategoryViewTracker.jsx`:** ক্যাটাগরি পেজে ডায়াগনস্টিক ভ্যালু ওয়ার্নিং সমাধান।
+- **টেস্ট কোড ও সেকেন্ডারি CAPI ফাইন টিউনিং:** URL সেশন টেস্ট কোড প্রায়োরিটাইজেশন এবং পারচেজে অতিরিক্ত সেকেন্ডারি CAPI কল এলিমিনেশন করে মেটায় নিখুঁত ১:১ Deduplication বাস্তবায়ন।
 
 ---
 
