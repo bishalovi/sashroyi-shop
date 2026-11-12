@@ -14,6 +14,7 @@ import {
   FiSettings,
   FiLayers,
   FiStar,
+  FiSearch,
 } from "react-icons/fi";
 import { MdOutlineShoppingCartCheckout } from "react-icons/md";
 
@@ -92,6 +93,12 @@ export default function AdminSidebar() {
           href="/admin/tracking"
           icon={<FiSliders />}
           label="Tracking & Pixels"
+          collapsed={collapsed}
+        />
+        <SidebarItem
+          href="/admin/seo"
+          icon={<FiSearch />}
+          label="SEO & Webmaster"
           collapsed={collapsed}
         />
         <SidebarItem

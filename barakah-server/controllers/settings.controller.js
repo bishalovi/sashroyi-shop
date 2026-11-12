@@ -108,6 +108,19 @@ const DEFAULT_WEBSITE_SETTINGS = {
     title: "সীমিত সময়ের বিশেষ অফার!",
     targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
+  seo: {
+    siteTitle: "Sashroyi | Kitchen, Home & Living & Household Essentials",
+    siteDescription:
+      "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living, Baby Care এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।",
+    siteKeywords:
+      "Sashroyi, sashroyi.shop, online shopping Bangladesh, kitchen dining, home living",
+    ogImage: "",
+    googleSiteVerification: "",
+    bingSiteVerification: "",
+    llmsEnabled: true,
+    llmsCustomSummary: "",
+    sitemapEnabled: true,
+  },
   updatedAt: new Date(),
 };
 
@@ -143,6 +156,10 @@ exports.getPublicSettings = async (req, res) => {
         contact: config.contact || DEFAULT_WEBSITE_SETTINGS.contact,
         footer: config.footer || DEFAULT_WEBSITE_SETTINGS.footer,
         offerTimer: config.offerTimer || DEFAULT_WEBSITE_SETTINGS.offerTimer,
+        seo: {
+          ...DEFAULT_WEBSITE_SETTINGS.seo,
+          ...(config.seo || {}),
+        },
       },
     });
   } catch (error) {
@@ -456,6 +473,57 @@ exports.updateAdminSettings = async (req, res) => {
         new Date().toISOString(),
     };
 
+    const existSeo = existing.seo || DEFAULT_WEBSITE_SETTINGS.seo;
+    const seo = {
+      siteTitle: (
+        payload.seo?.siteTitle !== undefined
+          ? payload.seo.siteTitle
+          : existSeo.siteTitle || DEFAULT_WEBSITE_SETTINGS.seo.siteTitle
+      ).trim(),
+      siteDescription: (
+        payload.seo?.siteDescription !== undefined
+          ? payload.seo.siteDescription
+          : existSeo.siteDescription || DEFAULT_WEBSITE_SETTINGS.seo.siteDescription
+      ).trim(),
+      siteKeywords: (
+        payload.seo?.siteKeywords !== undefined
+          ? payload.seo.siteKeywords
+          : existSeo.siteKeywords || DEFAULT_WEBSITE_SETTINGS.seo.siteKeywords
+      ).trim(),
+      ogImage: (
+        payload.seo?.ogImage !== undefined
+          ? payload.seo.ogImage
+          : existSeo.ogImage || ""
+      ).trim(),
+      googleSiteVerification: (
+        payload.seo?.googleSiteVerification !== undefined
+          ? payload.seo.googleSiteVerification
+          : existSeo.googleSiteVerification || ""
+      ).trim(),
+      bingSiteVerification: (
+        payload.seo?.bingSiteVerification !== undefined
+          ? payload.seo.bingSiteVerification
+          : existSeo.bingSiteVerification || ""
+      ).trim(),
+      llmsEnabled:
+        payload.seo?.llmsEnabled !== undefined
+          ? Boolean(payload.seo.llmsEnabled)
+          : existSeo.llmsEnabled !== undefined
+          ? Boolean(existSeo.llmsEnabled)
+          : true,
+      llmsCustomSummary: (
+        payload.seo?.llmsCustomSummary !== undefined
+          ? payload.seo.llmsCustomSummary
+          : existSeo.llmsCustomSummary || ""
+      ).trim(),
+      sitemapEnabled:
+        payload.seo?.sitemapEnabled !== undefined
+          ? Boolean(payload.seo.sitemapEnabled)
+          : existSeo.sitemapEnabled !== undefined
+          ? Boolean(existSeo.sitemapEnabled)
+          : true,
+    };
+
     const updatedData = {
       key: SETTINGS_KEY,
       general: {
@@ -477,6 +545,7 @@ exports.updateAdminSettings = async (req, res) => {
       contact,
       footer,
       offerTimer,
+      seo,
       updatedAt: new Date(),
     };
 

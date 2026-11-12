@@ -4,6 +4,20 @@ const API_URL = "https://sashroyi-api.onrender.com";
 export const revalidate = 300;
 
 export default async function sitemap() {
+  try {
+    const settingsRes = await fetch(`${API_URL}/api/settings/public`, {
+      next: { revalidate: 300 },
+    });
+    if (settingsRes.ok) {
+      const settingsJson = await settingsRes.json();
+      if (settingsJson?.data?.seo?.sitemapEnabled === false) {
+        return [];
+      }
+    }
+  } catch {
+    // Continue with default sitemap if settings fetch fails
+  }
+
   const staticRoutes = [
     {
       url: SITE_URL,

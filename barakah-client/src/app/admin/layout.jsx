@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings, FiGrid, FiStar, FiRefreshCw } from "react-icons/fi";
+import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings, FiGrid, FiStar, FiRefreshCw, FiSearch } from "react-icons/fi";
 import { IoMdMenu } from "react-icons/io";
 import { usePathname } from "next/navigation";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -222,6 +222,20 @@ export default function AdminLayout({ children }) {
                 >
                   <FiSliders />
                   Tracking & Pixels
+                </Link>
+              </li>
+
+              {/* SEO & Webmaster */}
+              <li>
+                <Link
+                  href="/admin/seo"
+                  onClick={closeDrawer}
+                  className={
+                    isExact("/admin/seo") ? "bg-[#d4af37] text-white" : ""
+                  }
+                >
+                  <FiSearch />
+                  SEO & Webmaster
                 </Link>
               </li>
 
