@@ -31,17 +31,18 @@ export default function OfferCountdown({ product }) {
 
   useEffect(() => {
     const calculateTime = () => {
-      let targetTime;
-      if (offerConfig.targetDate) {
-        targetTime = new Date(offerConfig.targetDate).getTime();
-      } else {
-        // Fallback: 24h rolling countdown
+      let targetTime = offerConfig.targetDate
+        ? new Date(offerConfig.targetDate).getTime()
+        : 0;
+
+      // Fallback to end-of-day 24h rolling countdown if targetDate is missing or expired
+      if (!targetTime || targetTime <= Date.now()) {
         const now = new Date();
         const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
         targetTime = endOfDay.getTime();
       }
 
-      const diff = targetTime - new Date().getTime();
+      const diff = targetTime - Date.now();
       if (diff <= 0) {
         setTimeLeft({ hours: "00", minutes: "00", seconds: "00" });
         return;

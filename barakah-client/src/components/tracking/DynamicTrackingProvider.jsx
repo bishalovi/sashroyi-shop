@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function DynamicTrackingProvider() {
   const pathname = usePathname();
   const baseUrl = "https://sashroyi-api.onrender.com";
-  const initializedRef = useRef(false);
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -38,6 +38,7 @@ export default function DynamicTrackingProvider() {
           const targetFbPixelId = (facebook?.isEnabled && facebook?.pixelId) ? facebook.pixelId : "3090216584507410";
           window.__metaPixelId = targetFbPixelId;
           window.__metaTestEventCode = facebook?.testEventCode || "";
+          window.__metaPixelDisabled = facebook?.isEnabled === false;
           if (!window.fbq) {
             !(function (f, b, e, v, n, t, s) {
               if (f.fbq) return;
@@ -65,9 +66,10 @@ export default function DynamicTrackingProvider() {
               "script",
               "https://connect.facebook.net/en_US/fbevents.js"
             );
+          }
+          if (!window.__metaPixelDisabled && typeof window.fbq === "function") {
             window.fbq("set", "autoConfig", "false", targetFbPixelId);
             window.fbq.disablePushState = true;
-            window.fbq("init", targetFbPixelId);
           }
 
           // 3. TikTok Pixel
@@ -124,18 +126,19 @@ export default function DynamicTrackingProvider() {
           }
         }
       })
-      .catch((err) => console.log("Tracking config fetch error:", err));
+      .catch((err) => console.log("Tracking config fetch error:", err))
+      .finally(() => setConfigLoaded(true));
   }, [baseUrl]);
 
   // Track PageView on route navigation (Browser + Server CAPI)
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && configLoaded) {
       trackMetaEvent("PageView", {
         page_path: pathname,
         page_title: typeof document !== "undefined" ? document.title : "",
       });
     }
-  }, [pathname]);
+  }, [pathname, configLoaded]);
 
   return null;
 }

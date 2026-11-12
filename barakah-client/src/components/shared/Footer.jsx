@@ -11,7 +11,7 @@ export default function Footer() {
   const phone = contact?.phone || "01910037935";
   const whatsapp = contact?.whatsapp || "01910037935";
   const email = contact?.email || "sashroyi@gmail.com";
-  const address = contact?.address || "Dhaka, Bangladesh";
+  const address = (contact?.address || "Dhaka, Bangladesh").replace(/Bangladeshh+/gi, "Bangladesh");
   const fbPage = contact?.facebookPage || "https://www.facebook.com/";
   const fbGroup = contact?.facebookGroup || "https://facebook.com/groups/";
   const insta = contact?.instagram || "https://instagram.com/";
@@ -93,7 +93,9 @@ export default function Footer() {
 
             <div className="flex flex-col gap-1.5">
               {quickLinks.map((link, idx) => {
-                const targetUrl = link.url || link.href || "#";
+                const rawUrl = link.url || link.href || "#";
+                const targetUrl =
+                  rawUrl === "/wsashroyi.shop" || rawUrl === "wsashroyi.shop" ? "/" : rawUrl;
                 const isExternal = targetUrl.startsWith("http://") || targetUrl.startsWith("https://");
                 
                 return isExternal ? (

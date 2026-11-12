@@ -246,9 +246,10 @@ function getActiveTestEventCode(userParams = {}) {
 }
 
 function dispatchToBrowserPixel(eventName, customData, eventId, userParams) {
+  if (typeof window !== "undefined" && window.__metaPixelDisabled) return;
   const pixelId = (typeof window !== "undefined" && window.__metaPixelId) || DEFAULT_PIXEL_ID;
   const am = buildBrowserAdvancedMatching(userParams);
-  const amSignature = JSON.stringify(am);
+  const amSignature = `${pixelId}:${JSON.stringify(am)}`;
 
   const runFbq = () => {
     if (typeof window.fbq !== "function") return false;
@@ -330,7 +331,7 @@ export async function trackMetaEvent(eventName, customData = {}, userParams = {}
   // 3. Server-Side CAPI Relay Dispatch (Next.js Serverless Route)
   // When an event (like Purchase) is already sent directly by the backend database controller,
   // skip the redundant Next.js CAPI relay to prevent duplicate server events.
-  if (!options.skipCapiRelay) {
+  if (!options.skipCapiRelay && !window.__metaPixelDisabled) {
     try {
       fetch("/api/tracking/events", {
         method: "POST",

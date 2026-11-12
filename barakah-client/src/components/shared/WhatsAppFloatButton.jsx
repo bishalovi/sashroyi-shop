@@ -13,8 +13,8 @@ export default function WhatsAppFloatButton() {
   const { getWhatsAppUrl, contact } = useSettings();
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // Don't display in admin dashboard
-  if (pathname && pathname.startsWith("/admin")) {
+  // Don't display in admin dashboard or checkout (checkout has its own floating contact menu)
+  if (pathname && (pathname.startsWith("/admin") || pathname === "/checkout")) {
     return null;
   }
 
