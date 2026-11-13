@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import {
   FaFileCsv,
@@ -253,10 +253,29 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
   const [parseError, setParseError] = useState("");
   const [fileName, setFileName] = useState("");
   const [duplicateAction, setDuplicateAction] = useState("skip");
+  const [targetCategory, setTargetCategory] = useState("");
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [importing, setImporting] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Fetch store categories on modal open
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchCats = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/categories`);
+        if (res.ok) {
+          const json = await res.json();
+          setAvailableCategories(json.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+    fetchCats();
+  }, [isOpen, baseUrl]);
 
   if (!isOpen) return null;
 
@@ -326,7 +345,10 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
 
     try {
       setImporting(true);
-      const payloadProducts = validItems.map(({ _rowNumber, _isValid, _error, ...rest }) => rest);
+      const payloadProducts = validItems.map(({ _rowNumber, _isValid, _error, ...rest }) => ({
+        ...rest,
+        category: targetCategory ? targetCategory : rest.category,
+      }));
 
       const res = await fetch(`${baseUrl}/api/products/bulk-import`, {
         method: "POST",
@@ -420,16 +442,36 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
               </button>
             </div>
 
-            <div className="flex items-center gap-2 text-xs">
-              <span className="font-medium text-gray-600">If duplicate (SKU/Slug):</span>
-              <select
-                value={duplicateAction}
-                onChange={(e) => setDuplicateAction(e.target.value)}
-                className="select select-bordered select-xs bg-white"
-              >
-                <option value="skip">Skip existing</option>
-                <option value="update">Update existing</option>
-              </select>
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {availableCategories.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-600">Assign Category:</span>
+                  <select
+                    value={targetCategory}
+                    onChange={(e) => setTargetCategory(e.target.value)}
+                    className="select select-bordered select-xs bg-white font-medium text-[#0f2a44]"
+                  >
+                    <option value="">Use CSV Category</option>
+                    {availableCategories.map((c) => (
+                      <option key={c._id || c.slug} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-gray-600">Duplicate action:</span>
+                <select
+                  value={duplicateAction}
+                  onChange={(e) => setDuplicateAction(e.target.value)}
+                  className="select select-bordered select-xs bg-white"
+                >
+                  <option value="skip">Skip existing</option>
+                  <option value="update">Update existing</option>
+                </select>
+              </div>
             </div>
           </div>
 

@@ -100,8 +100,28 @@ exports.getAllProducts = async (req, res) => {
     }
 
     if (category && category !== "all") {
-      const cleanCat = category.trim().replace(/[-\s]/g, "[-_\\s]?");
-      query.category = { $regex: new RegExp(`^${cleanCat}$`, "i") };
+      const cleanCatInput = category.trim();
+
+      // Check if the query is a category slug or ID in the categories collection
+      const categoriesCollection = db.collection("categories");
+      const matchedCategory = await categoriesCollection.findOne({
+        $or: [
+          { slug: cleanCatInput.toLowerCase() },
+          { name: { $regex: new RegExp(`^${cleanCatInput.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") } },
+        ],
+      });
+
+      if (matchedCategory) {
+        // Match either the category's real name, its slug, or raw input
+        query.$or = [
+          { category: matchedCategory.name },
+          { category: matchedCategory.slug },
+          { category: { $regex: new RegExp(`^${cleanCatInput.replace(/[-\s]/g, "[-_\\s&]?")}$`, "i") } },
+        ];
+      } else {
+        const cleanCat = cleanCatInput.replace(/[-\s]/g, "[-_\\s&]?");
+        query.category = { $regex: new RegExp(`^${cleanCat}$`, "i") };
+      }
     }
 
     if (subcategory && subcategory !== "none" && subcategory !== "all") {
