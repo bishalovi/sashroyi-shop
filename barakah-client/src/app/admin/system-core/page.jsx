@@ -33,6 +33,8 @@ import {
   FiCheck,
   FiZap,
   FiRotateCcw,
+  FiArrowRight,
+  FiCornerDownLeft,
 } from "react-icons/fi";
 
 const REAL_WORK_CHANGELOG = {
@@ -687,17 +689,32 @@ ${exportData.migrationNotes}`}
                   </p>
                 </div>
 
-                {/* Undo Last Update Button */}
-                <button
-                  type="button"
-                  onClick={() => handleUndoRollback(null)}
-                  disabled={undoing}
-                  className="btn btn-sm bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
-                  title="সর্বশেষ আপডেটের আগের ভার্সনে ফিরে যান"
-                >
-                  <FiRotateCcw className={undoing ? "animate-spin" : ""} />
-                  <span>{undoing ? "আনডু হচ্ছে..." : "↩️ Undo Last Update"}</span>
-                </button>
+                {/* Undo / Redo Navigation & Version Status */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {history && history.length > 0 && (
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0f2a44] text-white text-xs border border-[#d4af37]/30">
+                      <span className="text-white/60">বর্তমান সাইট:</span>
+                      <span className="font-extrabold text-[#d4af37]">{history[0]?.version || "Live"}</span>
+                      {history.length > 1 && (
+                        <>
+                          <FiArrowRight className="text-white/40 text-[10px]" />
+                          <span className="text-white/50 text-[11px]">আগের: {history[1]?.version}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleUndoRollback(null)}
+                    disabled={undoing || history.length === 0}
+                    className="btn btn-sm bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
+                    title="সর্বশেষ আপডেটের আগের ভার্সনে ফিরে যান"
+                  >
+                    <FiRotateCcw className={undoing ? "animate-spin" : ""} />
+                    <span>{undoing ? "আনডু হচ্ছে..." : "↩️ Undo (পেছনে যান)"}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Upload Dropzone */}
@@ -851,23 +868,63 @@ ${exportData.migrationNotes}`}
 
             {/* RECENT DEPLOY HISTORY & MULTI-LEVEL UNDO */}
             <div className="bg-white rounded-2xl p-6 border border-[#e5dccf] shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#e5dccf] mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#e5dccf] mb-4 gap-2">
                 <div>
                   <h3 className="text-base font-bold text-[#3d2f1f] flex items-center gap-2">
-                    <FiClock className="text-[#d4af37]" /> আপডেট ও ব্যাকআপের ইতিহাস (Deployment History & Restore Points)
+                    <FiClock className="text-[#d4af37]" /> আপডেট ও ব্যাকআপের টাইমলাইন (Update & Restore Timeline)
                   </h3>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    প্রতিটি আপডেটের পূর্বে স্বয়ংক্রিয় ব্যাকআপ সংরক্ষিত থাকে। যেকোনো সময় যেকোনো ভার্সনে ১-ক্লিকে ফিরে যাওয়া সম্ভব।
+                    এখানে আপনি বর্তমান ভার্সন এবং পেছনের রিস্টোর পয়েন্ট — দুটিই একসাথে দেখতে ও কন্ট্রোল করতে পারবেন।
                   </p>
                 </div>
                 <button
                   onClick={fetchHistory}
                   disabled={loadingHistory}
-                  className="btn btn-ghost btn-xs text-xs font-bold flex items-center gap-1 text-[#3d2f1f]"
+                  className="btn btn-ghost btn-xs text-xs font-bold flex items-center gap-1 text-[#3d2f1f] self-end sm:self-auto"
                 >
-                  <FiRefreshCw className={loadingHistory ? "animate-spin" : ""} /> রিফ্রেশ
+                  <FiRefreshCw className={loadingHistory ? "animate-spin" : ""} /> রিফ্রেশ টাইমলাইন
                 </button>
               </div>
+
+              {/* Version Comparison Card (Current vs Previous) */}
+              {history.length > 0 && (
+                <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-[#faf7f0] to-white border border-[#e5dccf] flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg shadow-xs">
+                      ✨
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">বর্তমান লাইভ ভার্সন (Current)</span>
+                      <h4 className="text-sm font-extrabold text-[#0f2a44]">{history[0]?.version}</h4>
+                      <p className="text-[11px] text-gray-500">{new Date(history[0]?.appliedAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {history.length > 1 ? (
+                    <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-[#e5dccf] pt-3 md:pt-0 md:pl-6">
+                      <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg shadow-xs">
+                        ⏮️
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">পেছনের সেফটি ব্যাকআপ (Previous)</span>
+                        <h4 className="text-sm font-extrabold text-[#3d2f1f]">{history[1]?.version}</h4>
+                        <p className="text-[11px] text-gray-500">{new Date(history[1]?.appliedAt).toLocaleString()}</p>
+                      </div>
+                      <button
+                        onClick={() => handleUndoRollback(history[0]?.localBackupFile)}
+                        disabled={undoing}
+                        className="btn btn-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold ml-2 shadow-xs"
+                      >
+                        ↩️ পেছনে যান
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
+                      এটিই প্রথম ইনস্টলকৃত ভার্সন। পরবর্তী আপডেটের পর পেছনের ভার্সন এখানে দেখাবে।
+                    </div>
+                  )}
+                </div>
+              )}
 
               {history.length === 0 ? (
                 <p className="text-xs text-gray-500 py-4 text-center">এখনো কোনো আপডেট রেকর্ড করা হয়নি।</p>
