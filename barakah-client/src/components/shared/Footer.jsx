@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt, FaUsers } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
 import { trackMetaEvent } from "@/lib/metaTracking";
 
@@ -54,9 +54,14 @@ export default function Footer() {
 
   const socialLinks = [
     {
-      label: "Facebook",
+      label: "Facebook Page",
       href: fbPage,
       icon: <FaFacebookF size={14} />,
+    },
+    {
+      label: "Facebook Group",
+      href: fbGroup,
+      icon: <FaUsers size={15} />,
     },
     {
       label: "Instagram",
@@ -124,6 +129,13 @@ export default function Footer() {
                     href={targetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      trackMetaEvent("Contact", {
+                        content_name: `Footer Link: ${link.label}`,
+                        content_category: "Customer Support",
+                        method: targetUrl.includes("group") ? "facebook_group" : "social_link",
+                      });
+                    }}
                     className="inline-flex min-h-[26px] items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#d4af37]"
                   >
                     {link.label}
