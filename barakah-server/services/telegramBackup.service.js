@@ -120,9 +120,10 @@ class TelegramBackupService {
   }
 
   /**
-   * Uploads the backup zip directly to Telegram Chat / Channel as a Document
+   * Uploads backup zip directly to Telegram Chat / Channel as a Document
+   * Supports both PRE-UPDATE (safety snapshot before import) and EXPORT ARCHIVES!
    */
-  async uploadBackupZip(filePath, fileName, domainName = "main_domain", releaseNotesText = "") {
+  async uploadBackupZip(filePath, fileName, domainName = "main_domain", notes = "", type = "import_pre_backup") {
     if (!fs.existsSync(filePath)) {
       throw new Error(`Backup file not found at: ${filePath}`);
     }
@@ -136,15 +137,28 @@ class TelegramBackupService {
     const dateStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
     const fileSizeMB = (fs.statSync(filePath).size / (1024 * 1024)).toFixed(2);
 
-    // Formatted Telegram Caption
-    const caption = `📦 SASHROYI AUTO-BACKUP VAULT
+    let caption = "";
+    if (type === "export_package") {
+      caption = `📦🚀 SASHROYI EXPORT UPDATE ARCHIVE
 ━━━━━━━━━━━━━━━━━━━━━━━━
-🌐 Domain: ${domainName}
-📦 Backup: ${fileName}
+🔵 TYPE: EXPORT PACKAGE (রিলিজ প্যাকেজ)
+🌐 Source Domain: ${domainName}
+📁 Package: ${fileName}
 📊 Size: ${fileSizeMB} MB
-⏰ Time: ${dateStr} (BST)
+⏰ Export Time: ${dateStr} (BST)
 ━━━━━━━━━━━━━━━━━━━━━━━━
-✅ সাইট আপডেটের পূর্বের সেফটি ব্যাকআপ সফলভাবে টেলিগ্রাম ক্লাউডে সংরক্ষিত হয়েছে!`;
+✨ মেইন সাইট থেকে নতুন আপডেট প্যাকেজ এক্সপোর্টের সাথে সাথে এর একটি পার্মানেন্ট কপি টেলিগ্রাম ক্লাউড ভল্টে নিরাপদে সংরক্ষণ করা হলো।`;
+    } else {
+      caption = `🛡️📦 SASHROYI PRE-UPDATE SAFETY BACKUP
+━━━━━━━━━━━━━━━━━━━━━━━━
+🟠 TYPE: PRE-UPDATE SAFETY BACKUP (আপডেটের আগের ব্যাকআপ)
+🌐 Domain: ${domainName}
+📁 Backup: ${fileName}
+📊 Size: ${fileSizeMB} MB
+⏰ Backup Time: ${dateStr} (BST)
+━━━━━━━━━━━━━━━━━━━━━━━━
+✅ সাইট আপডেটের পূর্বের সম্পূর্ণ কোডের সেফটি ব্যাকআপ টেলিগ্রামে সফলভাবে পৌঁছেছে! কোনো সমস্যা হলে এটি দিয়ে ইনস্ট্যান্ট রিস্টোর করা যাবে।`;
+    }
 
     const fileBuffer = fs.readFileSync(filePath);
     const fileBlob = new Blob([fileBuffer], { type: "application/zip" });

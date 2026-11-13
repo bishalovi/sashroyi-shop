@@ -933,48 +933,79 @@ ${exportData.migrationNotes}`}
                   <table className="table table-sm w-full text-xs">
                     <thead>
                       <tr className="border-b border-[#e5dccf] text-[#3d2f1f]">
+                        <th>টাইপ ও অ্যাকশন</th>
                         <th>ভার্সন</th>
                         <th>ডোমেইন</th>
-                        <th>আপডেটের সময়</th>
-                        <th>ক্লাউড ব্যাকআপ</th>
+                        <th>তারিখ ও সময়</th>
+                        <th>টেলিগ্রাম ক্লাউড</th>
                         <th>স্ট্যাটাস</th>
                         <th className="text-right">রোলব্যাক / আনডু</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {history.map((item, idx) => (
-                        <tr key={idx} className="border-b border-[#faf7f0]">
-                          <td className="font-bold text-[#0f2a44]">{item.version}</td>
-                          <td>{item.domainName || "main"}</td>
-                          <td>{new Date(item.appliedAt).toLocaleString()}</td>
-                          <td>
-                            {item.telegramDelivered ? (
-                              <span className="text-blue-600 font-bold flex items-center gap-1">
-                                <FiSend /> Telegram Sent
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">Local Only</span>
-                            )}
-                          </td>
-                          <td>
-                            <span className={`badge badge-sm font-bold text-white ${item.status === "rolled_back" ? "badge-warning" : "badge-success"}`}>
-                              {item.status}
-                            </span>
-                          </td>
-                          <td className="text-right">
-                            {item.isRestorable && (
-                              <button
-                                onClick={() => handleUndoRollback(item.localBackupFile)}
-                                disabled={undoing}
-                                className="btn btn-xs bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 font-bold rounded-lg flex items-center gap-1 ml-auto"
-                                title="এই পয়েন্টে সাইট ফিরিয়ে নিন"
+                      {history.map((item, idx) => {
+                        const isExport = item.type === "export" || String(item.version).includes("EXPORT");
+                        const isRollback = item.status === "rolled_back" || String(item.version).includes("ROLLBACK");
+                        return (
+                          <tr key={idx} className="border-b border-[#faf7f0] hover:bg-gray-50/50">
+                            <td>
+                              {isExport ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-blue-100 text-blue-700 border border-blue-200">
+                                  <FiDownload className="text-[10px]" /> EXPORT
+                                </span>
+                              ) : isRollback ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-amber-100 text-amber-800 border border-amber-200">
+                                  <FiRotateCcw className="text-[10px]" /> ROLLBACK
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <FiUploadCloud className="text-[10px]" /> IMPORT / DEPLOY
+                                </span>
+                              )}
+                            </td>
+                            <td className="font-bold text-[#0f2a44]">{item.version}</td>
+                            <td>{item.domainName || "main"}</td>
+                            <td>{new Date(item.appliedAt).toLocaleString()}</td>
+                            <td>
+                              {item.telegramDelivered ? (
+                                <span className="text-blue-600 font-bold flex items-center gap-1">
+                                  <FiSend /> Telegram Sent
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">Local Only</span>
+                              )}
+                            </td>
+                            <td>
+                              <span
+                                className={`badge badge-sm font-bold text-white ${
+                                  isExport
+                                    ? "bg-blue-600"
+                                    : isRollback
+                                    ? "bg-amber-600"
+                                    : "bg-emerald-600"
+                                }`}
                               >
-                                <FiRotateCcw className="text-[10px]" /> Undo Here
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="text-right">
+                              {item.isRestorable && !isExport && (
+                                <button
+                                  onClick={() => handleUndoRollback(item.localBackupFile)}
+                                  disabled={undoing}
+                                  className="btn btn-xs bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 font-bold rounded-lg flex items-center gap-1 ml-auto"
+                                  title="এই পয়েন্টে সাইট ফিরিয়ে নিন"
+                                >
+                                  <FiRotateCcw className="text-[10px]" /> Undo Here
+                                </button>
+                              )}
+                              {isExport && (
+                                <span className="text-gray-400 text-[10px] italic">Package Release</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

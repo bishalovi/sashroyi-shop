@@ -186,7 +186,45 @@ exports.exportUpdatePackage = async (req, res) => {
     }
 
     const zipBuffer = zip.toBuffer();
-    const zipFileName = `sashroyi-update-${version}.zip`;
+    const zipFileName = `sashroyi-export-${version}.zip`;
+
+    // Also automatically backup this export package to Telegram Cloud Vault!
+    try {
+      const tempExportDir = path.resolve(STORAGE_BACKUPS_DIR, "exports");
+      if (!fs.existsSync(tempExportDir)) {
+        fs.mkdirSync(tempExportDir, { recursive: true });
+      }
+      const tempExportPath = path.join(tempExportDir, zipFileName);
+      fs.writeFileSync(tempExportPath, zipBuffer);
+
+      telegramBackupService.uploadBackupZip(
+        tempExportPath,
+        zipFileName,
+        domainName,
+        releaseNotesContent,
+        "export_package"
+      ).then(async (teleRes) => {
+        console.log(`[System Update] Export archive backed up to Telegram! Message ID: ${teleRes.messageId}`);
+        const db = await connectDB();
+        await db.collection("system_update_history").insertOne({
+          version: `EXPORT ${version}`,
+          appliedAt: new Date(),
+          appliedBy: req.rootOwner?.email || author || "Root Owner",
+          domainName,
+          cloudProvider: "Telegram",
+          telegramDelivered: true,
+          telegramMessageId: teleRes.messageId,
+          localBackupFile: path.join("exports", zipFileName),
+          type: "export",
+          releaseNotes: releaseNotesContent,
+          status: "exported",
+        });
+      }).catch(err => {
+        console.warn("[System Update] Could not auto-send export to Telegram:", err.message);
+      });
+    } catch (saveErr) {
+      console.warn("Could not save local export copy:", saveErr.message);
+    }
 
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${zipFileName}"`);
@@ -336,7 +374,8 @@ exports.deployUpdatePackage = async (req, res) => {
         localBackupFilePath,
         backupFileName,
         domainName,
-        releaseNotesText
+        releaseNotesText,
+        "import_pre_backup"
       );
       console.log(`[System Update] Telegram upload CONFIRMED 100%! Message ID: ${cloudUploadResult.messageId}`);
     } catch (teleErr) {
@@ -366,6 +405,7 @@ exports.deployUpdatePackage = async (req, res) => {
         telegramDelivered: true,
         telegramMessageId: cloudUploadResult?.messageId,
         localBackupFile: backupFileName,
+        type: "import",
         releaseNotes: releaseNotesText,
         status: "active",
       });
