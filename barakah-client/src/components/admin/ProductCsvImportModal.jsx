@@ -291,7 +291,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
   const [duplicateAction, setDuplicateAction] = useState("skip");
   const [targetCategory, setTargetCategory] = useState("");
   const [targetBadge, setTargetBadge] = useState("__none__");
-  const [priceAdjustmentType, setPriceAdjustmentType] = useState("none"); // "none" | "fixed" | "percent"
+  const [priceAdjustmentType, setPriceAdjustmentType] = useState("fixed"); // "fixed" | "percent"
   const [priceAdjustmentValue, setPriceAdjustmentValue] = useState("");
   const [availableCategories, setAvailableCategories] = useState([]);
   const [importing, setImporting] = useState(false);
@@ -327,7 +327,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     setFileName("");
     setTargetCategory("");
     setTargetBadge("__none__");
-    setPriceAdjustmentType("none");
+    setPriceAdjustmentType("fixed");
     setPriceAdjustmentValue("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -562,21 +562,18 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                 <select
                   value={priceAdjustmentType}
                   onChange={(e) => setPriceAdjustmentType(e.target.value)}
-                  className="select select-ghost select-xs"
+                  className="select select-ghost select-xs font-semibold text-[#0f2a44]"
                 >
-                  <option value="none">As is</option>
-                  <option value="fixed">+ / - Tk</option>
-                  <option value="percent">+ / - %</option>
+                  <option value="fixed">৳ Tk (+ / -)</option>
+                  <option value="percent">% Percent (+ / -)</option>
                 </select>
-                {priceAdjustmentType !== "none" && (
-                  <input
-                    type="number"
-                    placeholder={priceAdjustmentType === "fixed" ? "+100 or -50" : "+10 or -10"}
-                    value={priceAdjustmentValue}
-                    onChange={(e) => setPriceAdjustmentValue(e.target.value)}
-                    className="input input-xs input-bordered w-24 bg-white"
-                  />
-                )}
+                <input
+                  type="number"
+                  placeholder={priceAdjustmentType === "fixed" ? "+10 or -10" : "+10% or -10%"}
+                  value={priceAdjustmentValue}
+                  onChange={(e) => setPriceAdjustmentValue(e.target.value)}
+                  className="input input-xs input-bordered w-24 bg-white font-medium"
+                />
               </div>
 
               <div className="flex items-center gap-1.5">
