@@ -188,7 +188,7 @@ exports.exportUpdatePackage = async (req, res) => {
     const zipBuffer = zip.toBuffer();
     const zipFileName = `sashroyi-export-${version}.zip`;
 
-    // Also automatically backup this export package to Telegram Cloud Vault!
+    // Automatically backup this export package to Telegram Cloud Vault!
     try {
       const tempExportDir = path.resolve(STORAGE_BACKUPS_DIR, "exports");
       if (!fs.existsSync(tempExportDir)) {
@@ -197,14 +197,17 @@ exports.exportUpdatePackage = async (req, res) => {
       const tempExportPath = path.join(tempExportDir, zipFileName);
       fs.writeFileSync(tempExportPath, zipBuffer);
 
-      telegramBackupService.uploadBackupZip(
+      console.log(`[System Update] Uploading export archive to Telegram: ${zipFileName}`);
+      const teleRes = await telegramBackupService.uploadBackupZip(
         tempExportPath,
         zipFileName,
         domainName,
         releaseNotesContent,
         "export_package"
-      ).then(async (teleRes) => {
-        console.log(`[System Update] Export archive backed up to Telegram! Message ID: ${teleRes.messageId}`);
+      );
+      console.log(`[System Update] Export archive backed up to Telegram! Message ID: ${teleRes.messageId}`);
+
+      try {
         const db = await connectDB();
         await db.collection("system_update_history").insertOne({
           version: `EXPORT ${version}`,
@@ -219,11 +222,11 @@ exports.exportUpdatePackage = async (req, res) => {
           releaseNotes: releaseNotesContent,
           status: "exported",
         });
-      }).catch(err => {
-        console.warn("[System Update] Could not auto-send export to Telegram:", err.message);
-      });
+      } catch (dbErr) {
+        console.warn("Could not log export to DB:", dbErr.message);
+      }
     } catch (saveErr) {
-      console.warn("Could not save local export copy:", saveErr.message);
+      console.warn("[System Update] Telegram export backup warning:", saveErr.message);
     }
 
     res.setHeader("Content-Type", "application/zip");
