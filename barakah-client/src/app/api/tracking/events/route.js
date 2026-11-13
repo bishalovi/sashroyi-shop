@@ -117,7 +117,7 @@ export async function POST(req) {
       event_time: eventTime,
       event_id: finalEventId,
       action_source: "website",
-      event_source_url: eventSourceUrl || "https://www.sashroyi.shop",
+      event_source_url: eventSourceUrl || "https://top.skbazarbd.com",
       user_data: userData,
       custom_data: customData || {},
     };

@@ -7,7 +7,7 @@ export function getSiteUrl() {
   if (envUrl && (process.env.NODE_ENV !== "production" || !isLocalUrl(envUrl))) {
     return envUrl;
   }
-  return "https://sashroyi.shop";
+  return "https://top.skbazarbd.com";
 }
 
 export function getApiUrl() {
