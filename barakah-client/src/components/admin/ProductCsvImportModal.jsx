@@ -291,6 +291,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
   const [duplicateAction, setDuplicateAction] = useState("skip");
   const [targetCategory, setTargetCategory] = useState("");
   const [targetBadge, setTargetBadge] = useState("__none__");
+  const [targetFreeShipping, setTargetFreeShipping] = useState("keep"); // "keep" | "all_free" | "none_free"
   const [priceAdjustmentType, setPriceAdjustmentType] = useState("fixed"); // "fixed" | "percent"
   const [priceAdjustmentValue, setPriceAdjustmentValue] = useState("");
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -327,6 +328,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     setFileName("");
     setTargetCategory("");
     setTargetBadge("__none__");
+    setTargetFreeShipping("keep");
     setPriceAdjustmentType("fixed");
     setPriceAdjustmentValue("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -424,6 +426,12 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
         ...rest,
         category: targetCategory ? targetCategory : rest.category,
         badge: targetBadge === "__none__" ? "" : targetBadge ? targetBadge : rest.badge,
+        isFreeShipping:
+          targetFreeShipping === "all_free"
+            ? true
+            : targetFreeShipping === "none_free"
+            ? false
+            : rest.isFreeShipping,
         price: calculateFinalPrice(rest.price),
       }));
 
@@ -556,6 +564,20 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                 </select>
               </div>
 
+              {/* Shipping Selection */}
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-gray-600">Shipping:</span>
+                <select
+                  value={targetFreeShipping}
+                  onChange={(e) => setTargetFreeShipping(e.target.value)}
+                  className="select select-bordered select-xs bg-white font-medium text-[#0f2a44]"
+                >
+                  <option value="keep">Keep CSV Shipping</option>
+                  <option value="all_free">🚚 All Free Shipping (ফ্রি)</option>
+                  <option value="none_free">📦 Standard Shipping</option>
+                </select>
+              </div>
+
               {/* Price Modifier */}
               <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200">
                 <span className="font-medium text-gray-600">Price Adjust:</span>
@@ -663,7 +685,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                       <th>Product Name</th>
                       <th>Category</th>
                       <th>Price</th>
-                      <th>Badge</th>
+                      <th>Shipping</th>
                       <th>Stock</th>
                       <th>Status</th>
                     </tr>
@@ -736,9 +758,38 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                           )}
                         </td>
                         <td className="w-24">
-                          <span className="badge badge-sm badge-ghost font-medium">
-                            {targetBadge === "__none__" ? "(None)" : targetBadge || item.badge || "-"}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCellChange(
+                                item._rowNumber,
+                                "isFreeShipping",
+                                !(targetFreeShipping === "all_free"
+                                  ? true
+                                  : targetFreeShipping === "none_free"
+                                  ? false
+                                  : item.isFreeShipping)
+                              )
+                            }
+                            className={`badge badge-sm cursor-pointer ${
+                              (targetFreeShipping === "all_free"
+                                ? true
+                                : targetFreeShipping === "none_free"
+                                ? false
+                                : item.isFreeShipping)
+                                ? "badge-info text-white font-medium"
+                                : "badge-ghost"
+                            }`}
+                            title="Click to toggle free shipping"
+                          >
+                            {(targetFreeShipping === "all_free"
+                              ? true
+                              : targetFreeShipping === "none_free"
+                              ? false
+                              : item.isFreeShipping)
+                              ? "🚚 Free"
+                              : "Standard"}
+                          </button>
                         </td>
                         <td>
                           <button
