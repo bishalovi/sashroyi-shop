@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * FILE: rootAuth.middleware.js
- * VERSION: v1.0.0
+ * VERSION: v1.2.0
  * ----------------------------------------------------------------------------
  * Middleware to restrict System Engine & Core Update endpoints strictly
  * to the Root Owner.
@@ -33,10 +33,10 @@ module.exports = async function verifyRootOwner(req, res, next) {
 
     const db = await connectDB();
 
-    // Check if security PIN is configured
+    // Check if security PIN is explicitly enabled
     const secConfig = await db.collection("settings").findOne({ key: SETTINGS_KEY });
 
-    if (secConfig && secConfig.masterPin) {
+    if (secConfig && secConfig.isEnabled && secConfig.masterPin) {
       // If PIN is enabled, verify it
       if (!providedPin || String(providedPin).trim() !== String(secConfig.masterPin).trim()) {
         return res.status(401).json({
