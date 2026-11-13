@@ -15,6 +15,37 @@ const connectDB = require("../config/db");
 
 const TELEGRAM_SETTINGS_KEY = "system_telegram_backup_config";
 
+/**
+ * Resilient Fetch with automatic retry and timeout
+ * Prevents "fetch failed" during sudden network hiccups or DNS latency
+ */
+async function fetchWithRetry(url, options = {}, retries = 3, timeoutMs = 15000) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      return response;
+    } catch (err) {
+      clearTimeout(timeout);
+      lastError = err;
+      console.warn(`[Telegram API] Attempt ${attempt}/${retries} failed (${err.name === "AbortError" ? "Timeout" : err.message}). Retrying in 1.5s...`);
+      if (attempt < retries) {
+        await new Promise((res) => setTimeout(res, 1500));
+      }
+    }
+  }
+
+  throw new Error(`টেলিগ্রাম নেটওয়ার্ক সংযোগ ব্যর্থ (৩ বার চেষ্টার পরও সংযোগ পাওয়া যায়নি): ${lastError?.message || "Connection timeout"}`);
+}
+
 class TelegramBackupService {
   /**
    * Retrieves Telegram configuration from Database or Environment
@@ -71,7 +102,7 @@ class TelegramBackupService {
       }
 
       // 1. Verify Bot Token
-      const meRes = await fetch(`https://api.telegram.org/bot${config.botToken}/getMe`);
+      const meRes = await fetchWithRetry(`https://api.telegram.org/bot${config.botToken}/getMe`);
       const meData = await meRes.json();
 
       if (!meData.ok) {
@@ -86,7 +117,7 @@ class TelegramBackupService {
       // 2. Send Test Message to Chat
       const testMsg = `✅ *Sashroyi Auto-Backup Bot Connected!*\n\n🤖 *Bot:* @${botUsername}\n📅 *Time:* ${new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })}\n\nআপনার টেলিগ্রাম ব্যাকআপ সিস্টেম সফলভাবে কানেক্টেড এবং প্রস্তুত।`;
 
-      const sendRes = await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
+      const sendRes = await fetchWithRetry(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -168,12 +199,14 @@ class TelegramBackupService {
     formData.append("caption", caption);
     formData.append("document", fileBlob, fileName);
 
-    const uploadRes = await fetch(
+    const uploadRes = await fetchWithRetry(
       `https://api.telegram.org/bot${config.botToken}/sendDocument`,
       {
         method: "POST",
         body: formData,
-      }
+      },
+      3,
+      60000 // 60 seconds timeout for big file uploads
     );
 
     const uploadData = await uploadRes.json();

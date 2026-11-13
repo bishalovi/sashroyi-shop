@@ -631,8 +631,23 @@ exports.saveTelegramConfig = async (req, res) => {
     // Proactive live validation before saving!
     if (isEnabled && cleanToken && cleanChatId) {
       // 1. Verify token
-      const meRes = await fetch(`https://api.telegram.org/bot${cleanToken}/getMe`);
-      const meData = await meRes.json();
+      let meRes, meData;
+      try {
+        meRes = await fetch(`https://api.telegram.org/bot${cleanToken}/getMe`);
+        meData = await meRes.json();
+      } catch (netErr) {
+        // Fallback retry once more
+        try {
+          await new Promise((r) => setTimeout(r, 1000));
+          meRes = await fetch(`https://api.telegram.org/bot${cleanToken}/getMe`);
+          meData = await meRes.json();
+        } catch (retryErr) {
+          return res.status(503).json({
+            success: false,
+            message: "টেলিগ্রাম সার্ভারের সাথে সংযোগ পাওয়া যাচ্ছে না (ইন্টারনেট বা ডিএনএস সমস্যা)। কিছুক্ষণ পর আবার চেষ্টা করুন।",
+          });
+        }
+      }
       if (!meData.ok) {
         return res.status(400).json({
           success: false,
