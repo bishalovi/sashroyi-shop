@@ -26,6 +26,7 @@ const settingsRoutes = require("./routes/settings.routes");
 const categoryRoutes = require("./routes/category.routes");
 const blacklistRoutes = require("./routes/blacklist.routes");
 const systemUpdateRoutes = require("./routes/systemUpdate.routes");
+const telegramBackupService = require("./services/telegramBackup.service");
 
 app.get("/", (req, res) => {
   res.send("Barakah server running successfully");
@@ -59,6 +60,40 @@ app.use("/api/shipping", shippingRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/blacklist", blacklistRoutes);
 app.use("/api/system-update", systemUpdateRoutes);
+
+// Global Error Handling & Telegram Watchdog Alert
+app.use((err, req, res, next) => {
+  console.error("[Unhandled Server Error]:", err);
+
+  // Send real-time watchdog alert to Telegram
+  telegramBackupService.sendAlert("Unhandled Server Error", {
+    Path: req.originalUrl,
+    Method: req.method,
+    Error: err.message || "Unknown internal error",
+    IP: req.ip || req.headers["x-forwarded-for"] || "Unknown",
+  }, "CRITICAL").catch(() => {});
+
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal server error occurred",
+  });
+});
+
+// Process-level uncaught exceptions & unhandled rejections watchdog
+process.on("uncaughtException", (err) => {
+  console.error("[Uncaught Exception]:", err);
+  telegramBackupService.sendAlert("Process Uncaught Exception", {
+    Error: err.message,
+    Stack: (err.stack || "").split("\n").slice(0, 3).join(" | "),
+  }, "CRITICAL").catch(() => {});
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[Unhandled Promise Rejection]:", reason);
+  telegramBackupService.sendAlert("Unhandled Promise Rejection", {
+    Reason: reason?.message || String(reason),
+  }, "WARNING").catch(() => {});
+});
 
 const PORT = process.env.PORT || 8000;
 

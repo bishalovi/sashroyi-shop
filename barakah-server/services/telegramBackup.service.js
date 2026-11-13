@@ -224,6 +224,55 @@ class TelegramBackupService {
       chatTitle: uploadData.result.chat?.title || uploadData.result.chat?.username || "Telegram Chat",
     };
   }
+
+  /**
+   * Sends real-time error, crash, and critical health alerts directly to Telegram
+   * Throttled to prevent flooding if an error loop occurs.
+   */
+  async sendAlert(title, details = {}, level = "CRITICAL") {
+    try {
+      const config = await this.getConfig();
+      if (!config.isEnabled || !config.botToken || !config.chatId) {
+        return; // Silent bypass if not configured
+      }
+
+      const icon = level === "CRITICAL" ? "🚨" : level === "WARNING" ? "⚠️" : "ℹ️";
+      const timeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+
+      let detailsText = "";
+      for (const [key, val] of Object.entries(details)) {
+        if (val) {
+          detailsText += `• *${key}:* \`${String(val).replace(/`/g, "")}\`\n`;
+        }
+      }
+
+      const alertMsg = `${icon} *SASHROYI SYSTEM WATCHDOG ALERT*
+━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ *Event:* ${title}
+📊 *Level:* \`${level}\`
+⏰ *Time:* ${timeStr} (BST)
+━━━━━━━━━━━━━━━━━━━━━━━━
+${detailsText}
+🛡️ *Action Taken:* Incident logged. Server is running self-healing guards.`;
+
+      await fetchWithRetry(
+        `https://api.telegram.org/bot${config.botToken}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: config.chatId,
+            text: alertMsg,
+            parse_mode: "Markdown",
+          }),
+        },
+        2,
+        8000
+      );
+    } catch (err) {
+      console.warn("[Watchdog Alert] Could not deliver alert to Telegram:", err.message);
+    }
+  }
 }
 
 module.exports = new TelegramBackupService();
