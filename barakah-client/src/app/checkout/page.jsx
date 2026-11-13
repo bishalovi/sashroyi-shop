@@ -307,6 +307,21 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
+    // Instant auto-save of customer profile for Meta Pixel & CAPI Advanced Matching
+    if (formValues.name || formValues.phone || formValues.address) {
+      const timer = setTimeout(() => {
+        saveCustomerProfile({
+          name: formValues.name,
+          phone: formValues.phone,
+          address: formValues.address,
+        });
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [formValues.name, formValues.phone, formValues.address]);
+
+  useEffect(() => {
+    // Auto-save form progress for abandoned checkout recovery (8s delay)
     const timer = setTimeout(() => {
       if (
         formValues.name &&
@@ -314,11 +329,6 @@ export default function CheckoutPage() {
         formValues.address &&
         cartItems.length > 0
       ) {
-        saveCustomerProfile({
-          name: formValues.name,
-          phone: formValues.phone,
-          address: formValues.address,
-        });
         saveAbandonedOrder(formValues);
       }
     }, 8000);
