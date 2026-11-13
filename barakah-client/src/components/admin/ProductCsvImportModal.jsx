@@ -259,6 +259,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
   const [fileName, setFileName] = useState("");
   const [duplicateAction, setDuplicateAction] = useState("skip");
   const [targetCategory, setTargetCategory] = useState("");
+  const [targetBadge, setTargetBadge] = useState("");
   const [priceAdjustmentType, setPriceAdjustmentType] = useState("none"); // "none" | "fixed" | "percent"
   const [priceAdjustmentValue, setPriceAdjustmentValue] = useState("");
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -293,6 +294,8 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     setParsedItems([]);
     setParseError("");
     setFileName("");
+    setTargetCategory("");
+    setTargetBadge("");
     setPriceAdjustmentType("none");
     setPriceAdjustmentValue("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -363,6 +366,24 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     return originalPrice;
   };
 
+  const handleCellChange = (rowNumber, field, value) => {
+    setParsedItems((prev) =>
+      prev.map((item) => {
+        if (item._rowNumber !== rowNumber) return item;
+        const updated = { ...item, [field]: value };
+        if (field === "price") {
+          updated.price = Number(value);
+        }
+        const validationErrors = [];
+        if (!updated.name || !String(updated.name).trim()) validationErrors.push("Name required");
+        if (Number.isNaN(updated.price) || updated.price < 0) validationErrors.push("Invalid price");
+        updated._isValid = validationErrors.length === 0;
+        updated._error = validationErrors.join(", ");
+        return updated;
+      })
+    );
+  };
+
   const handleImport = async () => {
     if (validItems.length === 0) return;
 
@@ -371,6 +392,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
       const payloadProducts = validItems.map(({ _rowNumber, _isValid, _error, ...rest }) => ({
         ...rest,
         category: targetCategory ? targetCategory : rest.category,
+        badge: targetBadge ? targetBadge : rest.badge,
         price: calculateFinalPrice(rest.price),
       }));
 
@@ -485,6 +507,23 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                 </div>
               )}
 
+              {/* Badge Selection */}
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-gray-600">Badge:</span>
+                <select
+                  value={targetBadge}
+                  onChange={(e) => setTargetBadge(e.target.value)}
+                  className="select select-bordered select-xs bg-white font-medium"
+                >
+                  <option value="">Keep CSV Badge</option>
+                  <option value="Hot">🔥 Hot</option>
+                  <option value="Sale">🏷️ Sale</option>
+                  <option value="New">✨ New Arrival</option>
+                  <option value="Best Seller">⭐ Best Seller</option>
+                  <option value="Trending">📈 Trending</option>
+                </select>
+              </div>
+
               {/* Price Modifier */}
               <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200">
                 <span className="font-medium text-gray-600">Price Adjust:</span>
@@ -592,9 +631,10 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                   <thead className="bg-gray-100 sticky top-0">
                     <tr>
                       <th>Row</th>
-                      <th>Product</th>
+                      <th>Product Name</th>
                       <th>Category</th>
                       <th>Price</th>
+                      <th>Badge</th>
                       <th>Stock</th>
                       <th>Status</th>
                     </tr>
@@ -603,7 +643,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                     {parsedItems.slice(0, 100).map((item) => (
                       <tr key={item._rowNumber} className={!item._isValid ? "bg-red-50" : ""}>
                         <td>{item._rowNumber}</td>
-                        <td className="max-w-[220px]">
+                        <td className="max-w-[240px]">
                           <div className="flex items-center gap-2">
                             {item.image ? (
                               <img
@@ -615,30 +655,60 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                                 }}
                               />
                             ) : null}
-                            <span className="truncate font-medium">{item.name || "(missing)"}</span>
+                            <input
+                              type="text"
+                              value={item.name}
+                              onChange={(e) => handleCellChange(item._rowNumber, "name", e.target.value)}
+                              className="input input-xs input-bordered w-full font-medium bg-white"
+                              title="Click to edit name directly"
+                            />
                           </div>
                         </td>
-                        <td>{targetCategory || item.category || "-"}</td>
-                        <td>
-                          {Number.isNaN(item.price) ? (
-                            "-"
-                          ) : priceAdjustmentType !== "none" && priceAdjustmentValue ? (
-                            <span className="font-semibold text-blue-700">
-                              ৳{calculateFinalPrice(item.price)}{" "}
-                              <span className="text-[10px] text-gray-400 line-through">
-                                ৳{item.price}
-                              </span>
+                        <td className="max-w-[130px]">
+                          <input
+                            type="text"
+                            value={targetCategory || item.category || ""}
+                            onChange={(e) => handleCellChange(item._rowNumber, "category", e.target.value)}
+                            disabled={Boolean(targetCategory)}
+                            placeholder="Category"
+                            className="input input-xs input-bordered w-full bg-white disabled:bg-gray-100"
+                            title={targetCategory ? "Assigned by top dropdown" : "Click to edit category"}
+                          />
+                        </td>
+                        <td className="w-24">
+                          <input
+                            type="number"
+                            value={Number.isNaN(item.price) ? "" : item.price}
+                            onChange={(e) => handleCellChange(item._rowNumber, "price", e.target.value)}
+                            className="input input-xs input-bordered w-20 font-semibold bg-white"
+                            title="Click to edit original price"
+                          />
+                          {priceAdjustmentType !== "none" && priceAdjustmentValue && (
+                            <span className="block text-[10px] font-semibold text-blue-700">
+                              → ৳{calculateFinalPrice(item.price)}
                             </span>
-                          ) : (
-                            `৳${item.price}`
                           )}
                         </td>
-                        <td>{item.inStock ? "In Stock" : "Out"}</td>
+                        <td className="w-24">
+                          <span className="badge badge-sm badge-ghost font-medium">
+                            {targetBadge || item.badge || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleCellChange(item._rowNumber, "inStock", !item.inStock)}
+                            className={`badge badge-sm cursor-pointer ${item.inStock ? "badge-success text-white" : "badge-ghost"}`}
+                            title="Click to toggle stock"
+                          >
+                            {item.inStock ? "In Stock" : "Out"}
+                          </button>
+                        </td>
                         <td>
                           {item._isValid ? (
-                            <span className="text-green-600 font-medium">Ready</span>
+                            <span className="text-green-600 font-medium text-xs">Ready</span>
                           ) : (
-                            <span className="text-red-600 font-medium">{item._error}</span>
+                            <span className="text-red-600 font-medium text-xs">{item._error}</span>
                           )}
                         </td>
                       </tr>
