@@ -112,7 +112,7 @@ export default function AdminLayout({ children }) {
         </div>
 
         {/* Sidebar */}
-        <div className="drawer-side z-50">
+        <div className="drawer-side z-40">
           <label htmlFor="admin-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
 
           <aside className="min-h-full w-64 bg-white border-r border-[#e5dccf] py-6 px-4 flex flex-col justify-between">
