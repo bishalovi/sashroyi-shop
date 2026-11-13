@@ -55,18 +55,23 @@ const SAMPLE_CSV_CONTENT = [
   ].join(","),
 ].join("\r\n");
 
-const CHATGPT_PROMPT = `Convert the following product information into a valid UTF-8 CSV file with these exact headers:
-name,category,subcategory,price,oldPrice,description,image,productCode,badge,inStock,isFreeShipping
+const CHATGPT_PROMPT = `Act as an E-commerce SEO Expert. Convert the following product data into a fully SEO-optimized, valid UTF-8 CSV with these EXACT headers:
+name,category,subcategory,price,oldPrice,description,image,productCode,badge,inStock,isFreeShipping,metaTitle,metaDescription,metaKeywords
 
-Rules:
-1. Wrap text fields containing commas or quotes in double quotes (escape internal quotes as "").
-2. "price" and "oldPrice" must be plain numbers only (no currency symbol like BDT or ৳). Leave oldPrice empty or 0 if there is no discount.
-3. "inStock" and "isFreeShipping" must be true or false.
-4. "image" must be a direct image URL (leave empty if unavailable).
-5. Output ONLY the raw CSV inside a single code block so I can save it directly as a .csv file.
+SEO & Quality Rules:
+1. "name": Catchy, natural, high-intent product title (English or Bangla as provided), 40-70 characters.
+2. "category": Must be one of the standard store categories (e.g. "Health & Beauty", "Kitchen & Dining", "Home & Living", "Baby Care", "Essential Gadgets", "Tool & Accessories").
+3. "price" and "oldPrice": Plain numbers only (NO currency symbols like BDT or ৳). If no discount, set oldPrice to 0.
+4. "description": Rich, customer-engaging description in clean text (benefits, key features, usage instructions). Avoid raw HTML tags.
+5. "metaTitle": SEO Title formatted like: "[Product Name] - Best Price in Bangladesh | Sashroyi Shop" (max 60 chars).
+6. "metaDescription": Compelling meta description with primary search keywords and clear call-to-action (120-155 characters).
+7. "metaKeywords": 5 to 8 comma-separated search terms (e.g., "[Product name] price in bd, buy [product name] online, original [product name], sashroyi shop").
+8. "inStock" & "isFreeShipping": Must be boolean: true or false.
+9. "image": Direct high-resolution image URL.
+10. Escape rules: Wrap text fields containing commas or quotes in double quotes (internal quotes escaped as ""). Output ONLY the raw CSV inside a single code block.
 
 Here is the product data:
-[PASTE PRODUCT TEXT / HTML / DETAILS HERE]`;
+[PASTE PRODUCT TEXT / HTML / DETAILS / LINKS HERE]`;
 
 const HEADER_ALIASES = {
   name: "name",
@@ -254,6 +259,8 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
   const [fileName, setFileName] = useState("");
   const [duplicateAction, setDuplicateAction] = useState("skip");
   const [targetCategory, setTargetCategory] = useState("");
+  const [priceAdjustmentType, setPriceAdjustmentType] = useState("none"); // "none" | "fixed" | "percent"
+  const [priceAdjustmentValue, setPriceAdjustmentValue] = useState("");
   const [availableCategories, setAvailableCategories] = useState([]);
   const [importing, setImporting] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
@@ -286,6 +293,8 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     setParsedItems([]);
     setParseError("");
     setFileName("");
+    setPriceAdjustmentType("none");
+    setPriceAdjustmentValue("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -340,6 +349,20 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     reader.readAsText(file, "UTF-8");
   };
 
+  const calculateFinalPrice = (originalPrice) => {
+    if (Number.isNaN(originalPrice) || originalPrice < 0) return originalPrice;
+    const numAdj = Number(priceAdjustmentValue);
+    if (!numAdj || Number.isNaN(numAdj)) return originalPrice;
+
+    if (priceAdjustmentType === "fixed") {
+      return Math.max(0, Math.round(originalPrice + numAdj));
+    }
+    if (priceAdjustmentType === "percent") {
+      return Math.max(0, Math.round(originalPrice * (1 + numAdj / 100)));
+    }
+    return originalPrice;
+  };
+
   const handleImport = async () => {
     if (validItems.length === 0) return;
 
@@ -348,6 +371,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
       const payloadProducts = validItems.map(({ _rowNumber, _isValid, _error, ...rest }) => ({
         ...rest,
         category: targetCategory ? targetCategory : rest.category,
+        price: calculateFinalPrice(rest.price),
       }));
 
       const res = await fetch(`${baseUrl}/api/products/bulk-import`, {
@@ -445,13 +469,13 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
             <div className="flex flex-wrap items-center gap-3 text-xs">
               {availableCategories.length > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <span className="font-medium text-gray-600">Assign Category:</span>
+                  <span className="font-medium text-gray-600">Category:</span>
                   <select
                     value={targetCategory}
                     onChange={(e) => setTargetCategory(e.target.value)}
                     className="select select-bordered select-xs bg-white font-medium text-[#0f2a44]"
                   >
-                    <option value="">Use CSV Category</option>
+                    <option value="">Keep CSV Category</option>
                     {availableCategories.map((c) => (
                       <option key={c._id || c.slug} value={c.name}>
                         {c.name}
@@ -461,8 +485,31 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                 </div>
               )}
 
+              {/* Price Modifier */}
+              <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200">
+                <span className="font-medium text-gray-600">Price Adjust:</span>
+                <select
+                  value={priceAdjustmentType}
+                  onChange={(e) => setPriceAdjustmentType(e.target.value)}
+                  className="select select-ghost select-xs"
+                >
+                  <option value="none">As is</option>
+                  <option value="fixed">+ / - Tk</option>
+                  <option value="percent">+ / - %</option>
+                </select>
+                {priceAdjustmentType !== "none" && (
+                  <input
+                    type="number"
+                    placeholder={priceAdjustmentType === "fixed" ? "+100 or -50" : "+10 or -10"}
+                    value={priceAdjustmentValue}
+                    onChange={(e) => setPriceAdjustmentValue(e.target.value)}
+                    className="input input-xs input-bordered w-24 bg-white"
+                  />
+                )}
+              </div>
+
               <div className="flex items-center gap-1.5">
-                <span className="font-medium text-gray-600">Duplicate action:</span>
+                <span className="font-medium text-gray-600">Duplicate:</span>
                 <select
                   value={duplicateAction}
                   onChange={(e) => setDuplicateAction(e.target.value)}
@@ -571,8 +618,21 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                             <span className="truncate font-medium">{item.name || "(missing)"}</span>
                           </div>
                         </td>
-                        <td>{item.category || "-"}</td>
-                        <td>{Number.isNaN(item.price) ? "-" : `৳${item.price}`}</td>
+                        <td>{targetCategory || item.category || "-"}</td>
+                        <td>
+                          {Number.isNaN(item.price) ? (
+                            "-"
+                          ) : priceAdjustmentType !== "none" && priceAdjustmentValue ? (
+                            <span className="font-semibold text-blue-700">
+                              ৳{calculateFinalPrice(item.price)}{" "}
+                              <span className="text-[10px] text-gray-400 line-through">
+                                ৳{item.price}
+                              </span>
+                            </span>
+                          ) : (
+                            `৳${item.price}`
+                          )}
+                        </td>
                         <td>{item.inStock ? "In Stock" : "Out"}</td>
                         <td>
                           {item._isValid ? (
