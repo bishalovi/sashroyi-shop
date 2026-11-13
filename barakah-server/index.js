@@ -25,6 +25,7 @@ const shippingRoutes = require("./routes/shipping.routes");
 const settingsRoutes = require("./routes/settings.routes");
 const categoryRoutes = require("./routes/category.routes");
 const blacklistRoutes = require("./routes/blacklist.routes");
+const systemUpdateRoutes = require("./routes/systemUpdate.routes");
 
 app.get("/", (req, res) => {
   res.send("Barakah server running successfully");
@@ -57,6 +58,7 @@ app.use("/api/tracking", trackingRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/blacklist", blacklistRoutes);
+app.use("/api/system-update", systemUpdateRoutes);
 
 const PORT = process.env.PORT || 8000;
 

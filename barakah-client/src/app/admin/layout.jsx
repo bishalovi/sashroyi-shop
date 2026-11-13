@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings, FiGrid, FiStar, FiRefreshCw, FiSearch } from "react-icons/fi";
+import { FiHome, FiBox, FiPlus, FiShoppingCart, FiSliders, FiTruck, FiSettings, FiGrid, FiStar, FiRefreshCw, FiCpu } from "react-icons/fi";
 import { IoMdMenu } from "react-icons/io";
 import { usePathname } from "next/navigation";
 import AdminRoute from "@/components/auth/AdminRoute";
+import { useAuth } from "@/contexts/AuthContext";
 import { MdOutlineShoppingCartCheckout } from "react-icons/md";
 import { toast } from "react-toastify";
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [clearingCache, setClearingCache] = useState(false);
 
   const closeDrawer = () => {
@@ -71,6 +73,8 @@ export default function AdminLayout({ children }) {
     pathname.startsWith("/admin/products/edit");
   const isCategoriesPage = pathname.startsWith("/admin/categories");
   const isReviewsPage = pathname.startsWith("/admin/reviews");
+  const isSystemCorePage = pathname.startsWith("/admin/system-core");
+  const isRootOwner = user?.role === "barakahAdmin1234" || user?.role === "root_owner";
   return (
     <AdminRoute>
       <div className="drawer lg:drawer-open min-h-screen">
@@ -112,7 +116,7 @@ export default function AdminLayout({ children }) {
         </div>
 
         {/* Sidebar */}
-        <div className="drawer-side z-40">
+        <div className="drawer-side z-50">
           <label htmlFor="admin-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
 
           <aside className="min-h-full w-64 bg-white border-r border-[#e5dccf] py-6 px-4 flex flex-col justify-between">
@@ -225,20 +229,6 @@ export default function AdminLayout({ children }) {
                 </Link>
               </li>
 
-              {/* SEO & Webmaster */}
-              <li>
-                <Link
-                  href="/admin/seo"
-                  onClick={closeDrawer}
-                  className={
-                    isExact("/admin/seo") ? "bg-[#d4af37] text-white" : ""
-                  }
-                >
-                  <FiSearch />
-                  SEO & Webmaster
-                </Link>
-              </li>
-
               {/* Shipping Settings */}
               <li>
                 <Link
@@ -266,6 +256,24 @@ export default function AdminLayout({ children }) {
                   Website Settings
                 </Link>
               </li>
+
+              {/* System Core & Updates (Root Owner Exclusive) */}
+              {isRootOwner && (
+                <li>
+                  <Link
+                    href="/admin/system-core"
+                    onClick={closeDrawer}
+                    className={
+                      isSystemCorePage
+                        ? "bg-[#0f2a44] text-[#d4af37] font-bold border border-[#d4af37]"
+                        : "text-[#0f2a44] font-semibold hover:bg-[#d4af37]/20"
+                    }
+                  >
+                    <FiCpu className="text-[#d4af37]" />
+                    <span>System Core & Updates</span>
+                  </Link>
+                </li>
+              )}
             </ul>
 
             {/* Sidebar Bottom Action: Clear Cache */}
