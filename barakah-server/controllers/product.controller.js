@@ -1,29 +1,6 @@
 const connectDB = require("../config/db");
 const { ObjectId } = require("mongodb");
 
-function notifyIndexNow(slug) {
-  const indexNowKey = process.env.INDEXNOW_KEY;
-  if (!indexNowKey || !slug || typeof fetch !== "function") return;
-  const siteUrl = (process.env.SITE_URL || "https://www.sashroyi.shop").replace(/\/+$/, "");
-  let host = "www.sashroyi.shop";
-  try {
-    host = new URL(siteUrl).host;
-  } catch {
-    return;
-  }
-  const urlList = [`${siteUrl}/products/${slug}`, `${siteUrl}/sitemap.xml`];
-  fetch("https://api.indexnow.org/indexnow", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      host,
-      key: indexNowKey,
-      keyLocation: `${siteUrl}/${indexNowKey}.txt`,
-      urlList,
-    }),
-  }).catch(() => {});
-}
-
 function generateSlug(text) {
   if (!text) return "";
   return text
@@ -297,7 +274,6 @@ exports.createProduct = async (req, res) => {
     };
 
     const result = await productsCollection.insertOne(newProduct);
-    notifyIndexNow(finalSlug);
 
     res.status(201).json({
       success: true,
@@ -436,7 +412,6 @@ exports.updateProduct = async (req, res) => {
       { _id: new ObjectId(id) },
       { $set: updatedDoc },
     );
-    notifyIndexNow(finalSlug);
 
     res.json({
       success: true,
@@ -527,6 +502,170 @@ exports.reorderProducts = async (req, res) => {
     res.json({
       success: true,
       message: "Products reordered successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// BULK IMPORT products from CSV
+exports.bulkImportProducts = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const productsCollection = db.collection("products");
+
+    const { products, duplicateAction = "skip" } = req.body;
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No products provided for import",
+      });
+    }
+
+    if (products.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: "Maximum 500 products can be imported at once",
+      });
+    }
+
+    let inserted = 0;
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (let i = 0; i < products.length; i += 1) {
+      const row = products[i] || {};
+      const rowNumber = i + 1;
+      const cleanName = String(row.name || "").trim();
+      const parsedPrice = Number(row.price);
+
+      if (!cleanName) {
+        failed += 1;
+        errors.push({ row: rowNumber, name: "(empty)", reason: "Product name is required" });
+        continue;
+      }
+
+      if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+        failed += 1;
+        errors.push({ row: rowNumber, name: cleanName, reason: "Invalid price" });
+        continue;
+      }
+
+      const cleanCode = String(row.productCode || "").trim();
+      const rawSlug = String(row.slug || "").trim();
+      const candidateSlug = generateSlug(rawSlug || cleanName);
+
+      // Check existing product by productCode (if provided) or exact slug
+      let existingProduct = null;
+      if (cleanCode) {
+        existingProduct = await productsCollection.findOne({ productCode: cleanCode });
+      }
+      if (!existingProduct && candidateSlug) {
+        existingProduct = await productsCollection.findOne({ slug: candidateSlug });
+      }
+
+      const parsedOldPrice = Number(row.oldPrice);
+      const finalOldPrice = !Number.isNaN(parsedOldPrice) && parsedOldPrice > 0 ? parsedOldPrice : 0;
+      const category = String(row.category || "").trim();
+      const subcategory = String(row.subcategory || "").trim();
+      const description = String(row.description || "").trim();
+      const image = String(row.image || "").trim();
+      const badge = String(row.badge || "").trim();
+      const inStock = typeof row.inStock === "boolean" ? row.inStock : true;
+      const isFreeShipping = Boolean(row.isFreeShipping);
+
+      const seoFields = buildAutoSeo({
+        name: cleanName,
+        category,
+        subcategory,
+        description,
+        price: parsedPrice,
+        badge,
+        metaTitle: row.metaTitle,
+        metaDescription: row.metaDescription,
+        metaKeywords: row.metaKeywords,
+      });
+
+      if (existingProduct) {
+        if (duplicateAction === "update") {
+          const finalSlug = await ensureUniqueSlug(
+            productsCollection,
+            rawSlug || existingProduct.slug || cleanName,
+            existingProduct._id
+          );
+
+          await productsCollection.updateOne(
+            { _id: existingProduct._id },
+            {
+              $set: {
+                name: cleanName,
+                slug: finalSlug,
+                category: category || existingProduct.category || "",
+                subcategory: subcategory || existingProduct.subcategory || "",
+                description: description || existingProduct.description || "",
+                price: parsedPrice,
+                oldPrice: finalOldPrice,
+                image: image || existingProduct.image || "",
+                badge,
+                productCode: cleanCode || existingProduct.productCode || "",
+                inStock,
+                isFreeShipping,
+                metaTitle: seoFields.metaTitle,
+                metaDescription: seoFields.metaDescription,
+                metaKeywords: seoFields.metaKeywords,
+                updatedAt: new Date(),
+              },
+            }
+          );
+          updated += 1;
+        } else {
+          skipped += 1;
+        }
+        continue;
+      }
+
+      const finalSlug = await ensureUniqueSlug(productsCollection, rawSlug || cleanName);
+
+      await productsCollection.insertOne({
+        name: cleanName,
+        slug: finalSlug,
+        category,
+        subcategory,
+        description,
+        price: parsedPrice,
+        oldPrice: finalOldPrice,
+        productType: "single",
+        variations: [],
+        image,
+        badge,
+        productCode: cleanCode,
+        inStock,
+        isFreeShipping,
+        metaTitle: seoFields.metaTitle,
+        metaDescription: seoFields.metaDescription,
+        metaKeywords: seoFields.metaKeywords,
+        createdAt: new Date(),
+      });
+      inserted += 1;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Bulk import completed",
+      summary: {
+        total: products.length,
+        inserted,
+        updated,
+        skipped,
+        failed,
+        errors,
+      },
     });
   } catch (error) {
     res.status(500).json({

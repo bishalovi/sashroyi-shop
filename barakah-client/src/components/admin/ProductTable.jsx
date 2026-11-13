@@ -17,7 +17,8 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { FaFacebook } from "react-icons/fa";
+import { FaFacebook, FaFileImport } from "react-icons/fa";
+import ProductCsvImportModal from "./ProductCsvImportModal";
 
 export default function ProductTable({
   initialProducts,
@@ -25,11 +26,13 @@ export default function ProductTable({
   totalPages = 1,
   itemsPerPage = 50,
   onPageChange,
+  onImportSuccess,
 }) {
   const baseUrl = "https://sashroyi-api.onrender.com";
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const isModerator = user?.role === "barakahModerator0102";
 
   useEffect(() => {
@@ -220,7 +223,31 @@ export default function ProductTable({
   };
 
   if (products.length === 0) {
-    return <p className="text-gray-500">No products found.</p>;
+    return (
+      <div className="space-y-4">
+        {!isModerator && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="btn btn-sm bg-[#0f2a44] text-white hover:bg-[#1a3d5f] border-none flex items-center gap-2"
+            >
+              <FaFileImport />
+              Import CSV
+            </button>
+          </div>
+        )}
+        <p className="text-gray-500">No products found.</p>
+        <ProductCsvImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          baseUrl={baseUrl}
+          onSuccess={() => {
+            onImportSuccess?.();
+            router.refresh();
+          }}
+        />
+      </div>
+    );
   }
 
   const getPageNumbers = (currentPage, totalPages) => {
@@ -264,6 +291,17 @@ export default function ProductTable({
         </div>
 
         <div className="flex items-center gap-2">
+          {!isModerator && (
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="btn btn-sm bg-[#0f2a44] text-white hover:bg-[#1a3d5f] border-none flex items-center gap-2 shadow-sm font-medium"
+              title="Bulk import products from CSV"
+            >
+              <FaFileImport />
+              Import CSV
+            </button>
+          )}
+
           <button
             onClick={() => {
               if (selectedIds.size === 0) {
@@ -597,6 +635,16 @@ export default function ProductTable({
           </div>
         </div>
       </div>
+
+      <ProductCsvImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        baseUrl={baseUrl}
+        onSuccess={() => {
+          onImportSuccess?.();
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

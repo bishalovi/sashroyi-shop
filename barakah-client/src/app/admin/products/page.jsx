@@ -75,6 +75,7 @@ export default function AllProductsPage() {
           totalPages={totalPages}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
+          onImportSuccess={() => getProducts(currentPage)}
         />
       )}
     </div>

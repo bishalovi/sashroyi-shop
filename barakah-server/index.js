@@ -14,7 +14,7 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
 const productRoutes = require("./routes/product.routes");
 const orderRoutes = require("./routes/order.routes");
