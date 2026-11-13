@@ -286,23 +286,25 @@ export default function SystemCoreUpdatesPage() {
     }
   };
 
-  // 4. UNDO / ROLLBACK HANDLER
-  const handleUndoRollback = async (backupFileName) => {
-    const confirmUndo = window.confirm(
-      backupFileName
-        ? `আপনি কি নিশ্চিত যে এই ব্যাকআপটি (${backupFileName}) দিয়ে সাইট আগের অবস্থায় ফিরিয়ে নিতে চান?`
-        : "আপনি কি নিশ্চিত যে শেষ আপডেটটি আনডু (Undo) করে পূর্ববর্তী সুস্থ ভার্সনে ফিরে যেতে চান?"
-    );
-    if (!confirmUndo) return;
+  // 4. UNDO / REDO (ROLLBACK & LATEST) HANDLER
+  const handleUndoRollback = async (backupFileName, action = "undo") => {
+    const isRedo = action === "redo";
+    const confirmMsg = isRedo
+      ? "আপনি কি নিশ্চিত যে আনডু বাতিল করে আবার নতুন লেটেস্ট ভার্সনে (Redo / Latest Version) ফিরে যেতে চান?"
+      : backupFileName
+      ? `আপনি কি নিশ্চিত যে এই ব্যাকআপটি (${backupFileName}) দিয়ে সাইট আগের অবস্থায় ফিরিয়ে নিতে চান?`
+      : "আপনি কি নিশ্চিত যে শেষ আপডেটটি আনডু (Undo) করে পূর্ববর্তী সুস্থ ভার্সনে ফিরে যেতে চান?";
+
+    if (!window.confirm(confirmMsg)) return;
 
     try {
       setUndoing(true);
-      toast.info("পূর্ববর্তী ভার্সন রিস্টোর করা হচ্ছে...");
+      toast.info(isRedo ? "লেটেস্ট ভার্সনে ফিরে যাওয়া হচ্ছে..." : "পূর্ববর্তী ভার্সন রিস্টোর করা হচ্ছে...");
 
       const res = await fetch(`${baseUrl}/api/system-update/undo`, {
         method: "POST",
         headers: getHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ backupFileName }),
+        body: JSON.stringify({ backupFileName, action }),
       });
 
       const data = await res.json();
@@ -310,7 +312,7 @@ export default function SystemCoreUpdatesPage() {
         toast.success(data.message);
         fetchHistory();
       } else {
-        toast.error(data.message || "Undo ব্যর্থ হয়েছে");
+        toast.error(data.message || `${isRedo ? "Redo" : "Undo"} ব্যর্থ হয়েছে`);
       }
     } catch (err) {
       toast.error("রোলব্যাক এরর: " + err.message);
@@ -704,16 +706,31 @@ ${exportData.migrationNotes}`}
                     </div>
                   )}
 
+                  {/* 1. Undo Button (Back to previous before update) */}
                   <button
                     type="button"
-                    onClick={() => handleUndoRollback(null)}
+                    onClick={() => handleUndoRollback(null, "undo")}
                     disabled={undoing || history.length === 0}
                     className="btn btn-sm bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
-                    title="সর্বশেষ আপডেটের আগের ভার্সনে ফিরে যান"
+                    title="আপডেট দেওয়ার ঠিক আগের ভার্সনে ফিরে যান"
                   >
                     <FiRotateCcw className={undoing ? "animate-spin" : ""} />
-                    <span>{undoing ? "আনডু হচ্ছে..." : "↩️ Undo (পেছনে যান)"}</span>
+                    <span>{undoing ? "প্রসেসিং..." : "↩️ Undo (আগের ভার্সন)"}</span>
                   </button>
+
+                  {/* 2. Redo Button (Forward back to latest after undo) */}
+                  {history.some((h) => h.type === "pre_undo_snapshot" || h.status === "rolled_back") && (
+                    <button
+                      type="button"
+                      onClick={() => handleUndoRollback(null, "redo")}
+                      disabled={undoing}
+                      className="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
+                      title="আনডু করার পর আবার নতুন লেটেস্ট ভার্সনে ফিরে যান"
+                    >
+                      <FiZap className={undoing ? "animate-spin" : ""} />
+                      <span>{undoing ? "প্রসেসিং..." : "⚡ Latest Update (নতুন ভার্সন)"}</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

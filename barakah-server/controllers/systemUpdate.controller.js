@@ -436,27 +436,61 @@ exports.deployUpdatePackage = async (req, res) => {
  * 4. UNDO / ROLLBACK ENGINE
  *    Can restore the last update or any past backup from history!
  */
+/**
+ * 4. UNDO & REDO ENGINE
+ *    - UNDO: Rollback to previous version (creates a forward snapshot so you can Redo!)
+ *    - REDO (Latest): Re-apply the newer version if you changed your mind after Undo!
+ */
 exports.undoRollbackUpdate = async (req, res) => {
   try {
-    const { backupFileName } = req.body;
+    const { backupFileName, action = "undo" } = req.body;
     const db = await connectDB();
 
     let targetFile = backupFileName;
 
     if (!targetFile) {
-      const lastUpdate = await db
-        .collection("system_update_history")
-        .findOne({ localBackupFile: { $exists: true, $ne: null }, status: { $ne: "rolled_back" } }, { sort: { appliedAt: -1 } });
+      if (action === "redo") {
+        // Find the snapshot taken right before undo
+        const redoPoint = await db
+          .collection("system_update_history")
+          .findOne(
+            { type: "pre_undo_snapshot", localBackupFile: { $exists: true, $ne: null } },
+            { sort: { appliedAt: -1 } }
+          );
 
-      if (lastUpdate && lastUpdate.localBackupFile) {
-        targetFile = lastUpdate.localBackupFile;
+        if (redoPoint && redoPoint.localBackupFile) {
+          targetFile = redoPoint.localBackupFile;
+        } else {
+          // Fallback to latest active import before rollback
+          const latestImport = await db
+            .collection("system_update_history")
+            .findOne(
+              { type: "import", localBackupFile: { $exists: true, $ne: null } },
+              { sort: { appliedAt: -1 } }
+            );
+          if (latestImport) targetFile = latestImport.localBackupFile;
+        }
+      } else {
+        // Standard Undo: Rollback to safety backup
+        const lastUpdate = await db
+          .collection("system_update_history")
+          .findOne(
+            { localBackupFile: { $exists: true, $ne: null }, status: { $ne: "rolled_back" }, type: { $ne: "export" } },
+            { sort: { appliedAt: -1 } }
+          );
+
+        if (lastUpdate && lastUpdate.localBackupFile) {
+          targetFile = lastUpdate.localBackupFile;
+        }
       }
     }
 
     if (!targetFile) {
       return res.status(404).json({
         success: false,
-        message: "আনডু করার মতো কোনো পূর্ববর্তী ব্যাকআপ ফাইল পাওয়া যায়নি।",
+        message: action === "redo" 
+          ? "সামনে যাওয়ার মতো (Redo / Latest Version) কোনো স্ন্যাপশট পাওয়া যায়নি।"
+          : "আনডু করার মতো কোনো পূর্ববর্তী ব্যাকআপ ফাইল পাওয়া যায়নি।",
       });
     }
 
@@ -469,32 +503,65 @@ exports.undoRollbackUpdate = async (req, res) => {
       });
     }
 
-    console.log(`[System Update] Performing UNDO / Rollback from: ${backupFilePath}`);
+    // BEFORE UNDOING: Take a forward snapshot so user can REDO anytime!
+    if (action === "undo") {
+      try {
+        const forwardSnapshotName = `redo-forward-snapshot-${Date.now()}.zip`;
+        const forwardSnapshotPath = path.resolve(STORAGE_BACKUPS_DIR, forwardSnapshotName);
+        const forwardZip = new AdmZip();
+        const clientDir = path.resolve(PROJECT_ROOT, "barakah-client");
+        const serverDir = path.resolve(PROJECT_ROOT, "barakah-server");
+        const ignoreList = [
+          "node_modules", ".next", ".git", "storage", "*.zip", "*.log"
+        ];
+        if (fs.existsSync(clientDir)) addFolderToZipRecursively(forwardZip, clientDir, "barakah-client", ignoreList);
+        if (fs.existsSync(serverDir)) addFolderToZipRecursively(forwardZip, serverDir, "barakah-server", ignoreList);
+        forwardZip.writeZip(forwardSnapshotPath);
+
+        await db.collection("system_update_history").insertOne({
+          version: "REDO POINT",
+          appliedAt: new Date(),
+          appliedBy: req.rootOwner?.email || "Root Owner",
+          localBackupFile: forwardSnapshotName,
+          type: "pre_undo_snapshot",
+          status: "redo_ready",
+          releaseNotes: "Snapshot taken immediately before undoing to allow Redo back to Latest.",
+        });
+      } catch (snapErr) {
+        console.warn("Could not save pre-undo forward snapshot:", snapErr.message);
+      }
+    }
+
+    console.log(`[System Update] Performing ${action.toUpperCase()} from: ${backupFilePath}`);
 
     const restoreZip = new AdmZip(backupFilePath);
     restoreZip.extractAllTo(PROJECT_ROOT, true);
 
     await db.collection("system_update_history").insertOne({
-      version: "ROLLBACK",
+      version: action === "redo" ? "LATEST RESTORED (REDO)" : "ROLLBACK (UNDO)",
       appliedAt: new Date(),
       appliedBy: req.rootOwner?.email || "Root Owner",
       restoredFrom: targetFile,
-      status: "rolled_back",
-      releaseNotes: `System successfully rolled back using backup archive: ${targetFile}`,
+      type: action === "redo" ? "redo" : "rollback",
+      status: action === "redo" ? "redo_active" : "rolled_back",
+      releaseNotes: `System successfully restored using archive: ${targetFile} (Action: ${action})`,
     });
 
-    console.log(`[System Update] UNDO / Rollback COMPLETED SUCCESSFULLY.`);
+    console.log(`[System Update] ${action.toUpperCase()} COMPLETED SUCCESSFULLY.`);
 
     res.json({
       success: true,
-      message: "সফলভাবে পূর্ববর্তী ভার্সনে সাইট ফিরিয়ে নেওয়া হয়েছে (Undo / Rollback Successful)!",
+      message: action === "redo"
+        ? "সফলভাবে লেটেস্ট নতুন ভার্সনে সাইট ফিরিয়ে নেওয়া হয়েছে (Redo to Latest Successful)!"
+        : "সফলভাবে পূর্ববর্তী ভার্সনে সাইট ফিরিয়ে নেওয়া হয়েছে (Undo to Previous Successful)!",
       restoredBackup: targetFile,
+      action,
     });
   } catch (error) {
-    console.error("Rollback error:", error);
+    console.error("Rollback/Redo error:", error);
     res.status(500).json({
       success: false,
-      message: "Rollback failed: " + error.message,
+      message: "Action failed: " + error.message,
     });
   }
 };
