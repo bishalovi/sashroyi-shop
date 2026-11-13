@@ -383,10 +383,20 @@ export default function SystemCoreUpdatesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
             <span className="text-xs text-white/80 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
               Domain: <strong className="text-[#d4af37]">{exportData.domainName}</strong>
             </span>
+            <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg border border-white/10" title="যদি কোনো মাস্টার পিন সেট করা থাকে তবে এখানে দিন">
+              <FiKey className="text-[#d4af37] text-xs" />
+              <input
+                type="password"
+                placeholder="Root PIN"
+                value={masterPin}
+                onChange={(e) => setMasterPin(e.target.value)}
+                className="bg-transparent border-none text-xs text-white placeholder-white/40 focus:outline-none w-20 font-mono"
+              />
+            </div>
           </div>
         </div>
 
