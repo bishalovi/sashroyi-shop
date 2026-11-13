@@ -495,6 +495,59 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
+// BULK DELETE products
+exports.bulkDeleteProducts = async (req, res) => {
+  try {
+    const db = await connectDB();
+    const productsCollection = db.collection("products");
+    const reviewsCollection = db.collection("reviews");
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "No product IDs provided" });
+    }
+
+    const validObjectIds = ids.filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
+
+    if (validObjectIds.length === 0) {
+      return res.status(400).json({ success: false, message: "No valid product IDs provided" });
+    }
+
+    const productsToDelete = await productsCollection
+      .find({ _id: { $in: validObjectIds } }, { projection: { _id: 1, slug: 1 } })
+      .toArray();
+
+    const slugsToDelete = productsToDelete.map((p) => p.slug).filter(Boolean);
+
+    const result = await productsCollection.deleteMany({
+      _id: { $in: validObjectIds },
+    });
+
+    try {
+      await reviewsCollection.deleteMany({
+        $or: [
+          { productId: { $in: ids } },
+          { productId: { $in: validObjectIds } },
+          ...(slugsToDelete.length > 0 ? [{ productId: { $in: slugsToDelete } }] : []),
+        ],
+      });
+    } catch (cleanErr) {
+      // Non-blocking cleanup
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} product(s)`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // REORDER products (Move Up / Move Down)
 exports.reorderProducts = async (req, res) => {
   try {

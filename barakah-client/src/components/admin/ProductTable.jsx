@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { FaFacebook, FaFileImport } from "react-icons/fa";
+import { FaFacebook, FaFileImport, FaTrashAlt } from "react-icons/fa";
 import ProductCsvImportModal from "./ProductCsvImportModal";
 
 export default function ProductTable({
@@ -33,6 +33,7 @@ export default function ProductTable({
   const [products, setProducts] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const isModerator = user?.role === "barakahModerator0102";
 
   useEffect(() => {
@@ -199,6 +200,56 @@ export default function ProductTable({
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const count = selectedIds.size;
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `You are about to permanently delete ${count} selected product(s)!`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: `Yes, delete ${count} product(s)!`,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsBulkDeleting(true);
+      const res = await fetch(`${baseUrl}/api/products/bulk-delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setProducts((prev) => prev.filter((p) => !selectedIds.has(p._id)));
+        setSelectedIds(new Set());
+
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: data.message || `Deleted ${count} product(s) successfully.`,
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        onImportSuccess?.();
+        router.refresh();
+      } else {
+        Swal.fire("Error", data.message || "Failed to delete products", "error");
+      }
+    } catch (err) {
+      Swal.fire("Error", "Network error while deleting products", "error");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const handleMoveProduct = async (index, direction) => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= products.length) return;
@@ -291,6 +342,18 @@ export default function ProductTable({
         </div>
 
         <div className="flex items-center gap-2">
+          {!isModerator && selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="btn btn-sm bg-red-600 hover:bg-red-700 text-white border-none flex items-center gap-1.5 shadow-sm font-medium transition-all"
+              title="Delete all selected products"
+            >
+              <FaTrashAlt className="text-xs" />
+              {isBulkDeleting ? "Deleting..." : `Delete (${selectedIds.size})`}
+            </button>
+          )}
+
           {!isModerator && (
             <button
               onClick={() => setIsImportModalOpen(true)}
