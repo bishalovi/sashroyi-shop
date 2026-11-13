@@ -392,7 +392,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
       const payloadProducts = validItems.map(({ _rowNumber, _isValid, _error, ...rest }) => ({
         ...rest,
         category: targetCategory ? targetCategory : rest.category,
-        badge: targetBadge ? targetBadge : rest.badge,
+        badge: targetBadge === "__none__" ? "" : targetBadge ? targetBadge : rest.badge,
         price: calculateFinalPrice(rest.price),
       }));
 
@@ -516,6 +516,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                   className="select select-bordered select-xs bg-white font-medium"
                 >
                   <option value="">Keep CSV Badge</option>
+                  <option value="__none__">🚫 No Badge (খালি)</option>
                   <option value="Hot">🔥 Hot</option>
                   <option value="Sale">🏷️ Sale</option>
                   <option value="New">✨ New Arrival</option>
@@ -691,7 +692,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                         </td>
                         <td className="w-24">
                           <span className="badge badge-sm badge-ghost font-medium">
-                            {targetBadge || item.badge || "-"}
+                            {targetBadge === "__none__" ? "(None)" : targetBadge || item.badge || "-"}
                           </span>
                         </td>
                         <td>
