@@ -167,6 +167,16 @@ export default function ProductDetailsClient({ product }) {
         },
       ],
     });
+
+    // Standard Meta CustomizeProduct event for variation selection
+    trackMetaEvent("CustomizeProduct", {
+      content_name: variationName,
+      content_category: product?.category || "General",
+      content_ids: [variationItemId],
+      content_type: "product",
+      value: variationPrice,
+      currency: "BDT",
+    });
   };
 
   const handleThumbnailClick = (item) => {
@@ -185,6 +195,14 @@ export default function ProductDetailsClient({ product }) {
   };
 
   const handleWhatsAppOrder = () => {
+    trackMetaEvent("Contact", {
+      content_name: `WhatsApp Order: ${product?.name || "Product"}`,
+      content_category: product?.category || "General",
+      value: activePrice * quantity,
+      currency: "BDT",
+      method: "whatsapp",
+    });
+
     const currentUrl = typeof window !== "undefined" ? window.location.href : "";
     const variationText = selectedVariation?.name ? `\n🏷️ অপশন: ${selectedVariation.name}` : "";
     const msg = `হ্যালো! আমি এই প্রোডাক্টটি সম্পর্কে বিস্তারিত জানতে / অর্ডার করতে চাই:\n\n📦 প্রোডাক্ট: ${product?.name || "Product"}${variationText}\n🔢 পরিমাণ: ${quantity} টি\n💰 মোট মূল্য: ৳${activePrice * quantity}\n🔗 লিঙ্ক: ${currentUrl}`;

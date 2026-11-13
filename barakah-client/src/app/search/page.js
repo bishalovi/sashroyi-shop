@@ -25,28 +25,42 @@ function SearchContent() {
       return;
     }
 
-    // Track Meta & GTM Search event
+    // Track GTM Search event
     pushToDataLayer({
       event: "search",
       search_term: query,
-    });
-
-    trackMetaEvent("Search", {
-      search_string: query,
-      content_type: "product",
     });
 
     setLoading(true);
     fetch(`${baseUrl}/api/products?search=${encodeURIComponent(query)}&limit=50`)
       .then((res) => res.json())
       .then((data) => {
-        setProducts(data?.data || []);
+        const found = data?.data || [];
+        setProducts(found);
         setLoading(false);
+
+        // Rich Meta Search with matched catalog content_ids & contents
+        trackMetaEvent("Search", {
+          search_string: query,
+          content_type: "product",
+          content_ids: found.slice(0, 10).map((p) => String(p._id)),
+          contents: found.slice(0, 10).map((p) => ({
+            id: String(p._id),
+            quantity: 1,
+            item_price: Number(p.price || 0),
+          })),
+          value: found.length > 0 ? Number(found[0]?.price || 0) : 0,
+          currency: "BDT",
+        });
       })
       .catch((err) => {
         console.error("Failed to search products:", err);
         setProducts([]);
         setLoading(false);
+        trackMetaEvent("Search", {
+          search_string: query,
+          content_type: "product",
+        });
       });
   }, [query]);
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
+import { trackMetaEvent, saveCustomerProfile } from "@/lib/metaTracking";
 
 export default function RegisterPage() {
   const baseUrl = "https://sashroyi-api.onrender.com";
@@ -40,6 +41,28 @@ export default function RegisterPage() {
           position: "top-right",
         });
         setServerMessage("Registration successful");
+
+        // Save profile for future Meta matching & fire CompleteRegistration
+        saveCustomerProfile({
+          name: data.userName || "",
+          phone: data.phone || "",
+          email: data.email || "",
+        });
+
+        trackMetaEvent(
+          "CompleteRegistration",
+          {
+            status: "successful",
+            method: "website_form",
+            currency: "BDT",
+          },
+          {
+            name: data.userName || "",
+            phone: data.phone || "",
+            email: data.email || "",
+          }
+        );
+
         reset();
       } else {
         toast.error(result.message || "Registration failed!", {

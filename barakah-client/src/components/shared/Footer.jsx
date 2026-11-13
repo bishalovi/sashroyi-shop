@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function Footer() {
   const { contact, header, footer, general, getWhatsAppUrl } = useSettings();
@@ -141,13 +142,33 @@ export default function Footer() {
             <div className="flex flex-col gap-1.5 text-xs md:text-sm text-white/70">
               <p className="flex items-center gap-2">
                 <FaEnvelope className="text-[#d4af37]" />
-                <a href={`mailto:${email}`} className="hover:text-[#d4af37] transition">
+                <a
+                  href={`mailto:${email}`}
+                  onClick={() => {
+                    trackMetaEvent("Contact", {
+                      content_name: "Footer Email Inquiry",
+                      content_category: "Customer Support",
+                      method: "email",
+                    });
+                  }}
+                  className="hover:text-[#d4af37] transition"
+                >
                   {email}
                 </a>
               </p>
               <p className="flex items-center gap-2">
                 <FaPhoneAlt className="text-[#d4af37]" />
-                <a href={`tel:${phone}`} className="hover:text-[#d4af37] transition">
+                <a
+                  href={`tel:${phone}`}
+                  onClick={() => {
+                    trackMetaEvent("Contact", {
+                      content_name: "Footer Phone Call",
+                      content_category: "Customer Support",
+                      method: "phone",
+                    });
+                  }}
+                  className="hover:text-[#d4af37] transition"
+                >
                   {phone}
                 </a>
               </p>
@@ -155,6 +176,13 @@ export default function Footer() {
                 <FaWhatsapp className="text-[#25D366]" />
                 <a
                   href={getWhatsAppUrl("হ্যালো! আমি sashroyi.shop থেকে তথ্য জানতে চাচ্ছি।")}
+                  onClick={() => {
+                    trackMetaEvent("Contact", {
+                      content_name: "Footer WhatsApp Inquiry",
+                      content_category: "Customer Support",
+                      method: "whatsapp",
+                    });
+                  }}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-[#d4af37] transition text-green-400 font-medium"
