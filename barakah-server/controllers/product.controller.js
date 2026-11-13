@@ -606,6 +606,38 @@ exports.bulkImportProducts = async (req, res) => {
       });
     }
 
+    // Auto-create any missing categories from imported products
+    const categoriesCollection = db.collection("categories");
+    const uniqueCategories = [
+      ...new Set(
+        products
+          .map((p) => String(p.category || "").trim())
+          .filter(Boolean)
+      ),
+    ];
+
+    for (const catName of uniqueCategories) {
+      const existingCat = await categoriesCollection.findOne({
+        $or: [
+          { name: { $regex: new RegExp(`^${catName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") } },
+          { slug: generateSlug(catName) },
+        ],
+      });
+
+      if (!existingCat) {
+        const catSlug = generateSlug(catName) || `cat-${Date.now().toString(36)}`;
+        await categoriesCollection.insertOne({
+          name: catName,
+          slug: catSlug,
+          description: `Best ${catName} products on Sashroyi Shop`,
+          image: "",
+          subcategories: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    }
+
     let inserted = 0;
     let updated = 0;
     let skipped = 0;
