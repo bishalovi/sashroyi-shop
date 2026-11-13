@@ -92,6 +92,13 @@ export default function Footer() {
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    trackMetaEvent("Contact", {
+                      content_name: `Footer Social Link: ${item.label}`,
+                      content_category: "Customer Support",
+                      method: item.label.toLowerCase(),
+                    });
+                  }}
                   aria-label={item.label}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37] hover:text-[#0f2a44]"
                 >
