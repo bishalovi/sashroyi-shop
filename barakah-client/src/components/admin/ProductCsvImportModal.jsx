@@ -190,7 +190,33 @@ function parseBooleanValue(rawValue, defaultValue = true) {
   return defaultValue;
 }
 
-function mapCsvRowsToProducts(rawRows) {
+function findMatchingCategory(rawCat, availableCategories = []) {
+  if (!rawCat || !availableCategories.length) return "";
+  const clean = String(rawCat).trim().toLowerCase().replace(/[^\w]/g, "");
+  if (!clean) return "";
+
+  const direct = availableCategories.find(
+    (c) =>
+      c.name.trim().toLowerCase() === rawCat.trim().toLowerCase() ||
+      c.slug.trim().toLowerCase() === rawCat.trim().toLowerCase()
+  );
+  if (direct) return direct.name;
+
+  const fuzzy = availableCategories.find((c) => {
+    const cNameClean = c.name.toLowerCase().replace(/[^\w]/g, "");
+    const cSlugClean = c.slug.toLowerCase().replace(/[^\w]/g, "");
+    return (
+      cNameClean === clean ||
+      cSlugClean === clean ||
+      cNameClean.includes(clean) ||
+      clean.includes(cNameClean)
+    );
+  });
+
+  return fuzzy ? fuzzy.name : "";
+}
+
+function mapCsvRowsToProducts(rawRows, availableCategories = []) {
   if (!rawRows || rawRows.length < 2) {
     return { items: [], error: "CSV file must contain a header row and at least one product row." };
   }
@@ -238,6 +264,11 @@ function mapCsvRowsToProducts(rawRows) {
       }
     });
 
+    const autoMatchedCategory = findMatchingCategory(product.category, availableCategories);
+    if (autoMatchedCategory) {
+      product.category = autoMatchedCategory;
+    }
+
     const validationErrors = [];
     if (!product.name) validationErrors.push("Name required");
     if (Number.isNaN(product.price) || product.price < 0) validationErrors.push("Invalid price");
@@ -259,7 +290,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
   const [fileName, setFileName] = useState("");
   const [duplicateAction, setDuplicateAction] = useState("skip");
   const [targetCategory, setTargetCategory] = useState("");
-  const [targetBadge, setTargetBadge] = useState("");
+  const [targetBadge, setTargetBadge] = useState("__none__");
   const [priceAdjustmentType, setPriceAdjustmentType] = useState("none"); // "none" | "fixed" | "percent"
   const [priceAdjustmentValue, setPriceAdjustmentValue] = useState("");
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -295,7 +326,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     setParseError("");
     setFileName("");
     setTargetCategory("");
-    setTargetBadge("");
+    setTargetBadge("__none__");
     setPriceAdjustmentType("none");
     setPriceAdjustmentValue("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -336,7 +367,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     reader.onload = (e) => {
       const text = e.target?.result;
       const rawRows = parseCsvText(text);
-      const { items, error } = mapCsvRowsToProducts(rawRows);
+      const { items, error } = mapCsvRowsToProducts(rawRows, availableCategories);
       if (error) {
         setParseError(error);
         setParsedItems([]);
@@ -665,16 +696,33 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                             />
                           </div>
                         </td>
-                        <td className="max-w-[130px]">
-                          <input
-                            type="text"
-                            value={targetCategory || item.category || ""}
-                            onChange={(e) => handleCellChange(item._rowNumber, "category", e.target.value)}
-                            disabled={Boolean(targetCategory)}
-                            placeholder="Category"
-                            className="input input-xs input-bordered w-full bg-white disabled:bg-gray-100"
-                            title={targetCategory ? "Assigned by top dropdown" : "Click to edit category"}
-                          />
+                        <td className="max-w-[150px]">
+                          {availableCategories.length > 0 ? (
+                            <select
+                              value={targetCategory || item.category || ""}
+                              onChange={(e) => handleCellChange(item._rowNumber, "category", e.target.value)}
+                              disabled={Boolean(targetCategory)}
+                              className="select select-bordered select-xs w-full bg-white font-medium disabled:bg-gray-100"
+                              title={targetCategory ? "Assigned by top dropdown" : "Select category for this product"}
+                            >
+                              <option value="">(Select Category)</option>
+                              {availableCategories.map((c) => (
+                                <option key={c._id || c.slug} value={c.name}>
+                                  {c.name}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              value={targetCategory || item.category || ""}
+                              onChange={(e) => handleCellChange(item._rowNumber, "category", e.target.value)}
+                              disabled={Boolean(targetCategory)}
+                              placeholder="Category"
+                              className="input input-xs input-bordered w-full bg-white disabled:bg-gray-100"
+                              title={targetCategory ? "Assigned by top dropdown" : "Click to edit category"}
+                            />
+                          )}
                         </td>
                         <td className="w-24">
                           <input
