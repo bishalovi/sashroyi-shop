@@ -15,5 +15,5 @@ export function getApiUrl() {
   if (envUrl && (process.env.NODE_ENV !== "production" || !isLocalUrl(envUrl))) {
     return envUrl;
   }
-  return "https://sashroyi-api.onrender.com";
+  return "https://topskbazar-api.onrender.com";
 }
