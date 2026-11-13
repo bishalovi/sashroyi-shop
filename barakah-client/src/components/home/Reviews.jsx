@@ -2,7 +2,7 @@ import ReviewsCarouselLazy from "./ReviewsCarouselLazy";
 import Container from "../shared/Container";
 
 async function getReviews() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
 
   try {
     const res = await fetch(`${baseUrl}/api/reviews`, {

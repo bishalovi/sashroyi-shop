@@ -22,7 +22,7 @@ function generateSlug(text) {
 }
 
 export default function EditProductPage() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   const params = useParams();
   const router = useRouter();
   const id = params.id;

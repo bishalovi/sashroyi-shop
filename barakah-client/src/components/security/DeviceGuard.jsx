@@ -26,7 +26,7 @@ export default function DeviceGuard() {
     const checkDeviceBlock = async () => {
       try {
         const deviceId = getOrCreateDeviceId();
-        const baseUrl = "https://sashroyi-api.onrender.com";
+        const baseUrl = "https://topskbazar-api.onrender.com";
 
         const res = await fetch(`${baseUrl}/api/blacklist/check?deviceId=${encodeURIComponent(deviceId)}`, {
           method: "GET",

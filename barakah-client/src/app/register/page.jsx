@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { trackMetaEvent, saveCustomerProfile } from "@/lib/metaTracking";
 
 export default function RegisterPage() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   const [serverMessage, setServerMessage] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 

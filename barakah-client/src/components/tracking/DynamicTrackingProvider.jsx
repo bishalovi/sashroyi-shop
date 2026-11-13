@@ -6,7 +6,7 @@ import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function DynamicTrackingProvider() {
   const pathname = usePathname();
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   const initializedRef = useRef(false);
 
   useEffect(() => {

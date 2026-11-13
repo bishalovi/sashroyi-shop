@@ -22,7 +22,7 @@ function generateSlug(text) {
 }
 
 export default function AddProductPage() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   const [preview, setPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadMode, setUploadMode] = useState("file"); // 'file' or 'url'

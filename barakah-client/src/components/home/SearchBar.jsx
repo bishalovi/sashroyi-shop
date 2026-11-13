@@ -16,7 +16,7 @@ export default function SearchBar() {
   const router = useRouter();
   const searchRef = useRef(null);
 
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
 
   // Debounced search for live dropdown
   useEffect(() => {

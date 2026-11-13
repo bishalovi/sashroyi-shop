@@ -141,7 +141,7 @@ export function formatImageUrl(url) {
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
 
   const fetchSettings = useCallback(async () => {
     try {

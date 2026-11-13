@@ -25,7 +25,7 @@ const toDisplayFormat = (yyyymmdd) => {
 };
 
 const ModeratorActivityCard = () => {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
 
   const todayInput = new Date().toISOString().split("T")[0];
   const todayDisplay = toDisplayFormat(todayInput);

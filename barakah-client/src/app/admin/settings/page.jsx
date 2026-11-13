@@ -41,7 +41,7 @@ import {
 } from "react-icons/fi";
 
 export default function AdminSettingsPage() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   const [activeTab, setActiveTab] = useState("header");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

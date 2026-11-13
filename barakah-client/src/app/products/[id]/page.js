@@ -97,7 +97,7 @@ export async function generateMetadata({ params }) {
 }
 
 async function getSingleProduct(id) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/products/${id}`, {
       next: { revalidate: 10 },
@@ -116,7 +116,7 @@ async function getSingleProduct(id) {
 }
 
 async function getRelatedProducts(category, excludeId) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   try {
     const res = await fetch(`${baseUrl}/api/products?category=${category}&limit=6`, {
       next: { revalidate: 10 },

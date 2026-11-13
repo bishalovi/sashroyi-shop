@@ -28,7 +28,7 @@ import {
 } from "react-icons/fa";
 
 export default function AdminShippingPage() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
   const [activeTab, setActiveTab] = useState("charges"); // 'charges' | 'couriers'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

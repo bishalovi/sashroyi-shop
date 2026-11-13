@@ -16,7 +16,7 @@ function SearchContent() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
 
   useEffect(() => {
     if (!query) {

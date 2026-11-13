@@ -20,7 +20,7 @@ import { TbUserCancel } from "react-icons/tb";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AnalyticsCard = () => {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = "https://topskbazar-api.onrender.com";
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
