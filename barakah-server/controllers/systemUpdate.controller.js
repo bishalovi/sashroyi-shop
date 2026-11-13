@@ -512,15 +512,64 @@ exports.saveTelegramConfig = async (req, res) => {
     const { isEnabled, botToken, chatId } = req.body;
     const db = await connectDB();
 
+    const cleanChatId = String(chatId || "").trim();
+    let cleanToken = botToken ? String(botToken).trim() : "";
+
+    // If botToken was masked (e.g. 92651509*******************), fetch the existing real token from DB
+    if (!cleanToken || cleanToken.includes("*****")) {
+      const existing = await db.collection("settings").findOne({ key: TELEGRAM_SETTINGS_KEY });
+      cleanToken = existing?.botToken || process.env.TELEGRAM_BOT_TOKEN || "";
+    }
+
+    // Proactive live validation before saving!
+    if (isEnabled && cleanToken && cleanChatId) {
+      // 1. Verify token
+      const meRes = await fetch(`https://api.telegram.org/bot${cleanToken}/getMe`);
+      const meData = await meRes.json();
+      if (!meData.ok) {
+        return res.status(400).json({
+          success: false,
+          message: `ভুল টেলিগ্রাম বট টোকেন: ${meData.description || "Invalid Bot Token"}`,
+        });
+      }
+
+      // 2. Verify chat ID (prevent bot-to-bot 403 or invalid chat ID)
+      const botId = String(meData.result.id);
+      if (cleanChatId === botId) {
+        return res.status(400).json({
+          success: false,
+          message: "ভুল Chat ID! আপনি বটের নিজের আইডি দিয়েছেন। টেলিগ্রাম বট নিজেকে মেসেজ পাঠাতে পারে না। আপনার নিজের ইউজার আইডি দিন।",
+        });
+      }
+
+      // 3. Send quick verification ping
+      const pingRes = await fetch(`https://api.telegram.org/bot${cleanToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: cleanChatId,
+          text: `🔔 *Telegram Vault Connected!*\n\nSashroyi Update Backup Vault has been linked with @${meData.result.username}.`,
+          parse_mode: "Markdown",
+        }),
+      });
+      const pingData = await pingRes.json();
+      if (!pingData.ok) {
+        return res.status(400).json({
+          success: false,
+          message: `টেলিগ্রাম যাচাইকরণ ব্যর্থ: ${pingData.description || "Chat ID invalid"}. নিশ্চিত করুন আপনি বটে @${meData.result.username} এ গিয়ে /start দিয়েছেন।`,
+        });
+      }
+    }
+
     const updateFields = {
       key: TELEGRAM_SETTINGS_KEY,
       isEnabled: isEnabled !== undefined ? !!isEnabled : true,
-      chatId: String(chatId || "").trim(),
+      chatId: cleanChatId,
       updatedAt: new Date(),
     };
 
-    if (botToken && !botToken.includes("*****")) {
-      updateFields.botToken = String(botToken).trim();
+    if (cleanToken) {
+      updateFields.botToken = cleanToken;
     }
 
     await db.collection("settings").updateOne(
@@ -529,7 +578,10 @@ exports.saveTelegramConfig = async (req, res) => {
       { upsert: true }
     );
 
-    res.json({ success: true, message: "Telegram Cloud কনফিগারেশন সফলভাবে সেভ হয়েছে!" });
+    res.json({
+      success: true,
+      message: "Telegram Cloud কনফিগারেশন সফলভাবে যাচাই ও সেভ হয়েছে!",
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
