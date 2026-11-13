@@ -3,11 +3,11 @@
 /**
  * ============================================================================
  * FILE: app/admin/system-core/page.jsx
- * VERSION: v1.3.0 (Smart Auto-Generated Real-Work Edition)
+ * VERSION: v1.4.0 (Strict Telegram & Multi-Level Undo Engine)
  * ----------------------------------------------------------------------------
  * System Core & Updates Manager (Strictly for Root Owner)
  * Tab 1: Export Update Package with auto-generated RELEASE_NOTES.txt
- * Tab 2: Import & Deploy Update (Reads notes -> Backs up to Telegram Cloud -> Applies)
+ * Tab 2: Import & Deploy Update (STRICT Telegram First + 1-Click Multi Undo)
  * Tab 3: Telegram Cloud Auto-Backup (100% Free Lifetime, Zero Expiration)
  * Tab 4: Root Security & Master PIN
  * ============================================================================
@@ -32,9 +32,9 @@ import {
   FiPlay,
   FiCheck,
   FiZap,
+  FiRotateCcw,
 } from "react-icons/fi";
 
-// Accurate & Professional Real-Work Changelog
 const REAL_WORK_CHANGELOG = {
   version: "v2.7.0",
   previousVersion: "v2.6.0",
@@ -43,7 +43,8 @@ const REAL_WORK_CHANGELOG = {
 - [Feature] Telegram Cloud Auto-Backup Engine: সাইট আপডেটের পূর্বে ১০০% কোডের সেফটি ব্যাকআপ সরাসরি টেলিগ্রামে প্রেরণ (আজীবন সম্পূর্ণ ফ্রি)।
 - [Feature] Automatic RELEASE_NOTES.txt Generator: প্রতিটি আপডেটের কাজের বিবরণ ও ফিক্স জিপের ভেতরে টেক্সট ফাইল আকারে অটোমেটিক যুক্ত হওয়া।
 - [Feature] Real-time Pre-Deploy Preview: আপডেট জিপ ড্রপ করলেই কোড কার্যকর করার আগেই স্ক্রিনে পরিবর্তন ও রিলিজ নোটস প্রিভিউ।
-- [Security] Strict Root Owner Security Guard: সাধারণ এডমিন বা স্টাফদের হাত থেকে কোর ইঞ্জিন সুরক্ষিত রাখতে মাস্টার পিন প্রটেকশন।`,
+- [Security] Strict Root Owner Security Guard: সাধারণ এডমিন বা স্টাফদের হাত থেকে কোর ইঞ্জিন সুরক্ষিত রাখতে মাস্টার পিন প্রটেকশন।
+- [Feature] Multi-Level Undo / Rollback Engine: যেকোনো সময় ১-ক্লিকে পূর্ববর্তী ভার্সনে ফিরে যাওয়ার সুবিধা।`,
   bugFixes: `- [Fixed] লাইব্রেরি কনফ্লিক্ট সমাধান: archiver v8 এর ESM/CJS ত্রুটি দূর করে এন্টারপ্রাইজ AdmZip রিকার্সিভ ইঞ্জিনে আপগ্রেড।
 - [Fixed] ডাইনামিক রুট পাথ রেজোলিউশন: উইন্ডোজ, লিনাক্স, সিপ্যানেল বা ভিপিএস যেকোনো সার্ভারে পাথ ক্র্যাশ প্রতিরোধ (getProjectRoot ইন্টিগ্রেশন)।
 - [Fixed] প্রি-আপডেট সেফটি গার্ড: ক্লাউড ব্যাকআপ ডেলিভারি নিশ্চিত না হওয়া পর্যন্ত লাইভ সাইটের ফাইলে কোনো হাত দেওয়া হবে না।
@@ -63,17 +64,18 @@ export default function SystemCoreUpdatesPage() {
   const [activeTab, setActiveTab] = useState("export");
   const [masterPin, setMasterPin] = useState("");
 
-  // Tab 1: Export State (Auto-generated with real, professional changelog)
+  // Tab 1: Export State
   const [exportData, setExportData] = useState(REAL_WORK_CHANGELOG);
   const [exporting, setExporting] = useState(false);
 
-  // Tab 2: Import State
+  // Tab 2: Import & Deploy State
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewData, setPreviewData] = useState(null);
   const [uploadingPreview, setUploadingPreview] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [deployStep, setDeployStep] = useState(0);
   const [deployResult, setDeployResult] = useState(null);
+  const [undoing, setUndoing] = useState(false);
   const fileInputRef = useRef(null);
 
   // Tab 3: Telegram Cloud Backup State
@@ -145,7 +147,6 @@ export default function SystemCoreUpdatesPage() {
     }
   };
 
-  // Reset or re-generate real work changelog
   const handleAutoGenerateNotes = () => {
     setExportData(REAL_WORK_CHANGELOG);
     toast.success("বাস্তব কাজের রিলিজ নোটস সফলভাবে অটো-জেনারেট হয়েছে!");
@@ -233,7 +234,7 @@ export default function SystemCoreUpdatesPage() {
     }
   };
 
-  // 3. SAFE DEPLOY HANDLER
+  // 3. SAFE DEPLOY HANDLER (STRICT TELEGRAM FIRST)
   const handleDeployUpdate = async () => {
     if (!previewData || !previewData.tempFilePath) {
       toast.error("কোনো আপডেট ফাইল রেডি নেই");
@@ -241,7 +242,7 @@ export default function SystemCoreUpdatesPage() {
     }
 
     const confirmDeploy = window.confirm(
-      `আপনি কি নিশ্চিত যে বর্তমান সাইটে ${previewData.version} ইনস্টল করতে চান?\n\nপ্রথমে বর্তমান সাইটের শতভাগ ব্যাকআপ আপনার টেলিগ্রাম ক্লাউডে পাঠিয়ে দেওয়া হবে, তারপর নতুন কোড লাইভ হবে।`
+      `আপনি কি নিশ্চিত যে বর্তমান সাইটে ${previewData.version} ইনস্টল করতে চান?\n\nসিস্টেম প্রথমে বর্তমান সাইটের ১০০% সেফটি ব্যাকআপ আপনার টেলিগ্রামে পাঠাবে। টেলিগ্রাম থেকে ডেলিভারি কনফার্ম হলেই কেবল কোড আপডেট হবে।`
     );
     if (!confirmDeploy) return;
 
@@ -249,7 +250,7 @@ export default function SystemCoreUpdatesPage() {
       setDeploying(true);
       setDeployStep(1);
 
-      setTimeout(() => setDeployStep(2), 2000);
+      setTimeout(() => setDeployStep(2), 1500);
 
       const res = await fetch(`${baseUrl}/api/system-update/deploy`, {
         method: "POST",
@@ -257,7 +258,6 @@ export default function SystemCoreUpdatesPage() {
         body: JSON.stringify({
           tempFileName: previewData.tempFilePath,
           domainName: window.location.hostname || "main_domain",
-          skipCloudUpload: false,
         }),
       });
 
@@ -284,7 +284,40 @@ export default function SystemCoreUpdatesPage() {
     }
   };
 
-  // 4. TEST TELEGRAM CONNECTION
+  // 4. UNDO / ROLLBACK HANDLER
+  const handleUndoRollback = async (backupFileName) => {
+    const confirmUndo = window.confirm(
+      backupFileName
+        ? `আপনি কি নিশ্চিত যে এই ব্যাকআপটি (${backupFileName}) দিয়ে সাইট আগের অবস্থায় ফিরিয়ে নিতে চান?`
+        : "আপনি কি নিশ্চিত যে শেষ আপডেটটি আনডু (Undo) করে পূর্ববর্তী সুস্থ ভার্সনে ফিরে যেতে চান?"
+    );
+    if (!confirmUndo) return;
+
+    try {
+      setUndoing(true);
+      toast.info("পূর্ববর্তী ভার্সন রিস্টোর করা হচ্ছে...");
+
+      const res = await fetch(`${baseUrl}/api/system-update/undo`, {
+        method: "POST",
+        headers: getHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ backupFileName }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+        fetchHistory();
+      } else {
+        toast.error(data.message || "Undo ব্যর্থ হয়েছে");
+      }
+    } catch (err) {
+      toast.error("রোলব্যাক এরর: " + err.message);
+    } finally {
+      setUndoing(false);
+    }
+  };
+
+  // 5. TEST TELEGRAM CONNECTION
   const handleTestTelegram = async () => {
     try {
       setTestingTelegram(true);
@@ -308,7 +341,7 @@ export default function SystemCoreUpdatesPage() {
     }
   };
 
-  // 5. SAVE TELEGRAM CONFIG
+  // 6. SAVE TELEGRAM CONFIG
   const handleSaveTelegramConfig = async (e) => {
     e.preventDefault();
     try {
@@ -332,7 +365,7 @@ export default function SystemCoreUpdatesPage() {
     }
   };
 
-  // 6. SAVE MASTER PIN
+  // 7. SAVE MASTER PIN
   const handleSavePin = async (e) => {
     e.preventDefault();
     if (newPin && newPin !== confirmPin) {
@@ -465,7 +498,6 @@ export default function SystemCoreUpdatesPage() {
                   </p>
                 </div>
 
-                {/* Auto-Generate / Reset Button */}
                 <button
                   type="button"
                   onClick={handleAutoGenerateNotes}
@@ -641,17 +673,31 @@ ${exportData.migrationNotes}`}
           </div>
         )}
 
-        {/* TAB 2: IMPORT & DEPLOY */}
+        {/* TAB 2: IMPORT & DEPLOY (STRICT TELEGRAM + UNDO) */}
         {activeTab === "import" && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-[#e5dccf] shadow-xs">
-              <div className="border-b border-[#e5dccf] pb-3 mb-5">
-                <h2 className="text-lg font-bold text-[#3d2f1f] flex items-center gap-2">
-                  <FiUploadCloud className="text-[#d4af37]" /> আপডেট ফাইল আপলোড ও ডিপ্লয়মেন্ট
-                </h2>
-                <p className="text-xs text-[#3d2f1f]/70 mt-0.5">
-                  মেইন সাইট থেকে ডাউনলোড করা জিপ ফাইলটি এখানে ড্রপ করুন। সিস্টেম স্বয়ংক্রিয়ভাবে বর্তমান কোডটি প্রথমে আপনার টেলিগ্রামে সেফটি ব্যাকআপ পাঠাবে, তারপর সাইট আপডেট করবে।
-                </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5dccf] pb-3 mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-[#3d2f1f] flex items-center gap-2">
+                    <FiUploadCloud className="text-[#d4af37]" /> আপডেট ফাইল আপলোড ও ডিপ্লয়মেন্ট
+                  </h2>
+                  <p className="text-xs text-[#3d2f1f]/70 mt-0.5">
+                    মেইন সাইট থেকে ডাউনলোড করা জিপ ফাইলটি এখানে ড্রপ করুন। টেলিগ্রামে ব্যাকআপ ১০০% কনফার্ম হলেই কেবল আপডেট কার্যকর হবে।
+                  </p>
+                </div>
+
+                {/* Undo Last Update Button */}
+                <button
+                  type="button"
+                  onClick={() => handleUndoRollback(null)}
+                  disabled={undoing}
+                  className="btn btn-sm bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
+                  title="সর্বশেষ আপডেটের আগের ভার্সনে ফিরে যান"
+                >
+                  <FiRotateCcw className={undoing ? "animate-spin" : ""} />
+                  <span>{undoing ? "আনডু হচ্ছে..." : "↩️ Undo Last Update"}</span>
+                </button>
               </div>
 
               {/* Upload Dropzone */}
@@ -803,12 +849,17 @@ ${exportData.migrationNotes}`}
               )}
             </div>
 
-            {/* RECENT DEPLOY HISTORY */}
+            {/* RECENT DEPLOY HISTORY & MULTI-LEVEL UNDO */}
             <div className="bg-white rounded-2xl p-6 border border-[#e5dccf] shadow-xs">
               <div className="flex items-center justify-between pb-3 border-b border-[#e5dccf] mb-4">
-                <h3 className="text-base font-bold text-[#3d2f1f] flex items-center gap-2">
-                  <FiClock className="text-[#d4af37]" /> আপডেট ও ব্যাকআপের ইতিহাস (Deployment History)
-                </h3>
+                <div>
+                  <h3 className="text-base font-bold text-[#3d2f1f] flex items-center gap-2">
+                    <FiClock className="text-[#d4af37]" /> আপডেট ও ব্যাকআপের ইতিহাস (Deployment History & Restore Points)
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    প্রতিটি আপডেটের পূর্বে স্বয়ংক্রিয় ব্যাকআপ সংরক্ষিত থাকে। যেকোনো সময় যেকোনো ভার্সনে ১-ক্লিকে ফিরে যাওয়া সম্ভব।
+                  </p>
+                </div>
                 <button
                   onClick={fetchHistory}
                   disabled={loadingHistory}
@@ -830,13 +881,14 @@ ${exportData.migrationNotes}`}
                         <th>আপডেটের সময়</th>
                         <th>ক্লাউড ব্যাকআপ</th>
                         <th>স্ট্যাটাস</th>
+                        <th className="text-right">রোলব্যাক / আনডু</th>
                       </tr>
                     </thead>
                     <tbody>
                       {history.map((item, idx) => (
                         <tr key={idx} className="border-b border-[#faf7f0]">
                           <td className="font-bold text-[#0f2a44]">{item.version}</td>
-                          <td>{item.domainName}</td>
+                          <td>{item.domainName || "main"}</td>
                           <td>{new Date(item.appliedAt).toLocaleString()}</td>
                           <td>
                             {item.telegramDelivered ? (
@@ -848,9 +900,21 @@ ${exportData.migrationNotes}`}
                             )}
                           </td>
                           <td>
-                            <span className="badge badge-success badge-sm text-white font-bold">
+                            <span className={`badge badge-sm font-bold text-white ${item.status === "rolled_back" ? "badge-warning" : "badge-success"}`}>
                               {item.status}
                             </span>
+                          </td>
+                          <td className="text-right">
+                            {item.isRestorable && (
+                              <button
+                                onClick={() => handleUndoRollback(item.localBackupFile)}
+                                disabled={undoing}
+                                className="btn btn-xs bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 font-bold rounded-lg flex items-center gap-1 ml-auto"
+                                title="এই পয়েন্টে সাইট ফিরিয়ে নিন"
+                              >
+                                <FiRotateCcw className="text-[10px]" /> Undo Here
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -885,7 +949,7 @@ ${exportData.migrationNotes}`}
                     className="checkbox checkbox-warning checkbox-sm"
                   />
                   <label htmlFor="teleEnabled" className="text-xs font-bold text-[#3d2f1f] cursor-pointer">
-                    আপডেটের পূর্বে স্বয়ংক্রিয়ভাবে টেলিগ্রামে ব্যাকআপ জিপ পাঠানো চালু রাখুন (Recommended)
+                    আপডেটের পূর্বে স্বয়ংক্রিয়ভাবে টেলিগ্রামে ব্যাকআপ জিপ পাঠানো চালু রাখুন (Required)
                   </label>
                 </div>
 
@@ -902,7 +966,7 @@ ${exportData.migrationNotes}`}
                     required
                   />
                   <span className="text-[11px] text-gray-500 mt-1 block">
-                    টেলিগ্রাম @BotFather থেকে পাওয়া আপনার বটের সিক্রেট এপিআই টোকেন।
+                    টেলিগ্রাম @BotFather থেকে পাওয়া আপনার বটের পুরো এপিআই টোকেন (সংখ্যা ও কোলন সহ)।
                   </span>
                 </div>
 
@@ -914,7 +978,7 @@ ${exportData.migrationNotes}`}
                     type="text"
                     value={telegramConfig.chatId}
                     onChange={(e) => setTelegramConfig({ ...telegramConfig, chatId: e.target.value })}
-                    placeholder="e.g. 123456789 বা -100123456789 (চ্যানেল)"
+                    placeholder="e.g. 123456789 বা -100123456789"
                     className="input input-bordered w-full rounded-xl text-sm font-mono"
                     required
                   />
@@ -968,7 +1032,7 @@ ${exportData.migrationNotes}`}
                     মেসেজ পাঠান: <code className="bg-white/10 px-1 py-0.5 rounded text-emerald-300">/newbot</code> এবং আপনার বটের নাম ও ইউজারনেম দিন।
                   </li>
                   <li>
-                    BotFather সাথে সাথে একটি <strong>API Token</strong> দিয়ে দেবে (যেমন: <code className="text-yellow-300">7123...</code>)।
+                    BotFather সাথে সাথে একটি <strong>API Token</strong> দিয়ে দেবে (যেমন: <code className="text-yellow-300">7123456789:AAF...</code>)।
                   </li>
                   <li>
                     এবার আপনার তৈরি করা বটে ঢুকে <strong>Start</strong> চাপুন।
@@ -984,7 +1048,7 @@ ${exportData.migrationNotes}`}
 
               <div className="mt-5 pt-3 border-t border-white/10 text-[11px] text-emerald-300 flex items-center gap-1.5">
                 <FiCheckCircle className="shrink-0" />
-                <span>সম্পূর্ণ ফ্রি, কোনো কার্ড লাগে না এবং ব্যাকআপ সরাসরি আপনার মোবাইলে আসবে!</span>
+                <span>টেলিগ্রামে সেন্ড কনফার্ম না হওয়া পর্যন্ত সাইটের কোড পরিবর্তন হবে না।</span>
               </div>
             </div>
           </div>

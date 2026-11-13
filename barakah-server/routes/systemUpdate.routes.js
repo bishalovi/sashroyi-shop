@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * FILE: systemUpdate.routes.js
- * VERSION: v1.0.0
+ * VERSION: v1.2.0
  * ----------------------------------------------------------------------------
  * Express routes for System Core Engine & Updates Manager.
  * Strictly protected by Root Owner verification middleware.
@@ -19,16 +19,16 @@ const {
   exportUpdatePackage,
   previewUpdatePackage,
   deployUpdatePackage,
+  undoRollbackUpdate,
   getUpdateHistory,
-  getDriveConfig,
-  saveDriveConfig,
-  testDriveConnection,
+  getTelegramConfig,
+  saveTelegramConfig,
+  testTelegramConnection,
   getSecurityConfig,
   saveSecurityPin,
 } = require("../controllers/systemUpdate.controller");
 
-// Setup multer storage for temporary update zips
-const tempDir = path.resolve(process.cwd(), "storage", "temp");
+const tempDir = path.resolve(__dirname, "..", "storage", "temp");
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
@@ -45,7 +45,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 300 * 1024 * 1024 }, // 300 MB limit
+  limits: { fileSize: 300 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.includes("zip") || file.originalname.endsWith(".zip")) {
       cb(null, true);
@@ -61,21 +61,24 @@ router.use(verifyRootOwner);
 // 1. Export Package
 router.post("/export", exportUpdatePackage);
 
-// 2. Preview Package (Upload zip to inspect release notes)
+// 2. Preview Package
 router.post("/preview", upload.single("updateZip"), previewUpdatePackage);
 
-// 3. Deploy Package (Auto Google Drive upload -> unpack & apply)
+// 3. Strict Deploy Package (Telegram First)
 router.post("/deploy", deployUpdatePackage);
 
-// 4. Update History
+// 4. Undo / Rollback Engine
+router.post("/undo", undoRollbackUpdate);
+
+// 5. Update History
 router.get("/history", getUpdateHistory);
 
-// 5. Google Drive Integration
-router.get("/drive-config", getDriveConfig);
-router.post("/drive-config", saveDriveConfig);
-router.get("/test-drive", testDriveConnection);
+// 6. Telegram Cloud Backup
+router.get("/telegram-config", getTelegramConfig);
+router.post("/telegram-config", saveTelegramConfig);
+router.get("/test-telegram", testTelegramConnection);
 
-// 6. Security PIN
+// 7. Security PIN
 router.get("/security-config", getSecurityConfig);
 router.post("/security-pin", saveSecurityPin);
 

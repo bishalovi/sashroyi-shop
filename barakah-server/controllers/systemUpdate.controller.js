@@ -1,29 +1,26 @@
 /**
  * ============================================================================
  * FILE: systemUpdate.controller.js
- * VERSION: v1.1.0 (Enterprise Solidified)
+ * VERSION: v1.4.0 (Strict Telegram Pre-Condition & Multi-Level Undo / Rollback)
  * ----------------------------------------------------------------------------
- * System Core & Update Controller:
- * 1. Export Update Package (.zip) with professional RELEASE_NOTES.txt & manifest
+ * 1. Export Update Package (.zip) with professional RELEASE_NOTES.txt
  * 2. Preview incoming Update Package (reads notes without installing)
- * 3. Safe Deploy: creates backup, uploads to Google Drive FIRST, then applies
- * 4. Google Drive settings & connection testing
- * 5. Update history tracking
+ * 3. Safe Deploy: STRICT Telegram send confirmation BEFORE unpacking
+ * 4. Undo / Rollback Engine: Restore up to last 5+ versions with 1-click
+ * 5. Telegram Cloud settings & connection testing
+ * 6. Update history tracking
  * ============================================================================
  */
 
 const fs = require("fs");
 const path = require("path");
 const AdmZip = require("adm-zip");
-const googleDriveService = require("../services/googleDrive.service");
+const telegramBackupService = require("../services/telegramBackup.service");
 const connectDB = require("../config/db");
 
-const DRIVE_SETTINGS_KEY = "system_google_drive_config";
+const TELEGRAM_SETTINGS_KEY = "system_telegram_backup_config";
 const SECURITY_SETTINGS_KEY = "system_root_security_config";
 
-/**
- * Dynamically resolves the true project root regardless of where process is launched
- */
 function getProjectRoot() {
   const cwd = process.cwd();
   if (fs.existsSync(path.resolve(cwd, "barakah-client")) && fs.existsSync(path.resolve(cwd, "barakah-server"))) {
@@ -51,9 +48,6 @@ if (!fs.existsSync(STORAGE_TEMP_DIR)) {
   fs.mkdirSync(STORAGE_TEMP_DIR, { recursive: true });
 }
 
-/**
- * Formats professional RELEASE_NOTES.txt
- */
 function generateReleaseNotesText({
   version,
   previousVersion = "v2.6.0",
@@ -78,24 +72,15 @@ Compatibility   : Node.js 18+ | Next.js 14+ | MongoDB 6+
 
 [+] 1. WHAT'S NEW (নতুন কী কী কাজ হয়েছে):
 --------------------------------------------------------------------------------
-${
-  whatsNew.trim() ||
-  "- Core system improvements and performance optimizations.\n- Updated dependencies and styling fixes."
-}
+${whatsNew.trim()}
 
 [-] 2. RESOLVED ISSUES & BUG FIXES (আগের ভার্সনের ভুল/সমস্যা যা ঠিক করা হয়েছে):
 --------------------------------------------------------------------------------
-${
-  bugFixes.trim() ||
-  "- Resolved minor edge-case UI rendering bugs.\n- Fixed stability and network response handlers."
-}
+${bugFixes.trim()}
 
 [!] 3. DATABASE & MIGRATION INSTRUCTIONS (ডাটাবেজ ও কনফিগারেশন নোট):
 --------------------------------------------------------------------------------
-${
-  migrationNotes.trim() ||
-  "- No breaking schema changes required.\n- Auto-synchronization enabled for this release."
-}
+${migrationNotes.trim()}
 
 ================================================================================
   CONFIDENTIAL & PROPRIETARY — FOR AUTHORIZED ROOT OWNER DEPLOYMENT ONLY
@@ -103,15 +88,11 @@ ${
 `;
 }
 
-/**
- * Recursively adds directory contents to AdmZip while filtering out ignored files
- */
 function addFolderToZipRecursively(zip, localFolderPath, zipRelativePath, ignoreList) {
   if (!fs.existsSync(localFolderPath)) return;
   const items = fs.readdirSync(localFolderPath);
 
   for (const item of items) {
-    // Check if item should be ignored
     const isIgnored = ignoreList.some((ign) => {
       if (ign.startsWith("*.")) {
         return item.endsWith(ign.slice(1));
@@ -173,11 +154,9 @@ exports.exportUpdatePackage = async (req, res) => {
 
     const zip = new AdmZip();
 
-    // 1. Add RELEASE_NOTES.txt and manifest.json
     zip.addFile("RELEASE_NOTES.txt", Buffer.from(releaseNotesContent, "utf8"));
     zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
 
-    // Standard ignore patterns
     const ignoreList = [
       "node_modules",
       ".next",
@@ -192,7 +171,6 @@ exports.exportUpdatePackage = async (req, res) => {
       "*.log",
     ];
 
-    // 2. Package barakah-client
     if (includeClient) {
       const clientDir = path.resolve(PROJECT_ROOT, "barakah-client");
       if (fs.existsSync(clientDir)) {
@@ -200,7 +178,6 @@ exports.exportUpdatePackage = async (req, res) => {
       }
     }
 
-    // 3. Package barakah-server
     if (includeServer) {
       const serverDir = path.resolve(PROJECT_ROOT, "barakah-server");
       if (fs.existsSync(serverDir)) {
@@ -225,7 +202,7 @@ exports.exportUpdatePackage = async (req, res) => {
 };
 
 /**
- * 2. PREVIEW UPDATE PACKAGE (Reads notes before installing)
+ * 2. PREVIEW UPDATE PACKAGE
  */
 exports.previewUpdatePackage = async (req, res) => {
   try {
@@ -272,17 +249,29 @@ exports.previewUpdatePackage = async (req, res) => {
 };
 
 /**
- * 3. SAFE DEPLOY UPDATE:
- *    Step 1: Create local backup zip of current code
- *    Step 2: Upload backup zip to Google Drive FIRST
- *    Step 3: Only when Drive confirms upload, extract & apply new update!
+ * 3. STRICT DEPLOY UPDATE:
+ *    Step 1: Check Telegram configuration
+ *    Step 2: Create local backup zip of current live code
+ *    Step 3: UPLOAD TO TELEGRAM FIRST -> MUST RECEIVE 100% SUCCESS CONFIRMATION
+ *    Step 4: Only when Telegram delivery confirms, extract new update!
  */
 exports.deployUpdatePackage = async (req, res) => {
   try {
-    const { tempFileName, domainName = "main_domain", skipDriveUpload = false } = req.body;
+    const { tempFileName, domainName = "main_domain" } = req.body;
 
     if (!tempFileName) {
       return res.status(400).json({ success: false, message: "Missing update package reference" });
+    }
+
+    // 1. STRICT TELEGRAM CHECK
+    const telegramConfig = await telegramBackupService.getConfig();
+    if (!telegramConfig.isEnabled || !telegramConfig.botToken || !telegramConfig.chatId) {
+      return res.status(400).json({
+        success: false,
+        aborted: true,
+        message:
+          "টেলিগ্রাম ক্লাউড ব্যাকআপ সক্রিয় নেই! টেলিগ্রামের সাথে পূর্ণ কানেকশন এবং ব্যাকআপ সফলভাবে সেন্ড হওয়া নিশ্চিত না হওয়া পর্যন্ত আপডেট শুরু করা অসম্ভব। দয়া করে আগে টেলিগ্রাম কনফিগার করুন।",
+      });
     }
 
     const updateZipPath = path.resolve(STORAGE_TEMP_DIR, tempFileName);
@@ -290,7 +279,7 @@ exports.deployUpdatePackage = async (req, res) => {
       return res.status(404).json({ success: false, message: "Update package file not found" });
     }
 
-    // Read manifest of incoming package
+    // Read manifest
     const updateZip = new AdmZip(updateZipPath);
     let incomingVersion = "vNext";
     let releaseNotesText = "";
@@ -306,12 +295,12 @@ exports.deployUpdatePackage = async (req, res) => {
       }
     } catch (e) {}
 
-    // STEP 1: CREATE PRE-UPDATE BACKUP ZIP OF CURRENT CODE
+    // STEP 2: CREATE PRE-UPDATE SNAPSHOT BACKUP OF CURRENT CODE
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const backupFileName = `backup-before-${incomingVersion}-${timestamp}.zip`;
     const localBackupFilePath = path.resolve(STORAGE_BACKUPS_DIR, backupFileName);
 
-    console.log(`[System Update] Creating pre-update backup at: ${localBackupFilePath}`);
+    console.log(`[System Update] Generating pre-update safety backup at: ${localBackupFilePath}`);
 
     const backupZip = new AdmZip();
     const clientDir = path.resolve(PROJECT_ROOT, "barakah-client");
@@ -337,41 +326,35 @@ exports.deployUpdatePackage = async (req, res) => {
     }
 
     backupZip.writeZip(localBackupFilePath);
-    console.log(`[System Update] Local backup written successfully (${fs.statSync(localBackupFilePath).size} bytes)`);
+    console.log(`[System Update] Local safety backup generated (${fs.statSync(localBackupFilePath).size} bytes)`);
 
-    // STEP 2: UPLOAD TO GOOGLE DRIVE FIRST
-    let driveUploadResult = null;
-    const driveConfig = await googleDriveService.getConfig();
+    // STEP 3: STRICT UPLOAD TO TELEGRAM FIRST
+    let cloudUploadResult = null;
+    try {
+      console.log(`[System Update] Uploading backup to Telegram Cloud...`);
+      cloudUploadResult = await telegramBackupService.uploadBackupZip(
+        localBackupFilePath,
+        backupFileName,
+        domainName,
+        releaseNotesText
+      );
+      console.log(`[System Update] Telegram upload CONFIRMED 100%! Message ID: ${cloudUploadResult.messageId}`);
+    } catch (teleErr) {
+      console.error("[System Update] TELEGRAM UPLOAD FAILED. ABORTING DEPLOY:", teleErr.message);
+      try { fs.unlinkSync(localBackupFilePath); } catch (e) {}
 
-    if (driveConfig.isEnabled && !skipDriveUpload) {
-      console.log(`[System Update] Uploading backup to Google Drive for domain: ${domainName}`);
-      try {
-        driveUploadResult = await googleDriveService.uploadBackupZip(
-          localBackupFilePath,
-          backupFileName,
-          domainName
-        );
-        console.log(`[System Update] Google Drive upload successful! File ID: ${driveUploadResult.fileId}`);
-      } catch (driveErr) {
-        console.error("[System Update] GOOGLE DRIVE UPLOAD FAILED:", driveErr.message);
-        // ABORT: Do not touch live site if Google Drive backup failed!
-        return res.status(502).json({
-          success: false,
-          aborted: true,
-          message:
-            "Google Drive-এ ব্যাকআপ আপলোড ব্যর্থ হয়েছে! সাইটের সুরক্ষার্থে আপডেট স্থগিত করা হলো: " +
-            driveErr.message,
-        });
-      }
-    } else {
-      console.log("[System Update] Google Drive upload skipped (not configured or disabled).");
+      return res.status(502).json({
+        success: false,
+        aborted: true,
+        message: `টেলিগ্রামে ব্যাকআপ পাঠানো ব্যর্থ হয়েছে (${teleErr.message})! টেলিগ্রামে নিশ্চিতভাবে ব্যাকআপ ডেলিভারি না হওয়া পর্যন্ত সাইটের কোনো কোড পরিবর্তন করা হবে না।`,
+      });
     }
 
-    // STEP 3: EXTRACT & APPLY NEW UPDATE
+    // STEP 4: TELEGRAM CONFIRMED -> NOW APPLY THE NEW UPDATE
     console.log(`[System Update] Applying new update files from: ${updateZipPath}`);
     updateZip.extractAllTo(PROJECT_ROOT, true);
 
-    // STEP 4: RECORD UPDATE IN DATABASE HISTORY
+    // STEP 5: RECORD IN DATABASE FOR MULTI-LEVEL UNDO
     try {
       const db = await connectDB();
       await db.collection("system_update_history").insertOne({
@@ -379,36 +362,26 @@ exports.deployUpdatePackage = async (req, res) => {
         appliedAt: new Date(),
         appliedBy: req.rootOwner?.email || "Root Owner",
         domainName,
-        googleDriveLink: driveUploadResult?.webViewLink || null,
-        googleDriveFileId: driveUploadResult?.fileId || null,
+        cloudProvider: "Telegram",
+        telegramDelivered: true,
+        telegramMessageId: cloudUploadResult?.messageId,
         localBackupFile: backupFileName,
         releaseNotes: releaseNotesText,
-        status: "success",
+        status: "active",
       });
     } catch (dbErr) {
-      console.warn("Failed to save update history log:", dbErr.message);
+      console.warn("Failed to record history log:", dbErr.message);
     }
 
-    // Clean up temporary update zip
-    try {
-      fs.unlinkSync(updateZipPath);
-    } catch (e) {}
+    try { fs.unlinkSync(updateZipPath); } catch (e) {}
 
     res.json({
       success: true,
       message: `System successfully updated to ${incomingVersion}!`,
       version: incomingVersion,
       backupFileName,
-      googleDriveBackup: driveUploadResult
-        ? {
-            uploaded: true,
-            link: driveUploadResult.webViewLink,
-            fileId: driveUploadResult.fileId,
-          }
-        : {
-            uploaded: false,
-            note: "Local backup created in server storage.",
-          },
+      telegramChat: cloudUploadResult.chatTitle,
+      telegramMessageId: cloudUploadResult.messageId,
     });
   } catch (error) {
     console.error("Deploy failed:", error);
@@ -420,7 +393,74 @@ exports.deployUpdatePackage = async (req, res) => {
 };
 
 /**
- * 4. GET UPDATE HISTORY
+ * 4. UNDO / ROLLBACK ENGINE
+ *    Can restore the last update or any past backup from history!
+ */
+exports.undoRollbackUpdate = async (req, res) => {
+  try {
+    const { backupFileName } = req.body;
+    const db = await connectDB();
+
+    let targetFile = backupFileName;
+
+    if (!targetFile) {
+      const lastUpdate = await db
+        .collection("system_update_history")
+        .findOne({ localBackupFile: { $exists: true, $ne: null }, status: { $ne: "rolled_back" } }, { sort: { appliedAt: -1 } });
+
+      if (lastUpdate && lastUpdate.localBackupFile) {
+        targetFile = lastUpdate.localBackupFile;
+      }
+    }
+
+    if (!targetFile) {
+      return res.status(404).json({
+        success: false,
+        message: "আনডু করার মতো কোনো পূর্ববর্তী ব্যাকআপ ফাইল পাওয়া যায়নি।",
+      });
+    }
+
+    const backupFilePath = path.resolve(STORAGE_BACKUPS_DIR, targetFile);
+
+    if (!fs.existsSync(backupFilePath)) {
+      return res.status(404).json({
+        success: false,
+        message: `ব্যাকআপ ফাইলটি সার্ভারে পাওয়া যায়নি: ${targetFile}`,
+      });
+    }
+
+    console.log(`[System Update] Performing UNDO / Rollback from: ${backupFilePath}`);
+
+    const restoreZip = new AdmZip(backupFilePath);
+    restoreZip.extractAllTo(PROJECT_ROOT, true);
+
+    await db.collection("system_update_history").insertOne({
+      version: "ROLLBACK",
+      appliedAt: new Date(),
+      appliedBy: req.rootOwner?.email || "Root Owner",
+      restoredFrom: targetFile,
+      status: "rolled_back",
+      releaseNotes: `System successfully rolled back using backup archive: ${targetFile}`,
+    });
+
+    console.log(`[System Update] UNDO / Rollback COMPLETED SUCCESSFULLY.`);
+
+    res.json({
+      success: true,
+      message: "সফলভাবে পূর্ববর্তী ভার্সনে সাইট ফিরিয়ে নেওয়া হয়েছে (Undo / Rollback Successful)!",
+      restoredBackup: targetFile,
+    });
+  } catch (error) {
+    console.error("Rollback error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Rollback failed: " + error.message,
+    });
+  }
+};
+
+/**
+ * 5. GET UPDATE HISTORY & AVAILABLE UNDO POINTS
  */
 exports.getUpdateHistory = async (req, res) => {
   try {
@@ -432,74 +472,72 @@ exports.getUpdateHistory = async (req, res) => {
       .limit(30)
       .toArray();
 
-    res.json({ success: true, history });
+    const historyWithAvailability = history.map((h) => {
+      let isRestorable = false;
+      if (h.localBackupFile) {
+        const fullPath = path.resolve(STORAGE_BACKUPS_DIR, h.localBackupFile);
+        isRestorable = fs.existsSync(fullPath);
+      }
+      return {
+        ...h,
+        isRestorable,
+      };
+    });
+
+    res.json({ success: true, history: historyWithAvailability });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 /**
- * 5. GOOGLE DRIVE CONFIG & CONNECTION TEST
+ * 6. TELEGRAM CONFIG & CONNECTION TEST
  */
-exports.getDriveConfig = async (req, res) => {
+exports.getTelegramConfig = async (req, res) => {
   try {
-    const config = await googleDriveService.getConfig();
+    const config = await telegramBackupService.getConfig();
     res.json({
       success: true,
       isEnabled: config.isEnabled,
-      clientEmail: config.clientEmail ? config.clientEmail.slice(0, 5) + "***" : "",
-      parentFolderId: config.parentFolderId,
-      hasPrivateKey: !!config.privateKey,
+      botToken: config.botToken ? config.botToken.slice(0, 8) + "*******************" : "",
+      chatId: config.chatId || "",
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-exports.saveDriveConfig = async (req, res) => {
+exports.saveTelegramConfig = async (req, res) => {
   try {
-    const { isEnabled, clientEmail, privateKey, parentFolderId, credentialsJson } = req.body;
+    const { isEnabled, botToken, chatId } = req.body;
     const db = await connectDB();
 
-    let parsedEmail = clientEmail;
-    let parsedKey = privateKey;
-    let parsedFolder = parentFolderId;
+    const updateFields = {
+      key: TELEGRAM_SETTINGS_KEY,
+      isEnabled: isEnabled !== undefined ? !!isEnabled : true,
+      chatId: String(chatId || "").trim(),
+      updatedAt: new Date(),
+    };
 
-    if (credentialsJson && credentialsJson.trim().startsWith("{")) {
-      try {
-        const parsed = JSON.parse(credentialsJson);
-        parsedEmail = parsed.client_email || parsedEmail;
-        parsedKey = parsed.private_key || parsedKey;
-      } catch (e) {
-        return res.status(400).json({ success: false, message: "Invalid JSON credentials" });
-      }
+    if (botToken && !botToken.includes("*****")) {
+      updateFields.botToken = String(botToken).trim();
     }
 
     await db.collection("settings").updateOne(
-      { key: DRIVE_SETTINGS_KEY },
-      {
-        $set: {
-          key: DRIVE_SETTINGS_KEY,
-          isEnabled: !!isEnabled,
-          clientEmail: parsedEmail || "",
-          privateKey: parsedKey || "",
-          parentFolderId: parsedFolder || "",
-          credentialsJson: credentialsJson || "",
-          updatedAt: new Date(),
-        },
-      },
+      { key: TELEGRAM_SETTINGS_KEY },
+      { $set: updateFields },
       { upsert: true }
     );
 
-    res.json({ success: true, message: "Google Drive configuration saved successfully!" });
+    res.json({ success: true, message: "Telegram Cloud কনফিগারেশন সফলভাবে সেভ হয়েছে!" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-exports.testDriveConnection = async (req, res) => {
+exports.testTelegramConnection = async (req, res) => {
   try {
-    const result = await googleDriveService.testConnection();
+    const result = await telegramBackupService.testConnection();
     res.json(result);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -507,7 +545,7 @@ exports.testDriveConnection = async (req, res) => {
 };
 
 /**
- * 6. ROOT SECURITY & MASTER PIN SETTINGS
+ * 7. ROOT SECURITY & MASTER PIN SETTINGS
  */
 exports.getSecurityConfig = async (req, res) => {
   try {
@@ -516,6 +554,7 @@ exports.getSecurityConfig = async (req, res) => {
 
     res.json({
       success: true,
+      isEnabled: !!(sec && sec.isEnabled),
       hasPin: !!(sec && sec.masterPin),
     });
   } catch (error) {
@@ -525,11 +564,11 @@ exports.getSecurityConfig = async (req, res) => {
 
 exports.saveSecurityPin = async (req, res) => {
   try {
-    const { masterPin, currentPin } = req.body;
+    const { masterPin, currentPin, isEnabled } = req.body;
     const db = await connectDB();
     const sec = await db.collection("settings").findOne({ key: SECURITY_SETTINGS_KEY });
 
-    if (sec && sec.masterPin) {
+    if (sec && sec.isEnabled && sec.masterPin) {
       if (String(currentPin).trim() !== String(sec.masterPin).trim()) {
         return res.status(401).json({ success: false, message: "Current Master PIN is incorrect" });
       }
@@ -540,6 +579,7 @@ exports.saveSecurityPin = async (req, res) => {
       {
         $set: {
           key: SECURITY_SETTINGS_KEY,
+          isEnabled: isEnabled !== undefined ? !!isEnabled : true,
           masterPin: masterPin ? String(masterPin).trim() : null,
           updatedAt: new Date(),
         },
