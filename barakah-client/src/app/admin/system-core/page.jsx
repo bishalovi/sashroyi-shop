@@ -35,6 +35,7 @@ import {
   FiRotateCcw,
   FiArrowRight,
   FiCornerDownLeft,
+  FiDatabase,
 } from "react-icons/fi";
 
 const REAL_WORK_CHANGELOG = {
@@ -89,6 +90,7 @@ export default function SystemCoreUpdatesPage() {
   const [testingTelegram, setTestingTelegram] = useState(false);
   const [telegramTestResult, setTelegramTestResult] = useState(null);
   const [savingTelegram, setSavingTelegram] = useState(false);
+  const [backingUpDB, setBackingUpDB] = useState(false);
 
   // Tab 4: Security PIN State
   const [newPin, setNewPin] = useState("");
@@ -342,6 +344,32 @@ export default function SystemCoreUpdatesPage() {
       toast.error("টেলিগ্রাম টেস্ট ব্যর্থ: " + err.message);
     } finally {
       setTestingTelegram(false);
+    }
+  };
+
+  // 5.1 TRIGGER DATABASE BACKUP TO TELEGRAM
+  const handleBackupDatabase = async () => {
+    try {
+      setBackingUpDB(true);
+      toast.info("ডাটাবেজের সমস্ত কালেকশন জিপ করে টেলিগ্রামে পাঠানো হচ্ছে...");
+
+      const res = await fetch(`${baseUrl}/api/system-update/database-backup`, {
+        method: "POST",
+        headers: getHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ domainName: exportData.domainName }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`সফল! মোট ${data.totalDocuments || 0} টি ডাটা সহ ডাটাবেজ ব্যাকআপ টেলিগ্রামে পৌঁছেছে!`);
+        fetchHistory();
+      } else {
+        toast.error(data.message || "ডাটাবেজ ব্যাকআপ ব্যর্থ হয়েছে");
+      }
+    } catch (err) {
+      toast.error("সার্ভার ত্রুটি: " + err.message);
+    } finally {
+      setBackingUpDB(false);
     }
   };
 
@@ -961,12 +989,17 @@ ${exportData.migrationNotes}`}
                     </thead>
                     <tbody>
                       {history.map((item, idx) => {
+                        const isDB = item.type === "db_backup" || String(item.version).includes("DATABASE");
                         const isExport = item.type === "export" || String(item.version).includes("EXPORT");
                         const isRollback = item.status === "rolled_back" || String(item.version).includes("ROLLBACK");
                         return (
                           <tr key={idx} className="border-b border-[#faf7f0] hover:bg-gray-50/50">
                             <td>
-                              {isExport ? (
+                              {isDB ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-purple-100 text-purple-700 border border-purple-200">
+                                  <FiDatabase className="text-[10px]" /> DB BACKUP
+                                </span>
+                              ) : isExport ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-blue-100 text-blue-700 border border-blue-200">
                                   <FiDownload className="text-[10px]" /> EXPORT
                                 </span>
@@ -995,7 +1028,9 @@ ${exportData.migrationNotes}`}
                             <td>
                               <span
                                 className={`badge badge-sm font-bold text-white ${
-                                  isExport
+                                  isDB
+                                    ? "bg-purple-600"
+                                    : isExport
                                     ? "bg-blue-600"
                                     : isRollback
                                     ? "bg-amber-600"
@@ -1006,7 +1041,7 @@ ${exportData.migrationNotes}`}
                               </span>
                             </td>
                             <td className="text-right">
-                              {item.isRestorable && !isExport && (
+                              {item.isRestorable && !isExport && !isDB && (
                                 <button
                                   onClick={() => handleUndoRollback(item.localBackupFile)}
                                   disabled={undoing}
@@ -1015,6 +1050,9 @@ ${exportData.migrationNotes}`}
                                 >
                                   <FiRotateCcw className="text-[10px]" /> Undo Here
                                 </button>
+                              )}
+                              {isDB && (
+                                <span className="text-purple-600 font-semibold text-[10px]">Database Vault</span>
                               )}
                               {isExport && (
                                 <span className="text-gray-400 text-[10px] italic">Package Release</span>
@@ -1093,15 +1131,28 @@ ${exportData.migrationNotes}`}
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleTestTelegram}
-                    disabled={testingTelegram}
-                    className="btn btn-outline border-blue-500 text-blue-700 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
-                  >
-                    {testingTelegram ? <FiRefreshCw className="animate-spin" /> : <FiPlay />}
-                    Test Telegram Connection (টেস্ট মেসেজ পাঠান)
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleTestTelegram}
+                      disabled={testingTelegram}
+                      className="btn btn-outline border-blue-500 text-blue-700 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                    >
+                      {testingTelegram ? <FiRefreshCw className="animate-spin" /> : <FiPlay />}
+                      Test Telegram Connection (টেস্ট মেসেজ পাঠান)
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleBackupDatabase}
+                      disabled={backingUpDB}
+                      className="btn bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                      title="সম্পূর্ণ MongoDB ডাটাবেজ এক ক্লিকে টেলিগ্রামে ব্যাকআপ নিন"
+                    >
+                      {backingUpDB ? <FiRefreshCw className="animate-spin" /> : <FiDatabase />}
+                      {backingUpDB ? "ডাটাবেজ ব্যাকআপ হচ্ছে..." : "🗄️ Backup Database to Telegram"}
+                    </button>
+                  </div>
 
                   <button
                     type="submit"

@@ -769,3 +769,25 @@ exports.saveSecurityPin = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * 8. TRIGGER FULL MONGODB DATABASE BACKUP TO TELEGRAM
+ */
+exports.backupDatabaseToTelegram = async (req, res) => {
+  try {
+    const databaseBackupService = require("../services/databaseBackup.service");
+    const domainName = req.body?.domainName || req.headers["host"] || "sashroyi.shop";
+    const result = await databaseBackupService.backupDatabaseToTelegram(domainName);
+    res.json({
+      success: true,
+      message: "সম্পূর্ণ ডাটাবেজ সফলভাবে জিপ করে আপনার টেলিগ্রাম ক্লাউড ভল্টে পাঠানো হয়েছে!",
+      ...result,
+    });
+  } catch (error) {
+    console.error("Database backup error:", error);
+    res.status(500).json({
+      success: false,
+      message: "ডাটাবেজ ব্যাকআপ ব্যর্থ হয়েছে: " + error.message,
+    });
+  }
+};

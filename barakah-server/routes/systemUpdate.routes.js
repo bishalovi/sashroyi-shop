@@ -26,6 +26,7 @@ const {
   testTelegramConnection,
   getSecurityConfig,
   saveSecurityPin,
+  backupDatabaseToTelegram,
 } = require("../controllers/systemUpdate.controller");
 
 const tempDir = path.resolve(__dirname, "..", "storage", "temp");
@@ -81,5 +82,8 @@ router.get("/test-telegram", testTelegramConnection);
 // 7. Security PIN
 router.get("/security-config", getSecurityConfig);
 router.post("/security-pin", saveSecurityPin);
+
+// 8. MongoDB Database Backup to Telegram
+router.post("/database-backup", backupDatabaseToTelegram);
 
 module.exports = router;
