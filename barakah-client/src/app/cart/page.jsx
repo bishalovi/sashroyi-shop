@@ -8,6 +8,7 @@ import Container from "@/components/shared/Container";
 import SectionTitle from "@/components/shared/SectionTitle";
 import { useEffect, useState } from "react";
 import { pushToDataLayer } from "@/lib/gtm";
+import { trackMetaEvent } from "@/lib/metaTracking";
 
 export default function CartPage() {
   const [shipping, setShipping] = useState("outside");
@@ -44,6 +45,21 @@ export default function CartPage() {
           quantity: Number(item.quantity || 1),
         })),
       },
+    });
+
+    // Rich Meta Custom Event: ViewCart (Browser Pixel + Server CAPI)
+    trackMetaEvent("ViewCart", {
+      content_type: "product",
+      content_ids: cartItems.map((item) => String(item._id || item.productId || "")).filter(Boolean),
+      contents: cartItems.map((item) => ({
+        id: String(item._id || item.productId || ""),
+        name: item.name || "",
+        quantity: Number(item.quantity || 1),
+        item_price: Number(item.price || 0),
+      })),
+      num_items: cartItems.reduce((acc, item) => acc + Number(item.quantity || 1), 0),
+      value: Number(totalPrice || 0),
+      currency: "BDT",
     });
 
     sessionStorage.setItem("barakah_view_cart_signature", cartSignature);

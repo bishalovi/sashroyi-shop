@@ -518,7 +518,7 @@ export default function CheckoutPage() {
                       },
                     })}
                     className="w-full rounded-xl border border-[#0f2a44]/15 px-4 py-3 outline-none focus:border-[#d4af37]"
-                    placeholder="আপনার পূর্ণ নাম লিখুন"
+                    placeholder="আপনার পূর্ণ নাম (যেমন: মোঃ রায়হান আহমেদ)"
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-500">

@@ -85,7 +85,11 @@ export async function POST(req) {
     };
 
     if (userParams.name) {
-      const parts = String(userParams.name).trim().split(/\s+/);
+      const cleanName = String(userParams.name)
+        .toLowerCase()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+        .trim();
+      const parts = cleanName.split(/\s+/).filter(Boolean);
       if (parts[0]) userData.fn = [hashData(parts[0])];
       if (parts.length > 1) {
         userData.ln = [hashData(parts.slice(1).join(" "))];
