@@ -9,6 +9,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { pushToDataLayer } from "@/lib/gtm";
 import { trackMetaEvent } from "@/lib/metaTracking";
 import { getOptimizedImageUrl } from "@/lib/imageOptimizer";
+import MobileStickyBuyBar from "@/components/products/MobileStickyBuyBar";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
 
@@ -212,7 +213,8 @@ export default function ProductDetailsClient({ product }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
       {/* Left Column: Interactive Main Image & Gallery */}
       <div className="space-y-4">
         {/* Main Display Image */}
@@ -493,5 +495,17 @@ export default function ProductDetailsClient({ product }) {
         </div>
       </div>
     </div>
-  );
+
+    {/* Mobile Sticky Buy Now Bar */}
+    <MobileStickyBuyBar
+      product={activeProduct}
+      quantity={quantity}
+      activePrice={activePrice}
+      activeOldPrice={activeOldPrice}
+      activeImage={activeImage}
+      selectedVariation={selectedVariation}
+      isInStock={isInStock}
+    />
+  </>
+);
 }
