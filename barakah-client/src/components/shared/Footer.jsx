@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt, FaUsers } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaEnvelope, FaWhatsapp, FaPhoneAlt, FaUsers, FaMapMarkerAlt } from "react-icons/fa";
 import { useSettings } from "@/contexts/SettingsContext";
 import { trackMetaEvent } from "@/lib/metaTracking";
 
@@ -209,7 +209,26 @@ export default function Footer() {
                   WhatsApp: {whatsapp}
                 </a>
               </p>
-              <p className="text-white/80 text-xs mt-0.5">{address}</p>
+              <p className="flex items-center gap-1.5 text-white/80 text-xs mt-0.5">
+                <FaMapMarkerAlt className="text-[#d4af37] shrink-0" />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    trackMetaEvent("FindLocation", {
+                      content_name: "Store Location",
+                      address: address,
+                      city: "Dhaka",
+                      country: "Bangladesh",
+                    });
+                  }}
+                  className="hover:text-[#d4af37] transition hover:underline"
+                  title="গুগল ম্যাপে ঠিকানা দেখুন"
+                >
+                  {address}
+                </a>
+              </p>
             </div>
           </div>
         </div>

@@ -39,6 +39,7 @@ export default function CheckoutPage() {
 
   // Track InitiateCheckout (Meta) & begin_checkout (DataLayer) exactly once per checkout visit
   const hasTrackedCheckoutRef = useRef(false);
+  const hasTrackedLeadRef = useRef(false);
   useEffect(() => {
     if (cartItems.length === 0 || hasTrackedCheckoutRef.current) return;
 
@@ -330,11 +331,31 @@ export default function CheckoutPage() {
         cartItems.length > 0
       ) {
         saveAbandonedOrder(formValues);
+
+        // Fire Meta Lead event if customer filled info but hasn't submitted yet
+        if (!hasTrackedLeadRef.current && formValues.phone.length >= 11) {
+          hasTrackedLeadRef.current = true;
+          trackMetaEvent(
+            "Lead",
+            {
+              content_name: "Checkout Abandoned Draft",
+              content_category: "E-commerce Lead",
+              value: Number(totalPrice || 0),
+              currency: "BDT",
+              num_items: cartItems.reduce((acc, i) => acc + Number(i.quantity || 1), 0),
+            },
+            {
+              name: formValues.name,
+              phone: formValues.phone,
+              address: formValues.address,
+            }
+          );
+        }
       }
     }, 8000);
 
     return () => clearTimeout(timer);
-  }, [formValues.name, formValues.phone, formValues.address, cartItems]);
+  }, [formValues.name, formValues.phone, formValues.address, cartItems, totalPrice]);
 
 
 

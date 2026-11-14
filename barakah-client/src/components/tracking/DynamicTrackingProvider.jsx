@@ -147,5 +147,23 @@ export default function DynamicTrackingProvider() {
     }
   }, [pathname]);
 
+  // Track EngagedVisitor once per session after 45 seconds of active browsing
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sessionKey = "barakah_engaged_visitor_tracked";
+    if (sessionStorage.getItem(sessionKey)) return;
+
+    const timer = setTimeout(() => {
+      sessionStorage.setItem(sessionKey, "true");
+      trackMetaEvent("EngagedVisitor", {
+        time_spent_seconds: 45,
+        engagement_level: "high",
+        current_page: window.location.pathname,
+      });
+    }, 45000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return null;
 }
