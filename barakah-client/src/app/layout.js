@@ -19,7 +19,7 @@ const API_URL = getApiUrl();
 
 export async function generateMetadata() {
   let seo = {};
-  let shopName = "Sashroyi Shop";
+  let shopName = "Sk Bazar";
 
   try {
     const res = await fetch(`${API_URL}/api/settings/public`, {
@@ -28,17 +28,17 @@ export async function generateMetadata() {
     if (res.ok) {
       const json = await res.json();
       seo = json?.data?.seo || {};
-      shopName = json?.data?.general?.shopName || "Sashroyi Shop";
+      shopName = json?.data?.general?.shopName || "Sk Bazar";
     }
   } catch {
     // Fallback to defaults if API is unavailable
   }
 
   const defaultTitle =
-    seo.siteTitle || "Sashroyi | Kitchen, Home & Living & Household Essentials";
+    seo.siteTitle || "Sk Bazar | Best Online Shopping in Bangladesh";
   const defaultDescription =
     seo.siteDescription ||
-    "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living, Baby Care এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।";
+    "সেরা মূল্যে সেরা মানের পণ্য অর্ডার করুন top.skbazarbd.com থেকে।";
   const keywords = seo.siteKeywords
     ? seo.siteKeywords.split(",").map((k) => k.trim()).filter(Boolean)
     : undefined;
