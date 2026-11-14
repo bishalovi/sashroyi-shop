@@ -115,6 +115,81 @@ function addFolderToZipRecursively(zip, localFolderPath, zipRelativePath, ignore
 }
 
 /**
+ * Clean Synchronization Utility:
+ * Compares current local files against incoming archive entries.
+ * Deletes any newly created files/folders that do not belong to the target archive,
+ * ensuring 100% exact mirror rollback (no leftover unwanted new features!).
+ */
+function cleanSynchronizeArchive(zip, targetRoot) {
+  const zipEntries = zip.getEntries();
+  const allowedZipPaths = new Set();
+
+  for (const entry of zipEntries) {
+    if (entry.isDirectory) continue;
+    // Normalize path separators to forward slash
+    const norm = entry.entryName.replace(/\\/g, "/");
+    allowedZipPaths.add(norm);
+  }
+
+  const protectedNames = new Set([
+    "node_modules",
+    ".next",
+    ".git",
+    "storage",
+    ".env",
+    ".env.local",
+    ".env.production",
+  ]);
+
+  function scanAndClean(currentLocalDir, relativePath) {
+    if (!fs.existsSync(currentLocalDir)) return;
+    const items = fs.readdirSync(currentLocalDir);
+
+    for (const item of items) {
+      if (protectedNames.has(item) || (item.startsWith(".") && item !== ".env.example")) {
+        continue; // Keep node_modules, .env, and git untouchable
+      }
+
+      const fullItemPath = path.join(currentLocalDir, item);
+      const relItemPath = relativePath ? `${relativePath}/${item}` : item;
+      const stat = fs.statSync(fullItemPath);
+
+      if (stat.isDirectory()) {
+        scanAndClean(fullItemPath, relItemPath);
+        // If directory is now empty and not present in zip, remove it
+        try {
+          const remaining = fs.readdirSync(fullItemPath);
+          if (remaining.length === 0) {
+            fs.rmdirSync(fullItemPath);
+            console.log(`[Clean Sync] Removed empty orphan folder: ${relItemPath}`);
+          }
+        } catch (e) {}
+      } else {
+        // If file is NOT in the target restore zip, DELETE IT!
+        if (!allowedZipPaths.has(relItemPath)) {
+          try {
+            fs.unlinkSync(fullItemPath);
+            console.log(`[Clean Sync] Purged extra/new feature file: ${relItemPath}`);
+          } catch (delErr) {
+            console.warn(`[Clean Sync] Failed to delete ${relItemPath}:`, delErr.message);
+          }
+        }
+      }
+    }
+  }
+
+  // Check client and server directories
+  const clientDir = path.resolve(targetRoot, "barakah-client");
+  const serverDir = path.resolve(targetRoot, "barakah-server");
+
+  if (fs.existsSync(clientDir)) scanAndClean(clientDir, "barakah-client");
+  if (fs.existsSync(serverDir)) scanAndClean(serverDir, "barakah-server");
+
+  // Finally extract all files from zip over the cleaned directories
+  zip.extractAllTo(targetRoot, true);
+}
+
+/**
  * 1. EXPORT UPDATE PACKAGE (.zip with RELEASE_NOTES.txt)
  */
 exports.exportUpdatePackage = async (req, res) => {
@@ -392,9 +467,9 @@ exports.deployUpdatePackage = async (req, res) => {
       });
     }
 
-    // STEP 4: TELEGRAM CONFIRMED -> NOW APPLY THE NEW UPDATE
-    console.log(`[System Update] Applying new update files from: ${updateZipPath}`);
-    updateZip.extractAllTo(PROJECT_ROOT, true);
+    // STEP 4: TELEGRAM CONFIRMED -> NOW APPLY WITH CLEAN SYNC
+    console.log(`[System Update] Applying clean sync update files from: ${updateZipPath}`);
+    cleanSynchronizeArchive(updateZip, PROJECT_ROOT);
 
     // STEP 5: RECORD IN DATABASE FOR MULTI-LEVEL UNDO
     try {
@@ -535,10 +610,10 @@ exports.undoRollbackUpdate = async (req, res) => {
       }
     }
 
-    console.log(`[System Update] Performing ${action.toUpperCase()} from: ${backupFilePath}`);
+    console.log(`[System Update] Performing CLEAN ${action.toUpperCase()} from: ${backupFilePath}`);
 
     const restoreZip = new AdmZip(backupFilePath);
-    restoreZip.extractAllTo(PROJECT_ROOT, true);
+    cleanSynchronizeArchive(restoreZip, PROJECT_ROOT);
 
     await db.collection("system_update_history").insertOne({
       version: action === "redo" ? "LATEST RESTORED (REDO)" : "ROLLBACK (UNDO)",
