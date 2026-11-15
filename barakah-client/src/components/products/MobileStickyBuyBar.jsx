@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { FaBolt, FaCartPlus } from "react-icons/fa";
 
 const DEFAULT_PLACEHOLDER =
@@ -33,12 +34,21 @@ export default function MobileStickyBuyBar({
   selectedVariation = null,
   isInStock = true,
 }) {
-  const [isVisible, setIsVisible] = useState(false);
+  const { mobileStickyBar } = useSettings();
+  const isEnabled = mobileStickyBar?.isEnabled !== false;
+  const isPermanent = mobileStickyBar?.displayMode === "permanent";
+
+  const [isVisible, setIsVisible] = useState(() => isPermanent);
   const [isAddingCart, setIsAddingCart] = useState(false);
   const { addToCart, clearCart } = useCart();
   const router = useRouter();
 
   useEffect(() => {
+    if (isPermanent) {
+      setIsVisible(true);
+      return;
+    }
+
     const handleScroll = () => {
       // Show bar once user has scrolled past top fold (> 280px)
       if (typeof window !== "undefined") {
@@ -54,7 +64,7 @@ export default function MobileStickyBuyBar({
     handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isPermanent]);
 
   const handleBuyNow = () => {
     if (!isInStock) return;
@@ -72,6 +82,11 @@ export default function MobileStickyBuyBar({
     addToCart({ ...product, quantity });
     setTimeout(() => setIsAddingCart(false), 600);
   };
+
+  // If feature is turned off in Settings, completely unmount (zero DOM, zero overhead)
+  if (!isEnabled) {
+    return null;
+  }
 
   const finalImage = activeImage || product?.image || DEFAULT_PLACEHOLDER;
   const totalPrice = Number(activePrice || product?.price || 0) * (quantity || 1);

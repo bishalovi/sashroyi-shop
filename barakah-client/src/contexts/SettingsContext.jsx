@@ -92,6 +92,10 @@ export const DEFAULT_SETTINGS = {
     title: "সীমিত সময়ের বিশেষ অফার!",
     targetDate: "",
   },
+  mobileStickyBar: {
+    isEnabled: true,
+    displayMode: "scroll",
+  },
 };
 
 /**
@@ -159,6 +163,7 @@ export function SettingsProvider({ children }) {
           hero: { ...prev.hero, ...(data.data.hero || {}) },
           contact: { ...prev.contact, ...(data.data.contact || {}) },
           offerTimer: { ...prev.offerTimer, ...(data.data.offerTimer || {}) },
+          mobileStickyBar: { ...prev.mobileStickyBar, ...(data.data.mobileStickyBar || {}) },
         }));
       }
     } catch (err) {
@@ -210,6 +215,7 @@ export function SettingsProvider({ children }) {
         noticeBar: settings.noticeBar || DEFAULT_SETTINGS.noticeBar,
         hero: settings.hero || DEFAULT_SETTINGS.hero,
         offerTimer: settings.offerTimer || DEFAULT_SETTINGS.offerTimer,
+        mobileStickyBar: settings.mobileStickyBar || DEFAULT_SETTINGS.mobileStickyBar,
         loading,
         getWhatsAppUrl,
         refreshSettings: fetchSettings,
@@ -235,6 +241,7 @@ export function useSettings() {
       noticeBar: DEFAULT_SETTINGS.noticeBar,
       hero: DEFAULT_SETTINGS.hero,
       offerTimer: DEFAULT_SETTINGS.offerTimer,
+      mobileStickyBar: DEFAULT_SETTINGS.mobileStickyBar,
       loading: false,
       getWhatsAppUrl: (msg = "হ্যালো!") => `https://wa.me/8801910037935?text=${encodeURIComponent(msg)}`,
       refreshSettings: () => {},

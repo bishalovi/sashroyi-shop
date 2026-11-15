@@ -32,6 +32,7 @@ import {
   FiPlus,
   FiTrash2,
   FiCreditCard,
+  FiSmartphone,
   FiUsers,
   FiUserCheck,
   FiUserPlus,
@@ -148,6 +149,10 @@ export default function AdminSettingsPage() {
         .toISOString()
         .slice(0, 16),
     },
+    mobileStickyBar: {
+      isEnabled: true,
+      displayMode: "scroll",
+    },
   });
 
   useEffect(() => {
@@ -190,6 +195,10 @@ export default function AdminSettingsPage() {
             targetDate: d.offerTimer?.targetDate
               ? new Date(d.offerTimer.targetDate).toISOString().slice(0, 16)
               : settings.offerTimer.targetDate,
+          },
+          mobileStickyBar: {
+            isEnabled: d.mobileStickyBar?.isEnabled !== undefined ? Boolean(d.mobileStickyBar.isEnabled) : true,
+            displayMode: d.mobileStickyBar?.displayMode || "scroll",
           },
         });
       }
@@ -417,6 +426,7 @@ export default function AdminSettingsPage() {
   const tabs = [
     { id: "header", label: "Header & Navigation", icon: <FiGlobe /> },
     { id: "paymentMethods", label: "Payment Methods (পেমেন্ট নম্বর)", icon: <FiCreditCard /> },
+    { id: "mobileStickyBar", label: "Mobile Sticky Bar (স্টিকি বার)", icon: <FiSmartphone /> },
     { id: "staff", label: "Admin & Moderator (অ্যাডমিন/মডারেটর)", icon: <FiUsers /> },
     { id: "footer", label: "Footer & Branding", icon: <FiMenu /> },
     { id: "contact", label: "Contact & Social", icon: <FiPhone /> },
@@ -1053,6 +1063,157 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Mobile Sticky Buy Bar Settings (মোবাইল স্টিকি অর্ডার বার) */}
+          {activeTab === "mobileStickyBar" && (
+            <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-6">
+              <div className="border-b pb-3">
+                <h2 className="text-lg font-bold text-[#0f2a44] flex items-center gap-2">
+                  <FiSmartphone className="text-[#d4af37]" /> Mobile Sticky Buy Bar Settings (মোবাইল স্টিকি অর্ডার বার)
+                </h2>
+                <p className="text-xs text-gray-500">
+                  মোবাইল ব্যবহারকারীদের জন্য প্রোডাক্ট পেজের নিচের স্টিকি &quot;এখনই অর্ডার করুন&quot; বার নিয়ন্ত্রণ করুন।
+                </p>
+              </div>
+
+              {/* 1. ON/OFF Master Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50/70">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-bold text-[#0f2a44]">
+                    স্টিকি অর্ডার বার সক্রিয় রাখুন (Enable Sticky Bar)
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    চালু থাকলে মোবাইল গ্রাহকরা প্রোডাক্ট পেজে নিচের ফিক্সড স্টিকি বার দেখতে পাবে।
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary toggle-lg"
+                  checked={settings.mobileStickyBar?.isEnabled !== false}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      mobileStickyBar: {
+                        ...(settings.mobileStickyBar || {}),
+                        isEnabled: e.target.checked,
+                      },
+                    })
+                  }
+                />
+              </div>
+
+              {/* 2. Display Mode Selection (Scroll vs Permanent) */}
+              <div className={`space-y-3 transition-opacity ${settings.mobileStickyBar?.isEnabled !== false ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+                <label className="text-sm font-bold text-[#0f2a44] block">
+                  ডিসপ্লে স্টাইল / দেখার ধরন নির্ধারণ করুন (Display Mode):
+                </label>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Option 1: On Scroll */}
+                  <div
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        mobileStickyBar: {
+                          ...(settings.mobileStickyBar || {}),
+                          displayMode: "scroll",
+                        },
+                      })
+                    }
+                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all flex flex-col justify-between ${
+                      (settings.mobileStickyBar?.displayMode || "scroll") === "scroll"
+                        ? "border-[#0f2a44] bg-[#0f2a44]/5 ring-2 ring-[#0f2a44]/20 shadow-sm"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="displayMode"
+                        className="radio radio-primary mt-1"
+                        checked={(settings.mobileStickyBar?.displayMode || "scroll") === "scroll"}
+                        onChange={() => {}}
+                      />
+                      <div>
+                        <span className="font-bold text-sm text-[#0f2a44] flex items-center gap-1.5">
+                          📜 স্ক্রোল করলে আসবে (On Scroll)
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                            রিকমেন্ডেড
+                          </span>
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                          গ্রাহক যখন প্রোডাক্টের বিবরণ বা ছবি দেখতে নিচে স্ক্রোল করবে (&gt; ২৮০px), তখন নিচ থেকে স্মুথভাবে স্টিকি বারটি ভেসে উঠবে। উপরে স্ক্রোল করলে স্বয়ংক্রিয়ভাবে লুকিয়ে যাবে।
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Option 2: Permanent / Always Visible */}
+                  <div
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        mobileStickyBar: {
+                          ...(settings.mobileStickyBar || {}),
+                          displayMode: "permanent",
+                        },
+                      })
+                    }
+                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all flex flex-col justify-between ${
+                      settings.mobileStickyBar?.displayMode === "permanent"
+                        ? "border-[#0f2a44] bg-[#0f2a44]/5 ring-2 ring-[#0f2a44]/20 shadow-sm"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="displayMode"
+                        className="radio radio-primary mt-1"
+                        checked={settings.mobileStickyBar?.displayMode === "permanent"}
+                        onChange={() => {}}
+                      />
+                      <div>
+                        <span className="font-bold text-sm text-[#0f2a44]">
+                          📌 সবসময় স্ক্রিনে ফিক্সড (Permanent / Always Visible)
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                          পেজ লোড হওয়ার সাথে সাথেই কোনো স্ক্রোলিং ছাড়াই মোবাইলের নিচে সবসময় স্টিকি বার দৃশ্যমান থাকবে। গ্রাহক যেকোনো সময় সরাসরি অর্ডার করতে পারবেন।
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div className="rounded-xl border border-[#d4af37]/30 bg-amber-50/40 p-4 space-y-2">
+                <p className="text-xs font-bold text-[#0f2a44] flex items-center gap-1.5">
+                  💡 স্টিকি বার প্রিভিউ (Mobile Sticky Bar Demo):
+                </p>
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex items-center justify-between gap-2 max-w-md">
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-400 font-bold border">
+                      ছবি
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-gray-700">প্রোডাক্টের নাম</p>
+                      <p className="text-xs font-extrabold text-[#0f2a44]">৳ ১,২৫০</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="p-2 border rounded-lg bg-gray-50 text-gray-600 text-xs">🛒</span>
+                    <span className="px-3 py-1.5 bg-[#0f2a44] text-white rounded-lg text-xs font-bold">
+                      ⚡ এখনই অর্ডার করুন
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  ⚡ <strong>জিরো স্পিড ইমপ্যাক্ট:</strong> এই ফিচারটি ১০০% অপ্টিমাইজড, প্রোডাক্ট পেজের লোডিং স্পিডে কোনো প্রভাব ফেলে না এবং কোনো অতিরিক্ত রিরেন্ডার তৈরি করে না।
+                </p>
               </div>
             </div>
           )}

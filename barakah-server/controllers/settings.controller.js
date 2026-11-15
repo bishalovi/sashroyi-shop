@@ -108,6 +108,10 @@ const DEFAULT_WEBSITE_SETTINGS = {
     title: "সীমিত সময়ের বিশেষ অফার!",
     targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
+  mobileStickyBar: {
+    isEnabled: true,
+    displayMode: "scroll",
+  },
   seo: {
     siteTitle: "Sashroyi | Kitchen, Home & Living & Household Essentials",
     siteDescription:
@@ -156,6 +160,7 @@ exports.getPublicSettings = async (req, res) => {
         contact: config.contact || DEFAULT_WEBSITE_SETTINGS.contact,
         footer: config.footer || DEFAULT_WEBSITE_SETTINGS.footer,
         offerTimer: config.offerTimer || DEFAULT_WEBSITE_SETTINGS.offerTimer,
+        mobileStickyBar: config.mobileStickyBar || DEFAULT_WEBSITE_SETTINGS.mobileStickyBar,
         seo: {
           ...DEFAULT_WEBSITE_SETTINGS.seo,
           ...(config.seo || {}),
@@ -530,6 +535,18 @@ exports.updateAdminSettings = async (req, res) => {
           : true,
     };
 
+    const existSticky = existing.mobileStickyBar || DEFAULT_WEBSITE_SETTINGS.mobileStickyBar;
+    const mobileStickyBar = {
+      isEnabled:
+        payload.mobileStickyBar?.isEnabled !== undefined
+          ? Boolean(payload.mobileStickyBar.isEnabled)
+          : Boolean(existSticky.isEnabled),
+      displayMode:
+        payload.mobileStickyBar?.displayMode === "permanent"
+          ? "permanent"
+          : "scroll",
+    };
+
     const updatedData = {
       key: SETTINGS_KEY,
       general: {
@@ -551,6 +568,7 @@ exports.updateAdminSettings = async (req, res) => {
       contact,
       footer,
       offerTimer,
+      mobileStickyBar,
       seo,
       updatedAt: new Date(),
     };
