@@ -1003,41 +1003,100 @@ ${exportData.migrationNotes}`}
 
               {/* Version Comparison Card (Current vs Previous) */}
               {history.length > 0 && (
-                <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-[#faf7f0] to-white border border-[#e5dccf] flex flex-col md:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg shadow-xs">
-                      ✨
+                <div className="mb-5 p-5 rounded-2xl bg-gradient-to-r from-[#faf7f0] to-white border border-[#e5dccf] space-y-4">
+                  {/* Status header */}
+                  <div className="flex items-center justify-between border-b border-[#e5dccf]/60 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="text-xs font-extrabold text-[#0f2a44]">
+                        বর্তমান লাইভ সাইট: <span className="text-[#d4af37] bg-[#0f2a44] px-2 py-0.5 rounded ml-1">{history[0]?.version}</span>
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">বর্তমান লাইভ ভার্সন (Current)</span>
-                      <h4 className="text-sm font-extrabold text-[#0f2a44]">{history[0]?.version}</h4>
-                      <p className="text-[11px] text-gray-500">{new Date(history[0]?.appliedAt).toLocaleString()}</p>
-                    </div>
+                    <span className="text-[11px] text-gray-400">
+                      আপডেট সময়: {new Date(history[0]?.appliedAt).toLocaleDateString()}
+                    </span>
                   </div>
 
-                  {history.length > 1 ? (
-                    <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-[#e5dccf] pt-3 md:pt-0 md:pl-6">
-                      <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg shadow-xs">
-                        ⏮️
-                      </div>
+                  {/* TWO DEDICATED SECTIONS: 1. CORE PATCH RESTORE vs 2. FULL CODEBASE RESTORE */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* SECTION 1: Core Patch Timeline */}
+                    <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 flex flex-col justify-between gap-3">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">পেছনের সেফটি ব্যাকআপ (Previous)</span>
-                        <h4 className="text-sm font-extrabold text-[#3d2f1f]">{history[1]?.version}</h4>
-                        <p className="text-[11px] text-gray-500">{new Date(history[1]?.appliedAt).toLocaleString()}</p>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                            🩹 ১. কোর প্যাচ টাইম-ট্রাভেল (Core Patch)
+                          </span>
+                          <span className="text-[9px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.5 rounded">Lightweight</span>
+                        </div>
+                        <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                          শুধুমাত্র সিস্টেম কোর ও সেটিংসের আগের বা নতুন অবস্থায় সুইচ করতে এটি ব্যবহার করুন।
+                        </p>
                       </div>
-                      <button
-                        onClick={() => handleUndoRollback(history[0]?.localBackupFile)}
-                        disabled={undoing}
-                        className="btn btn-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold ml-2 shadow-xs"
-                      >
-                        ↩️ পেছনে যান
-                      </button>
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-amber-200/60">
+                        <button
+                          type="button"
+                          onClick={() => handleUndoRollback(null, "undo")}
+                          disabled={undoing || history.length === 0}
+                          className="btn btn-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold flex-1 flex items-center justify-center gap-1 shadow-xs"
+                          title="কোর আপডেটের আগের অবস্থায় ফিরে যান"
+                        >
+                          <FiRotateCcw className={undoing ? "animate-spin text-[10px]" : "text-[10px]"} />
+                          <span>{undoing ? "..." : "↩️ Undo Patch"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleUndoRollback(null, "redo")}
+                          disabled={undoing}
+                          className="btn btn-xs bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-bold flex-1 flex items-center justify-center gap-1 shadow-xs"
+                          title="নতুন কোর আপডেটে আবার ফিরে আসুন"
+                        >
+                          <FiZap className="text-[10px]" />
+                          <span>⚡ Latest Patch</span>
+                        </button>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-[11px] text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
-                      এটিই প্রথম ইনস্টলকৃত ভার্সন। পরবর্তী আপডেটের পর পেছনের ভার্সন এখানে দেখাবে।
+
+                    {/* SECTION 2: Full Codebase Restore */}
+                    <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 flex flex-col justify-between gap-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                            📦 ২. সম্পূর্ণ ফুল সাইট রোলব্যাক (Full Codebase)
+                          </span>
+                          <span className="text-[9px] bg-blue-200 text-blue-900 font-bold px-1.5 py-0.5 rounded">Full Mirror Clean</span>
+                        </div>
+                        <p className="text-[11px] text-blue-800/80 leading-relaxed">
+                          সম্পূর্ণ সাইটের সমস্ত পেজ ও ডিজাইনকে হুবহু গতকালের ব্যাকআপে নিতে বা নতুন কোডে ফিরতে এটি ব্যবহার করুন।
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-blue-200/60">
+                        <button
+                          type="button"
+                          onClick={() => handleUndoRollback(history[0]?.localBackupFile, "undo")}
+                          disabled={undoing || history.length === 0}
+                          className="btn btn-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex-1 flex items-center justify-center gap-1 shadow-xs"
+                          title="সম্পূর্ণ সাইট হুবহু পূর্ববর্তী ব্যাকআপের সুস্থ অবস্থায় ফিরিয়ে নিন"
+                        >
+                          <FiRotateCcw className={undoing ? "animate-spin text-[10px]" : "text-[10px]"} />
+                          <span>{undoing ? "..." : "↩️ Undo Full Site"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleUndoRollback(null, "redo")}
+                          disabled={undoing}
+                          className="btn btn-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold flex-1 flex items-center justify-center gap-1 shadow-xs"
+                          title="আনডু করার পর আবার নতুন ফুল সাইটে ফিরে আসুন"
+                        >
+                          <FiZap className="text-[10px]" />
+                          <span>⚡ Latest Full Site</span>
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
