@@ -263,47 +263,58 @@ exports.exportUpdatePackage = async (req, res) => {
     const zipBuffer = zip.toBuffer();
     const zipFileName = `sashroyi-export-${version}.zip`;
 
-    // Automatically backup this export package to Telegram Cloud Vault!
-    try {
-      const tempExportDir = path.resolve(STORAGE_BACKUPS_DIR, "exports");
-      if (!fs.existsSync(tempExportDir)) {
-        fs.mkdirSync(tempExportDir, { recursive: true });
-      }
-      const tempExportPath = path.join(tempExportDir, zipFileName);
-      fs.writeFileSync(tempExportPath, zipBuffer);
+    // STRICT TELEGRAM DELIVERY FIRST:
+    // Package MUST be safely delivered to Telegram Cloud Vault BEFORE browser download begins!
+    const tempExportDir = path.resolve(STORAGE_BACKUPS_DIR, "exports");
+    if (!fs.existsSync(tempExportDir)) {
+      fs.mkdirSync(tempExportDir, { recursive: true });
+    }
+    const tempExportPath = path.join(tempExportDir, zipFileName);
+    fs.writeFileSync(tempExportPath, zipBuffer);
 
-      console.log(`[System Update] Uploading export archive to Telegram: ${zipFileName}`);
-      const teleRes = await telegramBackupService.uploadBackupZip(
+    console.log(`[System Update] Strict upload of export archive to Telegram: ${zipFileName}`);
+    let teleRes = null;
+    try {
+      teleRes = await telegramBackupService.uploadBackupZip(
         tempExportPath,
         zipFileName,
         domainName,
         releaseNotesContent,
         "export_package"
       );
-      console.log(`[System Update] Export archive backed up to Telegram! Message ID: ${teleRes.messageId}`);
+      console.log(`[System Update] Telegram export upload CONFIRMED 100%! Message ID: ${teleRes.messageId}`);
+    } catch (teleErr) {
+      console.error("[System Update] Telegram export upload FAILED:", teleErr.message);
+      try { fs.unlinkSync(tempExportPath); } catch (e) {}
 
-      try {
-        const db = await connectDB();
-        await db.collection("system_update_history").insertOne({
-          version: `EXPORT ${version}`,
-          appliedAt: new Date(),
-          appliedBy: req.rootOwner?.email || author || "Root Owner",
-          domainName,
-          cloudProvider: "Telegram",
-          telegramDelivered: true,
-          telegramMessageId: teleRes.messageId,
-          localBackupFile: path.join("exports", zipFileName),
-          type: "export",
-          releaseNotes: releaseNotesContent,
-          status: "exported",
-        });
-      } catch (dbErr) {
-        console.warn("Could not log export to DB:", dbErr.message);
-      }
-    } catch (saveErr) {
-      console.warn("[System Update] Telegram export backup warning:", saveErr.message);
+      // BLOCK EXPORT: Return error if Telegram delivery fails!
+      return res.status(502).json({
+        success: false,
+        message: `টেলিগ্রামে এক্সপোর্ট ব্যাকআপ পাঠানো ব্যর্থ হয়েছে (${teleErr.message})! টেলিগ্রামে নিশ্চিতভাবে ব্যাকআপ ডেলিভারি না হওয়া পর্যন্ত এক্সপোর্ট প্যাকেজ ডাউনলোড করা যাবে না।`,
+      });
     }
 
+    // Log to DB only after Telegram delivery is confirmed
+    try {
+      const db = await connectDB();
+      await db.collection("system_update_history").insertOne({
+        version: `EXPORT ${version}`,
+        appliedAt: new Date(),
+        appliedBy: req.rootOwner?.email || author || "Root Owner",
+        domainName,
+        cloudProvider: "Telegram",
+        telegramDelivered: true,
+        telegramMessageId: teleRes.messageId,
+        localBackupFile: path.join("exports", zipFileName),
+        type: "export",
+        releaseNotes: releaseNotesContent,
+        status: "exported",
+      });
+    } catch (dbErr) {
+      console.warn("Could not log export to DB:", dbErr.message);
+    }
+
+    // Stream download ONLY after Telegram confirmation!
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${zipFileName}"`);
     res.setHeader("Content-Length", zipBuffer.length);
