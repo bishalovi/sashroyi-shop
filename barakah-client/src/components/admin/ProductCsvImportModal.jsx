@@ -11,6 +11,7 @@ import {
   FaTimes,
   FaExclamationTriangle,
   FaCheckCircle,
+  FaTrashAlt,
 } from "react-icons/fa";
 
 const SAMPLE_CSV_CONTENT = [
@@ -417,6 +418,10 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
     );
   };
 
+  const handleRemoveRow = (rowNumber) => {
+    setParsedItems((prev) => prev.filter((item) => item._rowNumber !== rowNumber));
+  };
+
   const handleImport = async () => {
     if (validItems.length === 0) return;
 
@@ -688,6 +693,7 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                       <th>Shipping</th>
                       <th>Stock</th>
                       <th>Status</th>
+                      <th className="text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -807,6 +813,16 @@ export default function ProductCsvImportModal({ isOpen, onClose, baseUrl, onSucc
                           ) : (
                             <span className="text-red-600 font-medium text-xs">{item._error}</span>
                           )}
+                        </td>
+                        <td className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRow(item._rowNumber)}
+                            className="btn btn-ghost btn-xs text-red-500 hover:bg-red-50 hover:text-red-700"
+                            title="Remove this product from import list"
+                          >
+                            <FaTrashAlt />
+                          </button>
                         </td>
                       </tr>
                     ))}
