@@ -215,7 +215,11 @@ function buildBrowserAdvancedMatching(userParams) {
     am.em = String(userParams.email).trim().toLowerCase();
   }
   if (userParams.name) {
-    const parts = String(userParams.name).trim().toLowerCase().split(/\s+/);
+    const cleanName = String(userParams.name)
+      .toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+      .trim();
+    const parts = cleanName.split(/\s+/).filter(Boolean);
     if (parts[0]) am.fn = parts[0];
     if (parts.length > 1) am.ln = parts.slice(1).join(" ");
   }
