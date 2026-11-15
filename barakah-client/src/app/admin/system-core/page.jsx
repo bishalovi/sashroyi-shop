@@ -68,7 +68,10 @@ export default function SystemCoreUpdatesPage() {
   const [masterPin, setMasterPin] = useState("");
 
   // Tab 1: Export State
-  const [exportData, setExportData] = useState(REAL_WORK_CHANGELOG);
+  const [exportData, setExportData] = useState({
+    ...REAL_WORK_CHANGELOG,
+    packageType: "patch", // "patch" (কোর প্যাচ - আগের মতো) অথবা "full" (ফুল সাইট কোডবেস)
+  });
   const [exporting, setExporting] = useState(false);
 
   // Tab 2: Import & Deploy State
@@ -182,13 +185,14 @@ export default function SystemCoreUpdatesPage() {
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = `sashroyi-update-${exportData.version}.zip`;
+      const downloadPrefix = exportData.packageType === "full" ? "sashroyi-full-export" : "sashroyi-patch-export";
+      a.download = `${downloadPrefix}-${exportData.version}.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
 
-      toast.success(`সফলভাবে sashroyi-update-${exportData.version}.zip ডাউনলোড সম্পন্ন হয়েছে!`);
+      toast.success(`সফলভাবে ${downloadPrefix}-${exportData.version}.zip ডাউনলোড সম্পন্ন হয়েছে!`);
     } catch (err) {
       console.error("Export error:", err);
       toast.error("এক্সপোর্ট ব্যর্থ হয়েছে: " + err.message);
@@ -541,6 +545,66 @@ export default function SystemCoreUpdatesPage() {
               </div>
 
               <form onSubmit={handleExportPackage} className="space-y-4">
+                {/* PACKAGE TYPE SELECTOR: PATCH vs FULL */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
+                  <label className="block text-xs font-bold text-[#3d2f1f] mb-2">
+                    প্যাকেজের ধরন নির্ধারণ করুন (Export Package Type) <span className="text-red-500">*</span>:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        exportData.packageType === "patch"
+                          ? "bg-white border-amber-500 shadow-xs"
+                          : "bg-white/60 border-gray-200 hover:bg-white"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="packageType"
+                        value="patch"
+                        checked={exportData.packageType === "patch"}
+                        onChange={() => setExportData({ ...exportData, packageType: "patch" })}
+                        className="radio radio-warning radio-sm mt-0.5"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#0f2a44]">
+                          <span>🩹 ১. কোর আপডেট প্যাচ (আগের মতো)</span>
+                          <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-semibold">Lightweight (~50 KB)</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                          শুধুমাত্র সিস্টেম কোরের ফাইলগুলো দ্রুত আপডেট হবে। বিদ্যমান অন্যান্য পেজ অক্ষত থাকবে।
+                        </p>
+                      </div>
+                    </label>
+
+                    <label
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        exportData.packageType === "full"
+                          ? "bg-white border-blue-600 shadow-xs"
+                          : "bg-white/60 border-gray-200 hover:bg-white"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="packageType"
+                        value="full"
+                        checked={exportData.packageType === "full"}
+                        onChange={() => setExportData({ ...exportData, packageType: "full" })}
+                        className="radio radio-info radio-sm mt-0.5"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#0f2a44]">
+                          <span>📦 ২. সম্পূর্ণ ফুল সাইট কোডবেস (Full Archive)</span>
+                          <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-semibold">Complete (~800 KB)</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                          সাইটের সমস্ত পেজ, প্রোডাক্ট লজিক ও কোড থাকবে। ইমপোর্ট বা আনডু দিলে হুবহু ফুল সাইট সিঙ্ক হবে।
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[#3d2f1f] mb-1">
@@ -676,6 +740,7 @@ export default function SystemCoreUpdatesPage() {
 {`================================================================================
                     BARAKAH / SASHROYI SYSTEM UPDATE PACKAGE
 ================================================================================
+Package Type    : ${exportData.packageType === "full" ? "FULL SITE CODEBASE ARCHIVE" : "CORE UPDATE PATCH (LIGHTWEIGHT)"}
 Version         : ${exportData.version}
 Previous Version: ${exportData.previousVersion}
 Release Date    : ${new Date().toLocaleDateString("en-US")}

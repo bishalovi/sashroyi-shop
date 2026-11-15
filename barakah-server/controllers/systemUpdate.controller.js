@@ -204,13 +204,16 @@ exports.exportUpdatePackage = async (req, res) => {
       includeClient = true,
       includeServer = true,
       domainName = "sashroyi.shop",
+      packageType = "full", // "patch" (কোর প্যাচ) বা "full" (ফুল সাইট কোডবেস)
     } = req.body;
+
+    const isFullExport = packageType === "full";
 
     const releaseNotesContent = generateReleaseNotesText({
       version,
       previousVersion,
       author,
-      whatsNew,
+      whatsNew: (isFullExport ? "📦 [FULL SITE CODEBASE ARCHIVE]\n" : "🩹 [CORE UPDATE PATCH]\n") + whatsNew,
       bugFixes,
       migrationNotes,
       domainName,
@@ -219,6 +222,7 @@ exports.exportUpdatePackage = async (req, res) => {
     const manifest = {
       version,
       previousVersion,
+      packageType: isFullExport ? "full" : "patch",
       createdAt: new Date().toISOString(),
       author,
       components: {
@@ -232,36 +236,61 @@ exports.exportUpdatePackage = async (req, res) => {
     zip.addFile("RELEASE_NOTES.txt", Buffer.from(releaseNotesContent, "utf8"));
     zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
 
-    const ignoreList = [
-      "node_modules",
-      ".next",
-      ".git",
-      ".vscode",
-      "storage",
-      "backups",
-      ".env",
-      ".env.local",
-      ".env.production",
-      "*.zip",
-      "*.log",
-    ];
+    if (isFullExport) {
+      // 1. FULL CODEBASE ARCHIVE: Packages ALL source files of client & server
+      const ignoreList = [
+        "node_modules",
+        ".next",
+        ".git",
+        ".vscode",
+        "storage",
+        "backups",
+        ".env",
+        ".env.local",
+        ".env.production",
+        "*.zip",
+        "*.log",
+      ];
 
-    if (includeClient) {
-      const clientDir = path.resolve(PROJECT_ROOT, "barakah-client");
-      if (fs.existsSync(clientDir)) {
-        addFolderToZipRecursively(zip, clientDir, "barakah-client", ignoreList);
+      if (includeClient) {
+        const clientDir = path.resolve(PROJECT_ROOT, "barakah-client");
+        if (fs.existsSync(clientDir)) {
+          addFolderToZipRecursively(zip, clientDir, "barakah-client", ignoreList);
+        }
       }
-    }
 
-    if (includeServer) {
-      const serverDir = path.resolve(PROJECT_ROOT, "barakah-server");
-      if (fs.existsSync(serverDir)) {
-        addFolderToZipRecursively(zip, serverDir, "barakah-server", ignoreList);
+      if (includeServer) {
+        const serverDir = path.resolve(PROJECT_ROOT, "barakah-server");
+        if (fs.existsSync(serverDir)) {
+          addFolderToZipRecursively(zip, serverDir, "barakah-server", ignoreList);
+        }
+      }
+    } else {
+      // 2. CORE UPDATE PATCH (আগের মতো লাইটওয়েট প্যাচ): Packages only system-core files
+      const patchFiles = [
+        "barakah-client/src/app/admin/layout.jsx",
+        "barakah-client/src/app/admin/system-core/page.jsx",
+        "barakah-server/controllers/systemUpdate.controller.js",
+        "barakah-server/routes/systemUpdate.routes.js",
+        "barakah-server/services/telegramBackup.service.js",
+        "barakah-server/services/databaseBackup.service.js",
+        "barakah-server/middlewares/rootAuth.middleware.js",
+        "barakah-server/index.js",
+      ];
+
+      for (const relPath of patchFiles) {
+        const fullPath = path.resolve(PROJECT_ROOT, relPath);
+        if (fs.existsSync(fullPath)) {
+          const zipRelDir = path.dirname(relPath);
+          zip.addLocalFile(fullPath, zipRelDir);
+        }
       }
     }
 
     const zipBuffer = zip.toBuffer();
-    const zipFileName = `sashroyi-export-${version}.zip`;
+    const zipFileName = isFullExport
+      ? `sashroyi-full-export-${version}.zip`
+      : `sashroyi-patch-export-${version}.zip`;
 
     // STRICT TELEGRAM DELIVERY FIRST:
     // Package MUST be safely delivered to Telegram Cloud Vault BEFORE browser download begins!
