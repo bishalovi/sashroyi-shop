@@ -75,6 +75,7 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  const SITE_URL = await getDynamicSiteUrl();
   const productSlugOrId = product.slug || product._id;
   const canonicalUrl = `${SITE_URL}/products/${productSlugOrId}`;
   const productImage = product.image || DEFAULT_PLACEHOLDER;
@@ -168,9 +169,10 @@ export default async function ProductDetails({ params }) {
     );
   }
 
-  const [relatedProducts, reviewStats] = await Promise.all([
+  const [relatedProducts, reviewStats, SITE_URL] = await Promise.all([
     getRelatedProducts(product.category, product._id),
     getProductReviewStats(),
+    getDynamicSiteUrl(),
   ]);
 
   const productSlugOrId = product.slug || product._id;
