@@ -20,7 +20,7 @@ import { TbUserCancel } from "react-icons/tb";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AnalyticsCard = () => {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top.")) ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();

@@ -2,14 +2,35 @@ import HomeCategories from "@/components/home/HomeCategories";
 import ProductSection from "@/components/home/ProductSection";
 import Reviews from "@/components/home/Reviews";
 
-import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+import { headers } from "next/headers";
+import { getSiteUrl, getApiUrl, isTopSkbazarHost } from "@/lib/seoConfig";
 
-const baseUrl = getApiUrl();
-const SITE_URL = getSiteUrl();
+async function getDynamicApiUrl() {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") || h.get("host") || "";
+    if (isTopSkbazarHost(host)) {
+      return "https://topskbazar-api.onrender.com";
+    }
+  } catch {}
+  return getApiUrl();
+}
+
+async function getDynamicSiteUrl() {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") || h.get("host") || "";
+    if (isTopSkbazarHost(host)) {
+      return "https://top.skbazarbd.com";
+    }
+  } catch {}
+  return getSiteUrl();
+}
 
 export const revalidate = 10;
 
-async function getPublicSettings() {
+async function getPublicSettings(explicitBaseUrl) {
+  const baseUrl = explicitBaseUrl || (await getDynamicApiUrl());
   try {
     const res = await fetch(`${baseUrl}/api/settings/public`, {
       next: { revalidate: 60 },
@@ -22,7 +43,8 @@ async function getPublicSettings() {
   }
 }
 
-async function getCategories() {
+async function getCategories(explicitBaseUrl) {
+  const baseUrl = explicitBaseUrl || (await getDynamicApiUrl());
   try {
     const res = await fetch(`${baseUrl}/api/categories`, {
       next: { revalidate: 10 },
@@ -36,7 +58,8 @@ async function getCategories() {
   }
 }
 
-async function getProductsByCategory(categorySlug) {
+async function getProductsByCategory(categorySlug, explicitBaseUrl) {
+  const baseUrl = explicitBaseUrl || (await getDynamicApiUrl());
   try {
     const res = await fetch(
       `${baseUrl}/api/products?category=${categorySlug}&limit=8`,
@@ -53,7 +76,8 @@ async function getProductsByCategory(categorySlug) {
   }
 }
 
-async function getAllProducts() {
+async function getAllProducts(explicitBaseUrl) {
+  const baseUrl = explicitBaseUrl || (await getDynamicApiUrl());
   try {
     const res = await fetch(`${baseUrl}/api/products?limit=50`, {
       next: { revalidate: 10 },
@@ -80,10 +104,13 @@ const slimProduct = (p) => ({
 });
 
 export default async function HomePage() {
+  const baseUrl = await getDynamicApiUrl();
+  const SITE_URL = await getDynamicSiteUrl();
+
   const [categories, allProductsRaw, publicSettings] = await Promise.all([
-    getCategories(),
-    getAllProducts(),
-    getPublicSettings(),
+    getCategories(baseUrl),
+    getAllProducts(baseUrl),
+    getPublicSettings(baseUrl),
   ]);
 
   const allProducts = allProductsRaw.map(slimProduct);
@@ -122,7 +149,7 @@ export default async function HomePage() {
   // Fetch products for all active categories in parallel for maximum speed
   const categorySections = await Promise.all(
     categories.map(async (cat) => {
-      const products = (await getProductsByCategory(cat.slug)).map(slimProduct);
+      const products = (await getProductsByCategory(cat.slug, baseUrl)).map(slimProduct);
       return {
         ...cat,
         products,

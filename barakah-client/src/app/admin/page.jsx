@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 async function getDashboardData() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top.")) ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
 
   try {
     const [productsRes, ordersRes, statsRes] = await Promise.allSettled([

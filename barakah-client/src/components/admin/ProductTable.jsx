@@ -28,7 +28,7 @@ export default function ProductTable({
   onPageChange,
   onImportSuccess,
 }) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top.")) ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());

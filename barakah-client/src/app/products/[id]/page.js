@@ -5,15 +5,37 @@ import ViewItemTracker from "@/components/tracking/ViewItemTracker";
 import OfferCountdown from "@/components/products/OfferCountdown";
 import Reviews from "@/components/home/Reviews";
 
-import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
+import { getSiteUrl, getApiUrl, isTopSkbazarHost } from "@/lib/seoConfig";
+import { headers } from "next/headers";
 
 const DEFAULT_PLACEHOLDER = "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=600&auto=format&fit=crop";
-const SITE_URL = getSiteUrl();
-const API_URL = getApiUrl();
+
+async function getDynamicApiUrl() {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") || h.get("host") || "";
+    if (isTopSkbazarHost(host)) {
+      return "https://topskbazar-api.onrender.com";
+    }
+  } catch {}
+  return getApiUrl();
+}
+
+async function getDynamicSiteUrl() {
+  try {
+    const h = await headers();
+    const host = h.get("x-forwarded-host") || h.get("host") || "";
+    if (isTopSkbazarHost(host)) {
+      return "https://top.skbazarbd.com";
+    }
+  } catch {}
+  return getSiteUrl();
+}
 
 export const revalidate = 10;
 
 async function getProductReviewStats() {
+  const API_URL = await getDynamicApiUrl();
   try {
     const res = await fetch(`${API_URL}/api/reviews`, {
       next: { revalidate: 60 },
@@ -97,7 +119,7 @@ export async function generateMetadata({ params }) {
 }
 
 async function getSingleProduct(id) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = await getDynamicApiUrl();
   try {
     const res = await fetch(`${baseUrl}/api/products/${id}`, {
       next: { revalidate: 10 },
@@ -116,7 +138,7 @@ async function getSingleProduct(id) {
 }
 
 async function getRelatedProducts(category, excludeId) {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = await getDynamicApiUrl();
   try {
     const res = await fetch(`${baseUrl}/api/products?category=${category}&limit=6`, {
       next: { revalidate: 10 },

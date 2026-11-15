@@ -28,7 +28,7 @@ export default function AdminSeoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const FALLBACK_API = "https://sashroyi-api.onrender.com";
+  const FALLBACK_API = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top.")) ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
 
   const fetchWithFallback = async (path, options = {}) => {
     try {

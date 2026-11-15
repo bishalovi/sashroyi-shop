@@ -12,14 +12,22 @@ import UTMTracker from "@/components/tracking/UTMTracker";
 import DynamicTrackingProvider from "@/components/tracking/DynamicTrackingProvider";
 import DeviceGuard from "@/components/security/DeviceGuard";
 
-import { getSiteUrl, getApiUrl } from "@/lib/seoConfig";
-
-const SITE_URL = getSiteUrl();
-const API_URL = getApiUrl();
+import { getSiteUrl, getApiUrl, isTopSkbazarHost } from "@/lib/seoConfig";
+import { headers } from "next/headers";
 
 export async function generateMetadata() {
+  let host = "";
+  try {
+    const h = await headers();
+    host = h.get("x-forwarded-host") || h.get("host") || "";
+  } catch {}
+
+  const isTop = isTopSkbazarHost(host);
+  const SITE_URL = isTop ? "https://top.skbazarbd.com" : getSiteUrl();
+  const API_URL = isTop ? "https://topskbazar-api.onrender.com" : getApiUrl();
+
   let seo = {};
-  let shopName = "Sashroyi Shop";
+  let shopName = isTop ? "Sk Bazar" : "Sashroyi Shop";
 
   try {
     const res = await fetch(`${API_URL}/api/settings/public`, {
@@ -28,17 +36,16 @@ export async function generateMetadata() {
     if (res.ok) {
       const json = await res.json();
       seo = json?.data?.seo || {};
-      shopName = json?.data?.general?.shopName || "Sashroyi Shop";
+      shopName = json?.data?.general?.shopName || (isTop ? "Sk Bazar" : "Sashroyi Shop");
     }
   } catch {
     // Fallback to defaults if API is unavailable
   }
 
   const defaultTitle =
-    seo.siteTitle || "Sashroyi | Kitchen, Home & Living & Household Essentials";
+    seo.siteTitle || (isTop ? "Sk Bazar | Best Online Shopping in Bangladesh" : "Sashroyi | Kitchen, Home & Living & Household Essentials");
   const defaultDescription =
-    seo.siteDescription ||
-    "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living, Baby Care এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।";
+    seo.siteDescription || (isTop ? "সেরা মূল্যে সেরা মানের পণ্য অর্ডার করুন top.skbazarbd.com থেকে।" : "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living, Baby Care এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।");
   const keywords = seo.siteKeywords
     ? seo.siteKeywords.split(",").map((k) => k.trim()).filter(Boolean)
     : undefined;

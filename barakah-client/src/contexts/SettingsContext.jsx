@@ -139,9 +139,21 @@ export function formatImageUrl(url) {
 }
 
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const isTop = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top."));
+  const [settings, setSettings] = useState(() => {
+    if (isTop) {
+      return {
+        ...DEFAULT_SETTINGS,
+        general: { ...DEFAULT_SETTINGS.general, shopName: "Sk Bazar" },
+        header: { ...DEFAULT_SETTINGS.header, shopName: "Sk Bazar" },
+        contact: { ...DEFAULT_SETTINGS.contact, phone: "01626955718", whatsapp: "01626955718" },
+        footer: { ...DEFAULT_SETTINGS.footer, copyrightText: "© 2026 Sk Bazar. All rights reserved." }
+      };
+    }
+    return DEFAULT_SETTINGS;
+  });
   const [loading, setLoading] = useState(true);
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = isTop ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
 
   const fetchSettings = useCallback(async () => {
     try {

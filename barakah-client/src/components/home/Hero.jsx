@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FaArrowRight } from "react-icons/fa";
 
 export default function Hero() {
-  const baseUrl = "https://sashroyi-api.onrender.com";
+  const baseUrl = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top.")) ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
   const [heroConfig, setHeroConfig] = useState({
     badgeText: "Blessings in every moment",
     title: "Barakah - Islamic Clock & Canvas",
