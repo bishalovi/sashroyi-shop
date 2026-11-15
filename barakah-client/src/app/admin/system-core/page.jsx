@@ -178,7 +178,12 @@ export default function SystemCoreUpdatesPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Export request failed with status: " + res.status);
+        let errMsg = `Export request failed with status: ${res.status}`;
+        try {
+          const errData = await res.json();
+          if (errData && errData.message) errMsg = errData.message;
+        } catch (e) {}
+        throw new Error(errMsg);
       }
 
       const blob = await res.blob();
