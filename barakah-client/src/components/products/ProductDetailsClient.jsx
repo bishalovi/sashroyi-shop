@@ -231,6 +231,19 @@ export default function ProductDetailsClient({ product }) {
             </span>
           )}
 
+          {product?.isFreeShipping && (
+            <span
+              className={`absolute ${
+                activeOldPrice && activeOldPrice > activePrice
+                  ? "top-14 right-4"
+                  : "top-4 right-4"
+              } z-10 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white rounded-full font-bold text-xs shadow-md border border-emerald-500/30`}
+            >
+              <span>🚚</span>
+              <span>ফ্রি ডেলিভারি</span>
+            </span>
+          )}
+
           <Image
             key={activeImage}
             src={getOptimizedImageUrl(activeImage, 800)}
@@ -325,6 +338,13 @@ export default function ProductDetailsClient({ product }) {
                 ৳{(activeOldPrice - activePrice) * quantity} সাশ্রয়
               </span>
             </>
+          )}
+
+          {product?.isFreeShipping && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200 shadow-2xs">
+              <span>🚚</span>
+              <span>ফ্রি ডেলিভারি</span>
+            </span>
           )}
         </div>
 
@@ -464,12 +484,24 @@ export default function ProductDetailsClient({ product }) {
         {/* Trust Badges */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-[#0f2a44]/10">
           <div className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-            <div className="h-9 w-9 rounded-full bg-amber-50 text-[#d4af37] flex items-center justify-center shrink-0">
+            <div
+              className={`h-9 w-9 rounded-full ${
+                product?.isFreeShipping
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-amber-50 text-[#d4af37]"
+              } flex items-center justify-center shrink-0`}
+            >
               <FaTruck size={16} />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#0f2a44]">ক্যাশ অন ডেলিভারি</p>
-              <p className="text-[11px] text-gray-500">পণ্য দেখে মূল্য পরিশোধ</p>
+              <p className="text-xs font-bold text-[#0f2a44]">
+                {product?.isFreeShipping ? "🚚 ফ্রি ডেলিভারি" : "ক্যাশ অন ডেলিভারি"}
+              </p>
+              <p className="text-[11px] text-gray-500">
+                {product?.isFreeShipping
+                  ? "সারা দেশে কোনো ডেলিভারি চার্জ নেই"
+                  : "পণ্য দেখে মূল্য পরিশোধ"}
+              </p>
             </div>
           </div>
 
