@@ -60,6 +60,10 @@ export default function EditProductPage() {
   const [uploadMode, setUploadMode] = useState("current"); // 'current', 'file', 'url'
   const [uploadingVarIndex, setUploadingVarIndex] = useState(null);
 
+  // Gallery Images
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState(null);
+
   // Quick Presets
   const applyPcsPreset = () => {
     setVariations([
@@ -157,6 +161,46 @@ export default function EditProductPage() {
     }
   };
 
+  const addGalleryImage = () => {
+    setGalleryImages((prev) => [...prev, ""]);
+  };
+
+  const updateGalleryImage = (index, value) => {
+    setGalleryImages((prev) => {
+      const copy = [...prev];
+      copy[index] = value;
+      return copy;
+    });
+  };
+
+  const removeGalleryImage = (index) => {
+    setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGalleryFileUpload = async (index, file) => {
+    if (!file) return;
+    try {
+      setUploadingGalleryIndex(index);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        formData
+      );
+      if (res.data && res.data.secure_url) {
+        updateGalleryImage(index, res.data.secure_url);
+        toast.success(`গ্যালারি ছবি #${index + 1} আপলোড সফল হয়েছে`, { position: "top-right" });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("গ্যালারি ছবি আপলোড ব্যর্থ হয়েছে", { position: "top-right" });
+    } finally {
+      setUploadingGalleryIndex(null);
+    }
+  };
+
   // Fetch categories
   useEffect(() => {
     fetch(`${baseUrl}/api/categories`)
@@ -212,6 +256,14 @@ export default function EditProductPage() {
             metaDescription: product.metaDescription || "",
             metaKeywords: product.metaKeywords || "",
           });
+
+          if (Array.isArray(product.galleryImages) && product.galleryImages.length > 0) {
+            setGalleryImages(
+              product.galleryImages.filter((img) => typeof img === "string" && img.trim())
+            );
+          } else {
+            setGalleryImages([]);
+          }
 
           if (product.variations && product.variations.length > 0) {
             setVariations(product.variations);
@@ -346,6 +398,9 @@ export default function EditProductPage() {
           ...formData,
           slug: (formData.slug || generateSlug(formData.name)).trim(),
           image: finalImageUrl,
+          galleryImages: galleryImages
+            .map((url) => (typeof url === "string" ? url.trim() : ""))
+            .filter(Boolean),
           productType: formData.productType,
           price: formData.productType === "variable" && defaultVariation ? Number(defaultVariation.price) : Number(formData.price),
           oldPrice: formData.productType === "variable" && defaultVariation ? (defaultVariation.oldPrice ? Number(defaultVariation.oldPrice) : null) : (formData.oldPrice ? Number(formData.oldPrice) : null),
@@ -849,6 +904,89 @@ export default function EditProductPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* MULTI-IMAGE / GALLERY SECTION */}
+        <div className="rounded-xl border border-[#e5dccf] p-4 bg-[#faf7f0]/40 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <label className="block text-sm font-semibold text-[#3d2f1f]">
+                অতিরিক্ত গ্যালারি ছবি (More Gallery Photos - Optional)
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5">
+                প্রোডাক্টের একাধিক কোণ বা ফিচার দেখানোর জন্য অতিরিক্ত ছবি যোগ করুন (+ বাটন দিয়ে একাধিক ছবি যোগ করতে পারবেন)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addGalleryImage}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-[#0f2a44] text-white hover:bg-[#1a3d60] transition shadow-sm cursor-pointer"
+            >
+              <span>+</span>
+              <span>নতুন ছবি যোগ করুন</span>
+            </button>
+          </div>
+
+          {galleryImages.length === 0 ? (
+            <div className="border border-dashed border-gray-300 rounded-lg p-4 text-center text-xs text-gray-500 bg-white/60">
+              কোনো অতিরিক্ত গ্যালারি ছবি যোগ করা হয়নি। উপরের &quot;+ নতুন ছবি যোগ করুন&quot; বাটনে চাপুন।
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {galleryImages.map((imgUrl, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col sm:flex-row items-center gap-2.5 p-2.5 bg-white rounded-lg border border-gray-200"
+                >
+                  <div className="relative h-12 w-12 rounded border bg-gray-50 overflow-hidden shrink-0 flex items-center justify-center">
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt={`Gallery ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-gray-400">খালি</span>
+                    )}
+                  </div>
+
+                  <input
+                    type="url"
+                    value={imgUrl}
+                    onChange={(e) => updateGalleryImage(index, e.target.value)}
+                    placeholder={`গ্যালারি ছবি #${index + 1} এর লিঙ্ক (https://...)`}
+                    className="flex-1 w-full text-xs border border-gray-300 rounded-md px-3 py-2 outline-none focus:border-[#d4af37]"
+                  />
+
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    <label className="cursor-pointer inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-300 px-2.5 py-1.5 rounded-md hover:bg-gray-100 text-gray-700 font-medium transition">
+                      <span>{uploadingGalleryIndex === index ? "আপলোড হচ্ছে..." : "📁 ফাইল আপলোড"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingGalleryIndex === index}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleGalleryFileUpload(index, e.target.files[0]);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryImage(index)}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition"
+                      title="Remove Image"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
