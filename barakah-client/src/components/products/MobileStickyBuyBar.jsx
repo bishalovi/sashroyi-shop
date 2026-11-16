@@ -186,14 +186,26 @@ export default function MobileStickyBuyBar({
               type="button"
               onClick={handleBuyNow}
               disabled={!isInStock}
-              className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm text-white shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap ${
+              className={`px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm text-white shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap ${
                 isInStock
-                  ? "bg-gradient-to-r from-[#0f2a44] to-[#1c446c] hover:from-[#133557] hover:to-[#225384] shadow-[#0f2a44]/20"
+                  ? product?.isFreeShipping
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-emerald-700/25"
+                    : "bg-gradient-to-r from-[#0f2a44] to-[#1c446c] hover:from-[#133557] hover:to-[#225384] shadow-[#0f2a44]/20"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              <FaBolt className="text-[#d4af37] animate-pulse" size={14} />
-              <span>{isInStock ? "এখনই অর্ডার করুন" : "স্টক আউট"}</span>
+              {product?.isFreeShipping ? (
+                <span className="text-sm">🚚</span>
+              ) : (
+                <FaBolt className="text-[#d4af37] animate-pulse" size={14} />
+              )}
+              <span>
+                {isInStock
+                  ? product?.isFreeShipping
+                    ? "ফ্রি ডেলিভারিতে অর্ডার করুন"
+                    : "এখনই অর্ডার করুন"
+                  : "স্টক আউট"}
+              </span>
             </button>
           </div>
         </div>
