@@ -72,7 +72,19 @@ export default function SystemCoreUpdatesPage() {
     ...REAL_WORK_CHANGELOG,
     packageType: "patch", // "patch" (কোর প্যাচ - আগের মতো) অথবা "full" (ফুল সাইট কোডবেস)
   });
+  const [currentHostname, setCurrentHostname] = useState("sashroyi.shop");
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname || "sashroyi.shop";
+      setCurrentHostname(host);
+      setExportData((prev) => ({
+        ...prev,
+        domainName: host,
+      }));
+    }
+  }, []);
 
   // Tab 2: Import & Deploy State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -171,10 +183,15 @@ export default function SystemCoreUpdatesPage() {
       setExporting(true);
       toast.info("আপডেট প্যাকেজ ও রিলিজ নোটস তৈরি হচ্ছে...");
 
+      const activeDomain = typeof window !== "undefined" ? window.location.hostname : currentHostname;
+
       const res = await fetch(`${baseUrl}/api/system-update/export`, {
         method: "POST",
         headers: getHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(exportData),
+        body: JSON.stringify({
+          ...exportData,
+          domainName: activeDomain,
+        }),
       });
 
       if (!res.ok) {
@@ -315,7 +332,11 @@ export default function SystemCoreUpdatesPage() {
       const res = await fetch(`${baseUrl}/api/system-update/undo`, {
         method: "POST",
         headers: getHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ backupFileName, action }),
+        body: JSON.stringify({
+          backupFileName,
+          action,
+          domainName: typeof window !== "undefined" ? window.location.hostname : currentHostname,
+        }),
       });
 
       const data = await res.json();
@@ -365,7 +386,9 @@ export default function SystemCoreUpdatesPage() {
       const res = await fetch(`${baseUrl}/api/system-update/database-backup`, {
         method: "POST",
         headers: getHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ domainName: exportData.domainName }),
+        body: JSON.stringify({
+          domainName: typeof window !== "undefined" ? window.location.hostname : currentHostname,
+        }),
       });
 
       const data = await res.json();
@@ -458,8 +481,9 @@ export default function SystemCoreUpdatesPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-            <span className="text-xs text-white/80 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
-              Domain: <strong className="text-[#d4af37]">{exportData.domainName}</strong>
+            <span className="text-xs text-white/90 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Live Domain: <strong className="text-[#d4af37] tracking-wide">{currentHostname}</strong>
             </span>
             <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg border border-white/10" title="যদি কোনো মাস্টার পিন সেট করা থাকে তবে এখানে দিন">
               <FiKey className="text-[#d4af37] text-xs" />
@@ -1143,7 +1167,11 @@ ${exportData.migrationNotes}`}
                               )}
                             </td>
                             <td className="font-bold text-[#0f2a44]">{item.version}</td>
-                            <td>{item.domainName || "main"}</td>
+                            <td>
+                              <span className="font-mono font-bold text-xs bg-gray-100 text-[#0f2a44] px-2 py-0.5 rounded border border-gray-200">
+                                {item.domainName || currentHostname}
+                              </span>
+                            </td>
                             <td>{new Date(item.appliedAt).toLocaleString()}</td>
                             <td>
                               {item.telegramDelivered ? (

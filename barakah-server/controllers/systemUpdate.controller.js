@@ -655,10 +655,14 @@ exports.undoRollbackUpdate = async (req, res) => {
     const restoreZip = new AdmZip(backupFilePath);
     cleanSynchronizeArchive(restoreZip, PROJECT_ROOT);
 
+    const incomingDomain = req.body?.domainName || req.headers["x-forwarded-host"] || req.headers["host"] || "sashroyi.shop";
+    const cleanDomain = incomingDomain.replace(/:\d+$/, "");
+
     await db.collection("system_update_history").insertOne({
       version: action === "redo" ? "LATEST RESTORED (REDO)" : "ROLLBACK (UNDO)",
       appliedAt: new Date(),
       appliedBy: req.rootOwner?.email || "Root Owner",
+      domainName: cleanDomain,
       restoredFrom: targetFile,
       type: action === "redo" ? "redo" : "rollback",
       status: action === "redo" ? "redo_active" : "rolled_back",
