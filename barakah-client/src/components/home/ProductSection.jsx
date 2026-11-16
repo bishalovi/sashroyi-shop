@@ -13,7 +13,7 @@ const ProductSection = ({
   return (
     <section
       className={`${bgClass} py-4 lg:py-6 ${!isFirst ? "cv-auto" : ""}`}
-      style={!isFirst ? { contentVisibility: "auto", containIntrinsicSize: "auto 500px" } : undefined}
+      style={!isFirst ? { contentVisibility: "auto", containIntrinsicSize: "auto 1200px" } : undefined}
     >
       <Container>
         <SectionTitle
