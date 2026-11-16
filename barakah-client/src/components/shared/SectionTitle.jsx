@@ -18,7 +18,7 @@ export default function SectionTitle({
       {link && (
         <Link
           href={link}
-          className="hidden text-sm border px-3 py-2 rounded-lg font-medium text-[#0f2a44] transition-all duration-200 hover:text-[#d4af37] md:inline-block"
+          className="hidden text-sm border px-4 py-2.5 min-h-[40px] rounded-lg font-medium text-[#0f2a44] transition-all duration-200 hover:text-[#d4af37] md:inline-flex md:items-center"
         >
           {linkText} →
         </Link>
