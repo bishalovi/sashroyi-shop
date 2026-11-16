@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { FaBolt } from "react-icons/fa";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function OfferCountdown({ product }) {
-  const baseUrl = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top.")) ? "https://topskbazar-api.onrender.com" : (process.env.NEXT_PUBLIC_API_URL || "https://sashroyi-api.onrender.com");
-  const [offerConfig, setOfferConfig] = useState({
-    isEnabled: true,
-    title: "সীমিত সময়ের বিশেষ অফার!",
-    targetDate: null,
-  });
+  const { offerTimer } = useSettings();
+  const offerConfig = offerTimer || { isEnabled: false };
 
   const [timeLeft, setTimeLeft] = useState({
     hours: "00",
@@ -18,18 +15,8 @@ export default function OfferCountdown({ product }) {
   });
 
   useEffect(() => {
-    if (!baseUrl) return;
-    fetch(`${baseUrl}/api/settings/public`)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data?.offerTimer) {
-          setOfferConfig(res.data.offerTimer);
-        }
-      })
-      .catch((err) => console.error("Error loading offer timer config:", err));
-  }, [baseUrl]);
+    if (!offerConfig?.isEnabled) return;
 
-  useEffect(() => {
     const calculateTime = () => {
       let targetTime = offerConfig.targetDate
         ? new Date(offerConfig.targetDate).getTime()
@@ -62,9 +49,9 @@ export default function OfferCountdown({ product }) {
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
-  }, [offerConfig.targetDate]);
+  }, [offerConfig?.isEnabled, offerConfig?.targetDate]);
 
-  if (!offerConfig.isEnabled) return null;
+  if (!offerConfig?.isEnabled) return null;
 
   return (
     <div className="mb-4 rounded-2xl bg-linear-to-r from-[#0f2a44] via-[#1e3a5f] to-[#0f2a44] p-3 text-white shadow-sm">

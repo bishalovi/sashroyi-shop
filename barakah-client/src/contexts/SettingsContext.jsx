@@ -19,9 +19,10 @@ export const DEFAULT_SETTINGS = {
     faviconUrl: "",
     navLinks: [
       { label: "Home", url: "/" },
-      { label: "All Products", url: "/search" },
-      { label: "Kitchen & Dining", url: "/category/kitchen-dining" },
-      { label: "Home & Living", url: "/category/home-living" },
+      { label: "KITCHEN & DINING", url: "/category/kitchen-dining" },
+      { label: "HOME & LIVING", url: "/category/home-living" },
+      { label: "Baby Care", url: "/category/baby-care" },
+      { label: "Tool & Accessories", url: "/category/tool-accessories" },
     ],
   },
   paymentMethods: {
@@ -60,7 +61,7 @@ export const DEFAULT_SETTINGS = {
     ],
   },
   noticeBar: {
-    isEnabled: true,
+    isEnabled: false,
     text: "🔥 যেকোনো ২টি প্রোডাক্ট অর্ডারে ডেলিভারি সম্পূর্ণ ফ্রি!",
     link: "",
     bgColor: "#0f2a44",
@@ -144,7 +145,31 @@ export function formatImageUrl(url) {
 
 export function SettingsProvider({ children }) {
   const isTop = typeof window !== "undefined" && (window.location.hostname.includes("skbazar") || window.location.hostname.includes("top."));
+  const cacheKey = isTop ? "barakah_settings_top" : "barakah_settings_sashroyi";
+
   const [settings, setSettings] = useState(() => {
+    // If available in localStorage from previous load, use cached settings for instant zero-flash render
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === "object") {
+            return {
+              ...DEFAULT_SETTINGS,
+              ...parsed,
+              general: { ...DEFAULT_SETTINGS.general, ...(parsed.general || {}) },
+              header: { ...DEFAULT_SETTINGS.header, ...(parsed.header || {}) },
+              contact: { ...DEFAULT_SETTINGS.contact, ...(parsed.contact || {}) },
+              footer: { ...DEFAULT_SETTINGS.footer, ...(parsed.footer || {}) },
+              noticeBar: { ...DEFAULT_SETTINGS.noticeBar, ...(parsed.noticeBar || {}) },
+              offerTimer: { ...DEFAULT_SETTINGS.offerTimer, ...(parsed.offerTimer || {}) },
+            };
+          }
+        }
+      } catch {}
+    }
+
     if (isTop) {
       return {
         ...DEFAULT_SETTINGS,
@@ -166,30 +191,33 @@ export function SettingsProvider({ children }) {
       });
       const data = await res.json();
       if (data.success && data.data) {
-        setSettings((prev) => ({
-          general: { ...prev.general, ...(data.data.general || {}) },
-          header: { ...prev.header, ...(data.data.header || {}) },
-          paymentMethods: { ...prev.paymentMethods, ...(data.data.paymentMethods || {}) },
-          footer: { ...prev.footer, ...(data.data.footer || {}) },
-          noticeBar: { ...prev.noticeBar, ...(data.data.noticeBar || {}) },
-          hero: { ...prev.hero, ...(data.data.hero || {}) },
-          contact: { ...prev.contact, ...(data.data.contact || {}) },
-          offerTimer: { ...prev.offerTimer, ...(data.data.offerTimer || {}) },
-          mobileStickyBar: { ...prev.mobileStickyBar, ...(data.data.mobileStickyBar || {}) },
-        }));
+        setSettings((prev) => {
+          const merged = {
+            general: { ...prev.general, ...(data.data.general || {}) },
+            header: { ...prev.header, ...(data.data.header || {}) },
+            paymentMethods: { ...prev.paymentMethods, ...(data.data.paymentMethods || {}) },
+            footer: { ...prev.footer, ...(data.data.footer || {}) },
+            noticeBar: { ...prev.noticeBar, ...(data.data.noticeBar || {}) },
+            hero: { ...prev.hero, ...(data.data.hero || {}) },
+            contact: { ...prev.contact, ...(data.data.contact || {}) },
+            offerTimer: { ...prev.offerTimer, ...(data.data.offerTimer || {}) },
+            mobileStickyBar: { ...prev.mobileStickyBar, ...(data.data.mobileStickyBar || {}) },
+          };
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
       }
     } catch (err) {
       console.error("Failed to load website settings:", err);
     } finally {
       setLoading(false);
     }
-  }, [baseUrl]);
+  }, [baseUrl, cacheKey]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchSettings();
-    }, 800);
-    return () => clearTimeout(timer);
+    fetchSettings();
   }, [fetchSettings]);
 
   // Dynamic favicon injection
