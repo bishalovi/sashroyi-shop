@@ -272,6 +272,12 @@ exports.createProduct = async (req, res) => {
       metaKeywords,
     });
 
+    const cleanGalleryImages = Array.isArray(req.body.galleryImages)
+      ? req.body.galleryImages
+          .map((url) => (typeof url === "string" ? url.trim() : ""))
+          .filter(Boolean)
+      : [];
+
     const newProduct = {
       name: name?.trim() || "",
       slug: finalSlug,
@@ -283,6 +289,7 @@ exports.createProduct = async (req, res) => {
       productType: isVariable ? "variable" : "single",
       variations: cleanVariations,
       image: image?.trim() || "",
+      galleryImages: cleanGalleryImages,
       badge: badge?.trim() || "",
       productCode: productCode?.trim() || "",
       inStock: typeof inStock === "boolean" ? inStock : true,
@@ -407,6 +414,12 @@ exports.updateProduct = async (req, res) => {
       metaKeywords: metaKeywords !== undefined ? metaKeywords : existingProduct.metaKeywords,
     });
 
+    const cleanGalleryImages = Array.isArray(req.body.galleryImages)
+      ? req.body.galleryImages
+          .map((url) => (typeof url === "string" ? url.trim() : ""))
+          .filter(Boolean)
+      : existingProduct.galleryImages || [];
+
     const updatedDoc = {
       name: nextName,
       slug: finalSlug,
@@ -418,6 +431,7 @@ exports.updateProduct = async (req, res) => {
       price: finalPrice,
       oldPrice: finalOldPrice,
       image: image?.trim() || existingProduct.image,
+      galleryImages: cleanGalleryImages,
       badge: nextBadge,
       productCode: productCode !== undefined ? productCode.trim() : existingProduct.productCode || "",
       inStock: typeof inStock === "boolean" ? inStock : existingProduct.inStock,

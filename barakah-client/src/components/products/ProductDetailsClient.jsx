@@ -52,8 +52,14 @@ function getAutoColor(color, name) {
   return null;
 }
 
+function toBengaliNumber(num) {
+  const bengaliDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  return String(num).replace(/[0-9]/g, (d) => bengaliDigits[Number(d)]);
+}
+
 export default function ProductDetailsClient({ product }) {
   const [quantity, setQuantity] = useState(1);
+  const [touchStartX, setTouchStartX] = useState(null);
   const { getWhatsAppUrl } = useSettings();
 
   const isVariable =
@@ -110,9 +116,21 @@ export default function ProductDetailsClient({ product }) {
     };
   }, [product, activePrice, activeOldPrice, activeImage, selectedVariation]);
 
-  // Variations that have distinct images for thumbnail list
+  // Combined list of images: Main Image + Gallery Images + Variation Images
   const variationImagesList = useMemo(() => {
     const list = [{ id: "main", name: product?.name || "Main", image: mainProductImage, isMain: true }];
+
+    // Extra gallery images
+    if (Array.isArray(product?.galleryImages)) {
+      product.galleryImages.forEach((imgUrl, i) => {
+        const clean = typeof imgUrl === "string" ? imgUrl.trim() : "";
+        if (clean && !list.some((item) => item.image === clean)) {
+          list.push({ id: `gallery_${i}`, name: `ছবি ${toBengaliNumber(i + 2)}`, image: clean, isGallery: true });
+        }
+      });
+    }
+
+    // Variation specific images
     if (isVariable) {
       product.variations.forEach((v) => {
         if (v.image && v.image.trim() && !list.some((item) => item.image === v.image.trim())) {
@@ -121,7 +139,44 @@ export default function ProductDetailsClient({ product }) {
       });
     }
     return list;
-  }, [isVariable, product?.variations, product?.name, mainProductImage]);
+  }, [isVariable, product?.variations, product?.name, product?.galleryImages, mainProductImage]);
+
+  const currentImageIndex = useMemo(() => {
+    const idx = variationImagesList.findIndex((item) => item.image === activeImage);
+    return idx >= 0 ? idx : 0;
+  }, [variationImagesList, activeImage]);
+
+  const handlePrevImage = () => {
+    if (variationImagesList.length <= 1) return;
+    const prevIdx = (currentImageIndex - 1 + variationImagesList.length) % variationImagesList.length;
+    handleThumbnailClick(variationImagesList[prevIdx]);
+  };
+
+  const handleNextImage = () => {
+    if (variationImagesList.length <= 1) return;
+    const nextIdx = (currentImageIndex + 1) % variationImagesList.length;
+    handleThumbnailClick(variationImagesList[nextIdx]);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null) return;
+    if (e.changedTouches && e.changedTouches[0]) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diffX = touchStartX - touchEndX;
+      if (diffX > 40) {
+        handleNextImage(); // Swiped left -> next photo
+      } else if (diffX < -40) {
+        handlePrevImage(); // Swiped right -> prev photo
+      }
+    }
+    setTouchStartX(null);
+  };
 
   const handleSelectVariation = (variation) => {
     setSelectedVariation(variation);
@@ -218,7 +273,11 @@ export default function ProductDetailsClient({ product }) {
       {/* Left Column: Interactive Main Image & Gallery */}
       <div className="space-y-4">
         {/* Main Display Image */}
-        <div className="bg-white rounded-3xl overflow-hidden aspect-square relative shadow-md border border-[#0f2a44]/5 transition-all duration-300">
+        <div
+          className="bg-white rounded-3xl overflow-hidden aspect-square relative shadow-md border border-[#0f2a44]/5 transition-all duration-300 select-none group"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {product?.badge && (
             <span className="absolute top-4 left-4 z-10 px-3.5 py-1 bg-[#d4af37] text-white rounded-full font-bold text-xs uppercase tracking-wide shadow">
               {product.badge}
@@ -241,6 +300,49 @@ export default function ProductDetailsClient({ product }) {
             >
               <span>🚚</span>
               <span>ফ্রি ডেলিভারি</span>
+            </span>
+          )}
+
+          {/* Left / Prev Arrow Button */}
+          {variationImagesList.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handlePrevImage();
+              }}
+              aria-label="Previous photo"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 md:h-10 md:w-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center transition shadow-lg backdrop-blur-sm cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <svg className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Right / Next Arrow Button */}
+          {variationImagesList.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNextImage();
+              }}
+              aria-label="Next photo"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 md:h-10 md:w-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center transition shadow-lg backdrop-blur-sm cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <svg className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Photo Counter Badge */}
+          {variationImagesList.length > 1 && (
+            <span className="absolute bottom-3 right-3 z-10 px-3 py-1 bg-black/60 text-white rounded-full font-semibold text-xs tracking-wider shadow-md backdrop-blur-sm pointer-events-none">
+              {toBengaliNumber(currentImageIndex + 1)} / {toBengaliNumber(variationImagesList.length)}
             </span>
           )}
 
