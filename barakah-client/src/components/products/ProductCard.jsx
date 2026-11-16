@@ -152,6 +152,14 @@ export default function ProductCard({ product, priority = false, eager = false }
             {product.badge}
           </span>
         )}
+
+        {/* Free Delivery Badge */}
+        {product?.isFreeShipping && (
+          <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white shadow-sm border border-emerald-500/40 tracking-tight">
+            <span>🚚</span>
+            <span>ফ্রি ডেলিভারি</span>
+          </span>
+        )}
       </Link>
 
       {/* Content */}
