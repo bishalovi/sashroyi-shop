@@ -155,7 +155,7 @@ export default function ProductCard({ product, priority = false, eager = false }
 
         {/* Free Delivery Badge */}
         {Boolean(product?.isFreeShipping) && (
-          <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-600 text-white shadow-sm border border-emerald-500/40 tracking-tight">
+          <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-700 text-white shadow-sm border border-emerald-600/50 tracking-tight">
             <span>🚚</span>
             <span>ফ্রি ডেলিভারি</span>
           </span>

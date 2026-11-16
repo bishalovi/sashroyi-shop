@@ -12,10 +12,15 @@ export default function DynamicTrackingProvider() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Fetch tracking config from API immediately
-    fetch(`${baseUrl}/api/tracking/public`)
-      .then((res) => res.json())
-      .then((res) => {
+    let executed = false;
+    const runTracking = () => {
+      if (executed) return;
+      executed = true;
+
+      // Fetch tracking config from API during idle time to prevent TBT main-thread blocking
+      fetch(`${baseUrl}/api/tracking/public`)
+        .then((res) => res.json())
+        .then((res) => {
         if (res.success && res.data) {
           const { gtm, facebook, tiktok } = res.data;
 
@@ -135,6 +140,20 @@ export default function DynamicTrackingProvider() {
         }
       })
       .catch((err) => console.log("Tracking config fetch error:", err));
+    };
+
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(runTracking, { timeout: 2500 });
+      const events = ["pointerdown", "touchstart", "scroll", "keydown"];
+      events.forEach((evt) => window.addEventListener(evt, runTracking, { once: true, passive: true }));
+      return () => {
+        window.cancelIdleCallback?.(id);
+        events.forEach((evt) => window.removeEventListener(evt, runTracking));
+      };
+    } else {
+      const timer = setTimeout(runTracking, 1500);
+      return () => clearTimeout(timer);
+    }
   }, [baseUrl, pathname]);
 
   // Track PageView on route navigation (Browser + Server CAPI)

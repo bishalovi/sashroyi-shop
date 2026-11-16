@@ -128,10 +128,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
       </head>
       <body className={`${banglaFont.className} flex min-h-screen flex-col`}>
-        {/* Instant Meta Pixel loader (non-blocking afterInteractive) */}
+        {/* Non-blocking Meta Pixel loader (idle load) */}
         <Script
           id="meta-pixel-init"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               !function(f,b,e,v,n,t,s)
