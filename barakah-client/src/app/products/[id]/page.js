@@ -253,7 +253,7 @@ export default async function ProductDetails({ params }) {
       <ViewItemTracker product={product} />
       <div className="max-w-7xl mx-auto px-4">
         {/* Breadcrumb */}
-        <div className="text-sm text-[#0f2a44]/60 mb-6">
+        <div className="text-sm text-[#0f2a44]/60 mb-3 md:mb-4">
           <Link href="/" className="hover:underline">Home</Link> /{" "}
           <span className="capitalize">{product.category}</span> /{" "}
           <span>{product.name}</span>

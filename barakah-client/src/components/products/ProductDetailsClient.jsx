@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
 import AddToCartButton from "@/components/cart/AddToCartButton";
 import BuyNowButton from "@/app/products/[id]/BuyNowButton";
@@ -61,6 +61,8 @@ export default function ProductDetailsClient({ product }) {
   const [quantity, setQuantity] = useState(1);
   const [touchStartX, setTouchStartX] = useState(null);
   const { getWhatsAppUrl } = useSettings();
+  const thumbnailContainerRef = useRef(null);
+  const thumbnailRefs = useRef({});
 
   const isVariable =
     Array.isArray(product?.variations) &&
@@ -178,6 +180,22 @@ export default function ProductDetailsClient({ product }) {
     setTouchStartX(null);
   };
 
+  // Smooth auto-scroll active thumbnail into view/center when activeImage changes
+  useEffect(() => {
+    const el = thumbnailRefs.current[activeImage];
+    const container = thumbnailContainerRef.current;
+    if (el && container) {
+      const containerWidth = container.offsetWidth;
+      const elOffsetLeft = el.offsetLeft;
+      const elWidth = el.offsetWidth;
+      const targetScroll = elOffsetLeft - containerWidth / 2 + elWidth / 2;
+      container.scrollTo({
+        left: Math.max(0, targetScroll),
+        behavior: "smooth",
+      });
+    }
+  }, [activeImage]);
+
   const handleSelectVariation = (variation) => {
     setSelectedVariation(variation);
 
@@ -269,9 +287,9 @@ export default function ProductDetailsClient({ product }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 md:mb-12">
       {/* Left Column: Interactive Main Image & Gallery */}
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         {/* Main Display Image */}
         <div
           className="bg-white rounded-3xl overflow-hidden aspect-square relative shadow-md border border-[#0f2a44]/5 transition-all duration-300 select-none group"
@@ -303,7 +321,7 @@ export default function ProductDetailsClient({ product }) {
             </span>
           )}
 
-          {/* Left / Prev Arrow Button */}
+          {/* Left / Prev Arrow Button (Compact, hugging the side edge) */}
           {variationImagesList.length > 1 && (
             <button
               type="button"
@@ -313,15 +331,15 @@ export default function ProductDetailsClient({ product }) {
                 handlePrevImage();
               }}
               aria-label="Previous photo"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 md:h-10 md:w-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center transition shadow-lg backdrop-blur-sm cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute left-1.5 md:left-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 md:h-8 md:w-8 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center transition shadow-md backdrop-blur-xs cursor-pointer hover:scale-105 active:scale-95"
             >
-              <svg className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 md:w-4 md:h-4 fill-none stroke-current stroke-[2.5]" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
           )}
 
-          {/* Right / Next Arrow Button */}
+          {/* Right / Next Arrow Button (Compact, hugging the side edge) */}
           {variationImagesList.length > 1 && (
             <button
               type="button"
@@ -331,19 +349,12 @@ export default function ProductDetailsClient({ product }) {
                 handleNextImage();
               }}
               aria-label="Next photo"
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-9 w-9 md:h-10 md:w-10 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center transition shadow-lg backdrop-blur-sm cursor-pointer hover:scale-105 active:scale-95"
+              className="absolute right-1.5 md:right-2 top-1/2 -translate-y-1/2 z-20 h-7 w-7 md:h-8 md:w-8 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center transition shadow-md backdrop-blur-xs cursor-pointer hover:scale-105 active:scale-95"
             >
-              <svg className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 md:w-4 md:h-4 fill-none stroke-current stroke-[2.5]" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-          )}
-
-          {/* Photo Counter Badge */}
-          {variationImagesList.length > 1 && (
-            <span className="absolute bottom-3 right-3 z-10 px-3 py-1 bg-black/60 text-white rounded-full font-semibold text-xs tracking-wider shadow-md backdrop-blur-sm pointer-events-none">
-              {toBengaliNumber(currentImageIndex + 1)} / {toBengaliNumber(variationImagesList.length)}
-            </span>
           )}
 
           <Image
@@ -359,19 +370,25 @@ export default function ProductDetailsClient({ product }) {
           />
         </div>
 
-        {/* Thumbnail Gallery (When multiple variation images exist) */}
+        {/* Thumbnail Gallery (Auto-scrolls smoothly into view without text box overlays) */}
         {variationImagesList.length > 1 && (
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div
+            ref={thumbnailContainerRef}
+            className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none scroll-smooth"
+          >
             {variationImagesList.map((item, idx) => {
               const isSelected = activeImage === item.image;
               return (
                 <button
                   key={item.id || idx}
+                  ref={(el) => {
+                    thumbnailRefs.current[item.image] = el;
+                  }}
                   type="button"
                   onClick={() => handleThumbnailClick(item)}
-                  className={`relative h-20 w-20 flex-shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
+                  className={`relative h-16 w-16 sm:h-18 sm:w-18 flex-shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 shadow-md scale-105"
+                      ? "border-[#d4af37] ring-2 ring-[#d4af37]/40 shadow-sm scale-102"
                       : "border-gray-200 hover:border-[#d4af37]/60 opacity-80 hover:opacity-100"
                   }`}
                   title={item.name}
@@ -382,11 +399,6 @@ export default function ProductDetailsClient({ product }) {
                     loading="lazy"
                     className="h-full w-full object-cover"
                   />
-                  {item.name && (
-                    <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] text-center truncate px-1 py-0.5 font-medium">
-                      {item.name}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -420,7 +432,7 @@ export default function ProductDetailsClient({ product }) {
         ) : null}
 
         {/* Dynamic Price Display */}
-        <div className="flex items-baseline gap-3 my-4 flex-wrap">
+        <div className="flex items-baseline gap-3 my-3 flex-wrap">
           <span className="text-3xl sm:text-4xl font-extrabold text-[#0f2a44]">
             ৳ {activePrice * quantity}
           </span>
@@ -452,7 +464,7 @@ export default function ProductDetailsClient({ product }) {
 
         {/* Stock Status */}
         <p
-          className={`mb-5 font-semibold text-sm ${
+          className={`mb-3.5 font-semibold text-sm ${
             isInStock ? "text-green-600" : "text-red-500"
           }`}
         >
@@ -461,7 +473,7 @@ export default function ProductDetailsClient({ product }) {
 
         {/* Variations / Color / Size Selector (Horizontal Side-by-Side) */}
         {isVariable && (
-          <div className="mb-6 space-y-2.5">
+          <div className="mb-4 space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-bold text-[#0f2a44] flex items-center gap-1.5">
                 <span>অপশন সিলেক্ট করুন:</span>
@@ -480,7 +492,7 @@ export default function ProductDetailsClient({ product }) {
             </div>
 
             {/* Side-by-Side Flex Wrap Pills */}
-            <div className="flex flex-wrap gap-2.5 items-center">
+            <div className="flex flex-wrap gap-2 items-center">
               {product.variations.map((v) => {
                 const isSelected = selectedVariation?.id === v.id;
                 const autoColor = getAutoColor(v.color, v.name);
@@ -490,7 +502,7 @@ export default function ProductDetailsClient({ product }) {
                     key={v.id}
                     type="button"
                     onClick={() => handleSelectVariation(v)}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
                       isSelected
                         ? "border-[#d4af37] bg-white ring-2 ring-[#d4af37] text-[#0f2a44] font-bold shadow-md scale-[1.02]"
                         : "border-gray-200 bg-white/90 hover:border-[#d4af37]/60 hover:bg-white text-gray-700 hover:text-[#0f2a44] shadow-sm"
@@ -541,24 +553,24 @@ export default function ProductDetailsClient({ product }) {
         )}
 
         {/* Quantity */}
-        <div className="mb-6">
-          <p className="mb-2 text-sm font-medium text-[#0f2a44]">Quantity (পরিমাণ)</p>
+        <div className="mb-4">
+          <p className="mb-1.5 text-xs font-semibold text-[#0f2a44]">Quantity (পরিমাণ)</p>
 
           <div className="flex items-center w-fit rounded-full border border-[#0f2a44]/15 bg-white px-2 py-1 shadow-sm">
             <button
               onClick={decreaseQuantity}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#0f2a44] transition hover:bg-[#f8f6f1]"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-[#f8f6f1]"
             >
               -
             </button>
 
-            <span className="min-w-10 text-center text-lg font-bold text-[#0f2a44]">
+            <span className="min-w-9 text-center text-base font-bold text-[#0f2a44]">
               {quantity}
             </span>
 
             <button
               onClick={increaseQuantity}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#0f2a44] transition hover:bg-[#f8f6f1]"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#0f2a44] transition hover:bg-[#f8f6f1]"
             >
               +
             </button>
@@ -566,25 +578,25 @@ export default function ProductDetailsClient({ product }) {
         </div>
 
         {/* Primary Actions */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <AddToCartButton product={activeProduct} quantity={quantity} />
           <BuyNowButton product={activeProduct} quantity={quantity} />
         </div>
 
         {/* WhatsApp Action Button */}
-        <div className="mt-4">
+        <div className="mt-3">
           <button
             onClick={handleWhatsAppOrder}
             type="button"
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-6 py-3.5 text-base font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#20ba59] hover:shadow-md active:scale-[0.99] cursor-pointer"
+            className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-6 py-3 text-base font-semibold text-white shadow-sm transition-all duration-300 hover:bg-[#20ba59] hover:shadow-md active:scale-[0.99] cursor-pointer"
           >
-            <FaWhatsapp size={22} />
+            <FaWhatsapp size={20} />
             হোয়াটসঅ্যাপে অর্ডার / বিস্তারিত জানুন
           </button>
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-[#0f2a44]/10">
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-4 border-t border-[#0f2a44]/10">
           <div className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
             <div
               className={`h-9 w-9 rounded-full ${
