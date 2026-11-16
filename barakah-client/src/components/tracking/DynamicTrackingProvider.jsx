@@ -142,18 +142,23 @@ export default function DynamicTrackingProvider() {
       .catch((err) => console.log("Tracking config fetch error:", err));
     };
 
-    if ("requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(runTracking, { timeout: 2500 });
-      const events = ["pointerdown", "touchstart", "scroll", "keydown"];
-      events.forEach((evt) => window.addEventListener(evt, runTracking, { once: true, passive: true }));
-      return () => {
-        window.cancelIdleCallback?.(id);
-        events.forEach((evt) => window.removeEventListener(evt, runTracking));
-      };
-    } else {
-      const timer = setTimeout(runTracking, 1500);
-      return () => clearTimeout(timer);
-    }
+    const triggerEvents = ["pointerdown", "touchstart", "scroll", "keydown", "click", "mousemove", "wheel"];
+    const onUserInteraction = () => {
+      runTracking();
+      triggerEvents.forEach((evt) => window.removeEventListener(evt, onUserInteraction));
+    };
+
+    triggerEvents.forEach((evt) =>
+      window.addEventListener(evt, onUserInteraction, { once: true, passive: true })
+    );
+
+    // Fallback: load after main thread is calm if user does not immediately interact
+    const timer = setTimeout(runTracking, 5000);
+
+    return () => {
+      triggerEvents.forEach((evt) => window.removeEventListener(evt, onUserInteraction));
+      clearTimeout(timer);
+    };
   }, [baseUrl, pathname]);
 
   // Track PageView on route navigation (Browser + Server CAPI)
