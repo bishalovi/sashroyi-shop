@@ -100,6 +100,7 @@ const slimProduct = (p) => ({
   price: p.price,
   oldPrice: p.oldPrice,
   badge: p.badge,
+  isFreeShipping: Boolean(p.isFreeShipping),
   variations: p.variations,
 });
 
