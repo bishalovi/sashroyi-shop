@@ -108,7 +108,7 @@ export default function Footer() {
                     });
                   }}
                   aria-label={item.label}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#d4af37] hover:text-[#0f2a44]"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-[#e8c346] hover:text-[#0f2a44]"
                 >
                   {item.icon}
                 </a>
@@ -117,7 +117,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
+            <h4 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-[#e8c346]">
               Quick Links
             </h4>
 
@@ -139,7 +139,7 @@ export default function Footer() {
                         method: targetUrl.includes("group") ? "facebook_group" : "social_link",
                       });
                     }}
-                    className="inline-flex min-h-[26px] items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#d4af37]"
+                    className="inline-flex min-h-[32px] py-1 items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#e8c346]"
                   >
                     {link.label}
                   </a>
@@ -147,7 +147,7 @@ export default function Footer() {
                   <Link
                     key={idx}
                     href={targetUrl}
-                    className="inline-flex min-h-[26px] items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#d4af37]"
+                    className="inline-flex min-h-[32px] py-1 items-center text-xs md:text-sm text-white/80 transition-colors hover:text-[#e8c346]"
                   >
                     {link.label}
                   </Link>
@@ -157,13 +157,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-[#d4af37]">
+            <h4 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-[#e8c346]">
               Contact
             </h4>
 
             <div className="flex flex-col gap-1.5 text-xs md:text-sm text-white/70">
               <p className="flex items-center gap-2">
-                <FaEnvelope className="text-[#d4af37]" />
+                <FaEnvelope className="text-[#e8c346]" />
                 <a
                   href={`mailto:${email}`}
                   onClick={() => {
@@ -173,13 +173,13 @@ export default function Footer() {
                       method: "email",
                     });
                   }}
-                  className="hover:text-[#d4af37] transition"
+                  className="hover:text-[#e8c346] transition"
                 >
                   {email}
                 </a>
               </p>
               <p className="flex items-center gap-2">
-                <FaPhoneAlt className="text-[#d4af37]" />
+                <FaPhoneAlt className="text-[#e8c346]" />
                 <a
                   href={`tel:${phone}`}
                   onClick={() => {
@@ -189,7 +189,7 @@ export default function Footer() {
                       method: "phone",
                     });
                   }}
-                  className="hover:text-[#d4af37] transition"
+                  className="hover:text-[#e8c346] transition"
                 >
                   {phone}
                 </a>
@@ -207,13 +207,13 @@ export default function Footer() {
                   }}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-[#d4af37] transition text-green-400 font-medium"
+                  className="hover:text-[#e8c346] transition text-[#4ade80] font-medium"
                 >
                   WhatsApp: {whatsapp}
                 </a>
               </p>
               <p className="flex items-center gap-1.5 text-white/80 text-xs mt-0.5">
-                <FaMapMarkerAlt className="text-[#d4af37] shrink-0" />
+                <FaMapMarkerAlt className="text-[#e8c346] shrink-0" />
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
                   target="_blank"
