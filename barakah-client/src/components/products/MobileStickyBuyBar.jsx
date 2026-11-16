@@ -155,12 +155,6 @@ export default function MobileStickyBuyBar({
                     ({quantity}টি)
                   </span>
                 )}
-
-                {product?.isFreeShipping && (
-                  <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap">
-                    🚚 ফ্রি ডেলিভারি
-                  </span>
-                )}
               </div>
             </div>
           </div>
