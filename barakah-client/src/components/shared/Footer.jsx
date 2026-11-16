@@ -81,7 +81,10 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-[#0f2a44] text-white">
+    <footer
+      className="bg-[#0f2a44] text-white cv-auto"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 350px" }}
+    >
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-8">
         <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
           <div>

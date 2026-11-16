@@ -30,7 +30,10 @@ export default async function Reviews() {
   }
 
   return (
-    <section className="bg-[#faf7f0] py-16">
+    <section
+      className="bg-[#faf7f0] py-16 cv-auto"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 400px" }}
+    >
       <Container>
         <div className="mx-auto max-w-7xl px-4 text-center">
           <h2 className="mb-2 text-3xl font-bold text-[#3d2f1f] md:text-4xl">

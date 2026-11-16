@@ -11,7 +11,10 @@ const ProductSection = ({
   isFirst = false,
 }) => {
   return (
-    <section className={`${bgClass} py-4 lg:py-6`}>
+    <section
+      className={`${bgClass} py-4 lg:py-6 ${!isFirst ? "cv-auto" : ""}`}
+      style={!isFirst ? { contentVisibility: "auto", containIntrinsicSize: "auto 500px" } : undefined}
+    >
       <Container>
         <SectionTitle
           title={title}
