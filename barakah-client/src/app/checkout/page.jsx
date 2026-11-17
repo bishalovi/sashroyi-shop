@@ -232,6 +232,7 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors },
   } = useForm({
@@ -253,19 +254,14 @@ export default function CheckoutPage() {
       const initialPhone = p.phone || u.phone || "";
       const initialEmail = p.email || u.email || "";
       const initialAddress = p.address || u.address || "";
-      if (initialName || initialPhone || initialEmail || initialAddress) {
-        reset((prev) => ({
-          ...prev,
-          name: prev.name || initialName,
-          phone: prev.phone || initialPhone,
-          email: prev.email || initialEmail,
-          address: prev.address || initialAddress,
-        }));
-      }
+      if (initialName) setValue("name", initialName);
+      if (initialPhone) setValue("phone", initialPhone);
+      if (initialEmail) setValue("email", initialEmail);
+      if (initialAddress) setValue("address", initialAddress);
     } catch {
       // Non-blocking
     }
-  }, [reset]);
+  }, [setValue]);
 
   const formValues = watch();
 
