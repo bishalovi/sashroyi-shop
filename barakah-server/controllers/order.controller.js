@@ -266,6 +266,7 @@ exports.createOrder = async (req, res) => {
       sessionId: sessionId || null,
       customerName: String(customerName).trim(),
       phone: cleanPhone,
+      email: req.body.email ? String(req.body.email).trim().toLowerCase() : "",
       address: String(address).trim(),
       notes: notes ? String(notes).trim() : "",
       shippingType: finalShippingType,

@@ -103,17 +103,13 @@ const banglaFont = Hind_Siliguri({
 
 const interFont = Inter({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
   display: "swap",
-  preload: false,
   variable: "--font-inter",
 });
 
 const playfairFont = Playfair_Display({
   subsets: ["latin"],
-  weight: ["700"],
   display: "swap",
-  preload: false,
   variable: "--font-playfair",
 });
 

@@ -300,8 +300,13 @@ export async function trackMetaEvent(eventName, customData = {}, userParams = {}
   const resolvedEmail = userParams.email || savedProfile.email || "";
   const resolvedAddress = userParams.address || savedProfile.address || "";
 
+  const pixelId = (typeof window !== "undefined" && window.__metaPixelId) || DEFAULT_PIXEL_ID;
+  const activeCapiAccessToken = (typeof window !== "undefined" && window.__metaCapiAccessToken) || "";
+
   const finalUserParams = {
     ...userParams,
+    pixelId,
+    capiAccessToken: userParams.capiAccessToken || activeCapiAccessToken,
     externalId: resolvedPhone || userParams.externalId || visitorId,
     phone: resolvedPhone,
     name: resolvedName,

@@ -238,11 +238,34 @@ export default function CheckoutPage() {
     defaultValues: {
       name: "",
       phone: "",
+      email: "",
       address: "",
       notes: "",
       accountLast4: "",
     },
   });
+
+  useEffect(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem("barakah_customer_profile") || "{}");
+      const u = JSON.parse(localStorage.getItem("barakahUser") || "{}");
+      const initialName = p.name || u.name || "";
+      const initialPhone = p.phone || u.phone || "";
+      const initialEmail = p.email || u.email || "";
+      const initialAddress = p.address || u.address || "";
+      if (initialName || initialPhone || initialEmail || initialAddress) {
+        reset((prev) => ({
+          ...prev,
+          name: prev.name || initialName,
+          phone: prev.phone || initialPhone,
+          email: prev.email || initialEmail,
+          address: prev.address || initialAddress,
+        }));
+      }
+    } catch {
+      // Non-blocking
+    }
+  }, [reset]);
 
   const formValues = watch();
 
@@ -283,6 +306,7 @@ export default function CheckoutPage() {
 
           customerName: data.name,
           phone: data.phone,
+          email: data.email || "",
           address: data.address,
 
           notes: data.notes,
@@ -309,17 +333,18 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     // Instant auto-save of customer profile for Meta Pixel & CAPI Advanced Matching
-    if (formValues.name || formValues.phone || formValues.address) {
+    if (formValues.name || formValues.phone || formValues.email || formValues.address) {
       const timer = setTimeout(() => {
         saveCustomerProfile({
           name: formValues.name,
           phone: formValues.phone,
+          email: formValues.email,
           address: formValues.address,
         });
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [formValues.name, formValues.phone, formValues.address]);
+  }, [formValues.name, formValues.phone, formValues.email, formValues.address]);
 
   useEffect(() => {
     // Auto-save form progress for abandoned checkout recovery (8s delay)
@@ -387,6 +412,7 @@ export default function CheckoutPage() {
     saveCustomerProfile({
       name: data.name,
       phone: data.phone,
+      email: data.email || "",
       address: data.address,
     });
 
@@ -394,7 +420,7 @@ export default function CheckoutPage() {
       sessionId: getCheckoutSessionId(),
       customerName: data.name,
       phone: data.phone,
-      email: (function() {
+      email: (data.email || "").trim() || (function() {
         try {
           const authUser = JSON.parse(localStorage.getItem("barakahUser") || "{}");
           const profile = JSON.parse(localStorage.getItem("barakah_customer_profile") || "{}");
@@ -567,6 +593,28 @@ export default function CheckoutPage() {
                   {errors.phone && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-[#0f2a44]">
+                    ইমেইল <span className="text-xs text-gray-400 font-normal">(ঐচ্ছিক - অর্ডার কপি / ইনভয়েসের জন্য)</span>
+                  </label>
+                  <input
+                    type="email"
+                    {...register("email", {
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "সঠিক ইমেইল ঠিকানা দিন",
+                      },
+                    })}
+                    className="w-full rounded-xl border border-[#0f2a44]/15 px-4 py-3 outline-none focus:border-[#d4af37]"
+                    placeholder="example@gmail.com (যদি থাকে)"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.email.message}
                     </p>
                   )}
                 </div>

@@ -132,7 +132,9 @@ export async function POST(req) {
       payload.test_event_code = activeTestCode;
     }
 
-    const metaUrl = `https://graph.facebook.com/v19.0/${DEFAULT_PIXEL_ID}/events?access_token=${DEFAULT_CAPI_TOKEN}`;
+    const activePixelId = (userParams.pixelId || process.env.NEXT_PUBLIC_META_PIXEL_ID || DEFAULT_PIXEL_ID).trim();
+    const activeCapiToken = (userParams.capiAccessToken || process.env.META_CAPI_ACCESS_TOKEN || DEFAULT_CAPI_TOKEN).trim();
+    const metaUrl = `https://graph.facebook.com/v19.0/${activePixelId}/events?access_token=${activeCapiToken}`;
 
     const metaRes = await fetch(metaUrl, {
       method: "POST",

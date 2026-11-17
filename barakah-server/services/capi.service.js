@@ -18,6 +18,9 @@
 
 const crypto = require("crypto");
 
+const DEFAULT_PIXEL_ID = "3090216584507410";
+const DEFAULT_CAPI_TOKEN = "EAAN1ofCq9NUBSaUTZAgzfG4XJoOGP2xh2iZC3Q3Km7KyRxY24srJG6ZAb7ZAviKpQJC210vGGeZBWwCqZC0DUQfqhZBL1BzG7GSrZCHu9Xk0rRJoD1mV9eUwZAxP3tbuUOovVm2PiSCM824SVZBQGoZAlJJk6A2q3sKZBSFRsKx5viyISgFPyL0MaQNo4cTmE0ku5jyTfwZDZD";
+
 const BD_LOCATIONS = [
   { keywords: ["chittagong", "chattogram", "চট্টগ্রাম"], city: "chattogram", zip: "4000" },
   { keywords: ["sylhet", "সিলেট"], city: "sylhet", zip: "3100" },
@@ -79,11 +82,8 @@ function resolveClientIp(rawIp) {
 
 async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) {
   try {
-    if (!metaConfig || !metaConfig.isEnabled || !metaConfig.isCapiEnabled) {
-      return { skipped: true, reason: "Meta CAPI is not enabled" };
-    }
-
-    const { pixelId, capiAccessToken, testEventCode } = metaConfig;
+    const pixelId = (metaConfig?.pixelId || process.env.META_PIXEL_ID || DEFAULT_PIXEL_ID || "").trim();
+    const capiAccessToken = (metaConfig?.capiAccessToken || process.env.META_CAPI_ACCESS_TOKEN || DEFAULT_CAPI_TOKEN || "").trim();
 
     if (!pixelId || !capiAccessToken) {
       return { skipped: true, reason: "Missing Pixel ID or CAPI Access Token" };
@@ -92,7 +92,11 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
     const eventId = String(order._id || order.orderId || `order_${Date.now()}`);
     const eventTime = Math.floor(Date.now() / 1000);
 
-    const nameParts = (order.customerName || "").trim().split(/\s+/);
+    const cleanName = String(order.customerName || "")
+      .toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+      .trim();
+    const nameParts = cleanName.split(/\s+/).filter(Boolean);
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
@@ -175,11 +179,9 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
 
 async function sendMetaCapiGenericEvent({ eventName, eventId, eventSourceUrl, customData, userParams = {}, metaConfig, clientIp, userAgent }) {
   try {
-    if (!metaConfig || !metaConfig.isEnabled || !metaConfig.isCapiEnabled) {
-      return { skipped: true, reason: "Meta CAPI is not enabled" };
-    }
+    const pixelId = (metaConfig?.pixelId || process.env.META_PIXEL_ID || DEFAULT_PIXEL_ID || "").trim();
+    const capiAccessToken = (metaConfig?.capiAccessToken || process.env.META_CAPI_ACCESS_TOKEN || DEFAULT_CAPI_TOKEN || "").trim();
 
-    const { pixelId, capiAccessToken, testEventCode } = metaConfig;
     if (!pixelId || !capiAccessToken) {
       return { skipped: true, reason: "Missing Pixel ID or CAPI Access Token" };
     }
@@ -192,6 +194,18 @@ async function sendMetaCapiGenericEvent({ eventName, eventId, eventSourceUrl, cu
       client_user_agent: userAgent || "Mozilla/5.0",
       country: [hashData("bd")],
     };
+
+    if (userParams.name) {
+      const cleanName = String(userParams.name)
+        .toLowerCase()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+        .trim();
+      const nameParts = cleanName.split(/\s+/).filter(Boolean);
+      if (nameParts[0]) userData.fn = [hashData(nameParts[0])];
+      if (nameParts.length > 1) {
+        userData.ln = [hashData(nameParts.slice(1).join(" "))];
+      }
+    }
 
     const normalizedPhone = normalizePhoneDigits(userParams.phone);
     if (normalizedPhone) {
