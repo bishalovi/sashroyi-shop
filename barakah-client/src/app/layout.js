@@ -42,10 +42,17 @@ export async function generateMetadata() {
     // Fallback to defaults if API is unavailable
   }
 
-  const defaultTitle =
-    seo.siteTitle || (isTop ? "Sk Bazar | Best Online Shopping in Bangladesh" : "Sashroyi | Kitchen, Home & Living & Household Essentials");
-  const defaultDescription =
-    seo.siteDescription || (isTop ? "সেরা মূল্যে সেরা মানের পণ্য অর্ডার করুন top.skbazarbd.com থেকে।" : "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living, Baby Care এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।");
+  const rawTitle =
+    seo.siteTitle || (isTop ? "Sk Bazar | Best Online Shopping in BD" : "Sashroyi | Kitchen, Home & Living Essentials");
+  const defaultTitle = rawTitle.length > 60 ? rawTitle.substring(0, 57).trim() + "..." : rawTitle;
+
+  const rawDescription =
+    seo.siteDescription || (isTop ? "সেরা মূল্যে সেরা মানের পণ্য অর্ডার করুন top.skbazarbd.com থেকে।" : "সাশ্রয়ী মূল্যে সেরা মানের Kitchen & Dining, Home & Living এবং দৈনন্দিন প্রয়োজনীয় পণ্য অর্ডার করুন sashroyi.shop থেকে।");
+  const defaultDescription = rawDescription.length > 160 ? rawDescription.substring(0, 157).trim() + "..." : rawDescription;
+
+  const defaultOgImage = `${SITE_URL}/logo.svg`;
+  const resolvedOgImage = seo.ogImage || defaultOgImage;
+
   const keywords = seo.siteKeywords
     ? seo.siteKeywords.split(",").map((k) => k.trim()).filter(Boolean)
     : undefined;
@@ -70,21 +77,23 @@ export async function generateMetadata() {
     keywords,
     openGraph: {
       type: "website",
+      url: SITE_URL,
       locale: "bn_BD",
       siteName: shopName,
       title: defaultTitle,
       description: defaultDescription,
-      ...(seo.ogImage
-        ? {
-            images: [{ url: seo.ogImage, alt: shopName }],
-          }
-        : {}),
+      images: [
+        {
+          url: resolvedOgImage,
+          alt: shopName,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: defaultTitle,
       description: defaultDescription,
-      ...(seo.ogImage ? { images: [seo.ogImage] } : {}),
+      images: [resolvedOgImage],
     },
     ...(Object.keys(verification).length > 0 ? { verification } : {}),
     robots: {
