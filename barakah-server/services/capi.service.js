@@ -67,12 +67,12 @@ function normalizePhoneDigits(phone) {
 }
 
 function resolveLocation(address) {
-  if (!address) return { city: "dhaka", zip: "1200" };
+  if (!address) return null;
   const lower = String(address).toLowerCase();
   const matched = BD_LOCATIONS.find((loc) =>
     loc.keywords.some((kw) => lower.includes(kw))
   );
-  return matched ? { city: matched.city, zip: matched.zip } : { city: "dhaka", zip: "1200" };
+  return matched ? { city: matched.city, zip: matched.zip } : null;
 }
 
 function resolveClientIp(rawIp) {
@@ -115,11 +115,13 @@ async function sendMetaCapiPurchase({ order, metaConfig, clientIp, userAgent }) 
     if (firstName) userData.fn = [hashData(firstName)];
     if (lastName) userData.ln = [hashData(lastName)];
 
-    const { city, zip } = resolveLocation(order.address);
-    const cityHash = hashData(city);
-    userData.ct = [cityHash];
-    userData.st = [cityHash];
-    userData.zp = [hashData(zip)];
+    const loc = resolveLocation(order.address);
+    if (loc) {
+      const cityHash = hashData(loc.city);
+      userData.ct = [cityHash];
+      userData.st = [cityHash];
+      userData.zp = [hashData(loc.zip)];
+    }
 
     const resolvedFbc = order.fbc || (order.fbclid ? `fb.1.${Date.now()}.${order.fbclid}` : "");
     if (resolvedFbc && String(resolvedFbc).startsWith("fb.")) userData.fbc = String(resolvedFbc);
@@ -216,11 +218,13 @@ async function sendMetaCapiGenericEvent({ eventName, eventId, eventSourceUrl, cu
     }
 
     if (userParams.email) userData.em = [hashData(userParams.email)];
-    const { city, zip } = resolveLocation(userParams.address || userParams.city);
-    const cityHash = hashData(city);
-    userData.ct = [cityHash];
-    userData.st = [cityHash];
-    userData.zp = [hashData(zip)];
+    const loc = resolveLocation(userParams.address || userParams.city);
+    if (loc) {
+      const cityHash = hashData(loc.city);
+      userData.ct = [cityHash];
+      userData.st = [cityHash];
+      userData.zp = [hashData(loc.zip)];
+    }
 
     if (userParams.fbc && String(userParams.fbc).startsWith("fb.")) userData.fbc = String(userParams.fbc);
     if (userParams.fbp && String(userParams.fbp).startsWith("fb.")) userData.fbp = String(userParams.fbp);

@@ -41,12 +41,12 @@ function hashData(value) {
 }
 
 function resolveLocation(address) {
-  if (!address) return { city: "dhaka", zip: "1200" };
+  if (!address) return null;
   const lower = String(address).toLowerCase();
   const matched = BD_LOCATIONS.find((loc) =>
     loc.keywords.some((kw) => lower.includes(kw))
   );
-  return matched ? { city: matched.city, zip: matched.zip } : { city: "dhaka", zip: "1200" };
+  return matched ? { city: matched.city, zip: matched.zip } : null;
 }
 
 export async function POST(req) {
@@ -104,11 +104,13 @@ export async function POST(req) {
       userData.em = [hashData(userParams.email)];
     }
 
-    const { city, zip } = resolveLocation(userParams.address || userParams.city);
-    const cityHash = hashData(city);
-    userData.ct = [cityHash];
-    userData.st = [cityHash];
-    userData.zp = [hashData(zip)];
+    const loc = resolveLocation(userParams.address || userParams.city);
+    if (loc) {
+      const cityHash = hashData(loc.city);
+      userData.ct = [cityHash];
+      userData.st = [cityHash];
+      userData.zp = [hashData(loc.zip)];
+    }
 
     const resolvedFbp = userParams.fbp || req.cookies.get("_fbp")?.value;
     const resolvedFbc = userParams.fbc || req.cookies.get("_fbc")?.value;

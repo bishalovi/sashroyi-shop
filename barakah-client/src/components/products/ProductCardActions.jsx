@@ -19,7 +19,7 @@ export default function ProductCardActions({ targetProduct }) {
     clearCart();
     addToCart(
       { ...targetProduct, quantity: 1 },
-      { silent: true, skipTracking: true }
+      { silent: true }
     );
     router.push("/checkout");
   };

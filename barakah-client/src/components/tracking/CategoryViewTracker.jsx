@@ -28,28 +28,19 @@ export default function CategoryViewTracker({ categoryName, categorySlug, subcat
       },
     });
 
-    // 2. Meta Pixel & CAPI (ViewContent for Category)
-    trackMetaEvent("ViewContent", {
-      content_name: title,
-      content_category: categorySlug,
-      content_type: "product_group",
-      content_ids: productIds,
-      contents: products.slice(0, 5).map((p) => ({
-        id: String(p._id || p.id),
-        quantity: 1,
-        item_price: Number(p.price || 0),
-      })),
-      num_items: products.length,
-      value: products.length > 0 ? Number(products[0]?.price || 0) : 0,
-      currency: "BDT",
-    });
-
-    // 3. Custom / Standard ViewCategory Event
+    // 2. Standard ViewCategory Event (Catalog & Category Tracking)
     trackMetaEvent("ViewCategory", {
       category_name: title,
       category_slug: categorySlug,
       subcategory_slug: subcategorySlug || "all",
+      content_ids: productIds,
+      contents: products.slice(0, 10).map((p) => ({
+        id: String(p._id || p.id),
+        quantity: 1,
+        item_price: Number(p.price || 0),
+      })),
       total_products: products.length,
+      currency: "BDT",
     });
   }, [categorySlug, subcategorySlug]);
 

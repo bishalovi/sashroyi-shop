@@ -69,7 +69,7 @@ export default function MobileStickyBuyBar({
   const handleBuyNow = () => {
     if (!isInStock) return;
     clearCart();
-    addToCart({ ...product, quantity }, { silent: true, skipTracking: true });
+    addToCart({ ...product, quantity }, { silent: true });
 
     setTimeout(() => {
       router.push("/checkout");

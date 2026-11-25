@@ -41,12 +41,12 @@ const BD_LOCATIONS = [
 ];
 
 function resolveLocation(address) {
-  if (!address) return { city: "dhaka", zip: "1200" };
+  if (!address) return null;
   const lower = String(address).toLowerCase();
   const matched = BD_LOCATIONS.find((loc) =>
     loc.keywords.some((kw) => lower.includes(kw))
   );
-  return matched ? { city: matched.city, zip: matched.zip } : { city: "dhaka", zip: "1200" };
+  return matched ? { city: matched.city, zip: matched.zip } : null;
 }
 
 function getCookie(name) {
@@ -224,13 +224,13 @@ function buildBrowserAdvancedMatching(userParams) {
     if (parts.length > 1) am.ln = parts.slice(1).join(" ");
   }
 
-  // City, State, and ZIP for 100% Browser Match Quality
+  // City, State, and ZIP for 100% Browser Match Quality (only when genuine address exists)
   const loc = resolveLocation(userParams.address || userParams.city);
-  if (loc.city) {
+  if (loc && loc.city) {
     am.ct = loc.city.replace(/[^a-z]/g, "");
     am.st = loc.city.replace(/[^a-z]/g, "");
   }
-  if (loc.zip) {
+  if (loc && loc.zip) {
     am.zp = String(loc.zip).trim();
   }
 
@@ -273,7 +273,7 @@ function dispatchToBrowserPixel(eventName, customData, eventId, userParams) {
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
-      if (runFbq() || attempts >= 25) {
+      if (runFbq() || attempts >= 50) {
         clearInterval(timer);
       }
     }, 100);

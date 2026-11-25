@@ -49,9 +49,6 @@ export default function DynamicTrackingProvider() {
             !(function (f, b, e, v, n, t, s) {
               if (f.fbq) return;
               n = f.fbq = function () {
-                if ((arguments[0] === "track" || arguments[0] === "trackCustom") && (!arguments[3] || !arguments[3].eventID)) {
-                  return;
-                }
                 n.callMethod
                   ? n.callMethod.apply(n, arguments)
                   : n.queue.push(arguments);
@@ -153,8 +150,8 @@ export default function DynamicTrackingProvider() {
       window.addEventListener(evt, onUserInteraction, { once: true, passive: true })
     );
 
-    // Fallback: load after main thread is calm if user does not immediately interact
-    const timer = setTimeout(runTracking, 5000);
+    // Fallback: load after main thread is calm if user does not immediately interact (1.2s)
+    const timer = setTimeout(runTracking, 1200);
 
     return () => {
       triggerEvents.forEach((evt) => window.removeEventListener(evt, onUserInteraction));

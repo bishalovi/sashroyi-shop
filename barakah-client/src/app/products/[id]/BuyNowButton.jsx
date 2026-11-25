@@ -9,7 +9,7 @@ export default function BuyNowButton({ product, quantity = 1 }) {
 
   const handleBuyNow = () => {
     clearCart();
-    addToCart({ ...product, quantity }, { silent: true, skipTracking: true });
+    addToCart({ ...product, quantity }, { silent: true });
 
     setTimeout(() => {
       router.push("/checkout");
